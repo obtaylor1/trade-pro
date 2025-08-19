@@ -16,7 +16,11 @@ export const tradingOpportunitySchema = z.object({
   rationale: z.string(),
   isMicro: z.boolean().default(false),
   contractSize: z.string().optional(),
-  minimumTrade: z.string().optional()
+  minimumTrade: z.string().optional(),
+  exchange: z.string().optional(),
+  sector: z.string().optional(),
+  volume: z.string().optional(),
+  riskLevel: z.string().optional()
 });
 
 export const tradeExecutionSchema = z.object({
