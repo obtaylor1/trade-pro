@@ -9,26 +9,43 @@ import BrokerDashboard from "@/components/BrokerDashboard";
 import SimulatorSetupModal from "@/components/SimulatorSetup";
 import TradeHistory from "@/components/TradeHistory";
 import PortfolioSummaryPage from "@/components/PortfolioSummaryPage";
+import UserAuthModal from "@/components/UserAuthModal";
 import { type TradeResult, type UserProfile, type PortfolioPosition, type SimulatorSetup } from "@shared/schema";
 
 export default function Home() {
   const [selectedMarket, setSelectedMarket] = useState<"stocks" | "commodities" | "crypto">("commodities");
   const [tradeResult, setTradeResult] = useState<TradeResult | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showSetup, setShowSetup] = useState(true);
+  const [showSetup, setShowSetup] = useState(false);
   const [showTradeHistory, setShowTradeHistory] = useState(false);
   const [showPortfolioSummary, setShowPortfolioSummary] = useState(false);
+  const [showAuth, setShowAuth] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   
-  // Mock user profile - in a real app this would come from authentication
+  // User profile from authentication
   const [userProfile, setUserProfile] = useState<UserProfile>({
-    id: "user-1",
-    name: "Alex Thompson",
+    id: "demo-user",
+    name: "Demo User",
     accountType: "individual",
-    availableFunds: 25000,
-    virtualFunds: 100000,
+    availableFunds: 10000,
+    virtualFunds: 10000,
     selectedBroker: "ninjatrader-sim",
     isLiveTrading: false
   });
+
+  const handleUserAuthenticated = (authenticatedUser: any) => {
+    setUserProfile({
+      id: authenticatedUser.id,
+      name: authenticatedUser.name,
+      accountType: "individual",
+      availableFunds: authenticatedUser.currentBalance,
+      virtualFunds: authenticatedUser.currentBalance,
+      selectedBroker: authenticatedUser.selectedBroker,
+      isLiveTrading: authenticatedUser.isLiveTrading
+    });
+    setIsAuthenticated(true);
+    setShowAuth(false);
+  };
 
   // Mock portfolio positions
   const [portfolioPositions] = useState<PortfolioPosition[]>([
@@ -89,6 +106,20 @@ export default function Home() {
     setIsModalOpen(false);
     setTradeResult(null);
   };
+
+  // Show authentication screen if not authenticated
+  if (!isAuthenticated && showAuth) {
+    return (
+      <div className="bg-trading-dark text-white font-inter min-h-screen">
+        <Header />
+        <UserAuthModal
+          isVisible={showAuth && !isAuthenticated}
+          onUserAuthenticated={handleUserAuthenticated}
+          onClose={() => setShowAuth(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-trading-dark text-white font-inter min-h-screen">
@@ -162,6 +193,13 @@ export default function Home() {
         userProfile={userProfile}
         isVisible={showPortfolioSummary}
         onClose={() => setShowPortfolioSummary(false)}
+      />
+
+      {/* User Authentication Modal */}
+      <UserAuthModal
+        isVisible={showAuth && !isAuthenticated}
+        onUserAuthenticated={handleUserAuthenticated}
+        onClose={() => setShowAuth(false)}
       />
     </div>
   );

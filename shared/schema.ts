@@ -158,8 +158,25 @@ export const paperTrades = pgTable("paper_trades", {
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  email: text("email"),
+  email: text("email").unique().notNull(),
+  startingCapital: numeric("starting_capital").default("10000"),
+  currentBalance: numeric("current_balance").default("10000"),
+  selectedBroker: text("selected_broker").default("ninjatrader-sim"),
+  isLiveTrading: boolean("is_live_trading").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User registration/login schemas
+export const userRegistrationSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  startingCapital: z.number().min(100, "Minimum starting capital is $100"),
+  selectedBroker: z.string().default("ninjatrader-sim"),
+});
+
+export const userLoginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
 });
 
 export type TradingOpportunity = z.infer<typeof tradingOpportunitySchema>;
@@ -171,3 +188,9 @@ export type PortfolioPosition = z.infer<typeof portfolioPositionSchema>;
 export type SimulatorSetup = z.infer<typeof simulatorSetupSchema>;
 export type PaperTrade = z.infer<typeof paperTradeSchema>;
 export type TradeSummary = z.infer<typeof tradeSummarySchema>;
+export type UserRegistration = z.infer<typeof userRegistrationSchema>;
+export type UserLogin = z.infer<typeof userLoginSchema>;
+
+// Database user type
+export type DatabaseUser = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;

@@ -1,8 +1,8 @@
-import { type TradingOpportunity, type TradeResult, type PaperTrade, type TradeSummary } from "@shared/schema";
+import { type TradingOpportunity, type TradeResult, type PaperTrade, type TradeSummary, type UserRegistration, type UserLogin, type DatabaseUser } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { marketDataService } from "./marketDataService";
 import { db } from "./db";
-import { paperTrades } from "@shared/schema";
+import { paperTrades, users } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
@@ -12,6 +12,12 @@ export interface IStorage {
   getUserTrades(userId: string, limit?: number): Promise<PaperTrade[]>;
   getTradeSummary(userId: string): Promise<TradeSummary>;
   updateTradeStatus(tradeId: string, status: string, currentPrice?: number): Promise<void>;
+  
+  // User management
+  registerUser(userData: UserRegistration): Promise<DatabaseUser>;
+  loginUser(email: string): Promise<DatabaseUser | null>;
+  updateUserBalance(userId: string, newBalance: number): Promise<void>;
+  getUserByEmail(email: string): Promise<DatabaseUser | null>;
 }
 
 // Cache for market data to avoid hitting API limits
@@ -285,6 +291,52 @@ export class MemStorage implements IStorage {
       .update(paperTrades)
       .set(updateData)
       .where(eq(paperTrades.tradeId, tradeId));
+  }
+
+  // User management methods
+  async registerUser(userData: UserRegistration): Promise<DatabaseUser> {
+    const userId = randomUUID();
+    
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        id: userId,
+        name: userData.name,
+        email: userData.email,
+        startingCapital: userData.startingCapital.toString(),
+        currentBalance: userData.startingCapital.toString(),
+        selectedBroker: userData.selectedBroker,
+        isLiveTrading: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    return newUser;
+  }
+
+  async loginUser(email: string): Promise<DatabaseUser | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    return user || null;
+  }
+
+  async getUserByEmail(email: string): Promise<DatabaseUser | null> {
+    return this.loginUser(email);
+  }
+
+  async updateUserBalance(userId: string, newBalance: number): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        currentBalance: newBalance.toString(),
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
   }
 }
 

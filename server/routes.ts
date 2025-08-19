@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { tradeExecutionSchema } from "@shared/schema";
+import { tradeExecutionSchema, userRegistrationSchema, userLoginSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -82,6 +82,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating trade status:', error);
       res.status(500).json({ message: "Failed to update trade status" });
+    }
+  });
+
+  // User registration
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const validatedData = userRegistrationSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(409).json({ message: "User with this email already exists" });
+      }
+      
+      const newUser = await storage.registerUser(validatedData);
+      res.status(201).json({
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        startingCapital: parseFloat(newUser.startingCapital),
+        currentBalance: parseFloat(newUser.currentBalance),
+        selectedBroker: newUser.selectedBroker,
+        isLiveTrading: newUser.isLiveTrading,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      console.error('Error registering user:', error);
+      res.status(500).json({ message: "Failed to register user" });
+    }
+  });
+
+  // User login
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const validatedData = userLoginSchema.parse(req.body);
+      const user = await storage.loginUser(validatedData.email);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        startingCapital: parseFloat(user.startingCapital),
+        currentBalance: parseFloat(user.currentBalance),
+        selectedBroker: user.selectedBroker,
+        isLiveTrading: user.isLiveTrading,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      console.error('Error logging in user:', error);
+      res.status(500).json({ message: "Failed to login user" });
+    }
+  });
+
+  // Get user profile
+  app.get("/api/auth/user/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const user = await storage.loginUser(userId); // Using loginUser as it returns by ID or email
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        startingCapital: parseFloat(user.startingCapital),
+        currentBalance: parseFloat(user.currentBalance),
+        selectedBroker: user.selectedBroker,
+        isLiveTrading: user.isLiveTrading,
+      });
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      res.status(500).json({ message: "Failed to fetch user profile" });
     }
   });
 
