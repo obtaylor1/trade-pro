@@ -32,7 +32,7 @@ export default function MarketSelector({ selectedMarket, onSelectMarket }: Marke
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       {markets.map((market) => {
         const isSelected = selectedMarket === market.id;
         
