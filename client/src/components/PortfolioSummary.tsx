@@ -53,10 +53,9 @@ export default function PortfolioSummary({ positions, isLiveTrading, onViewHisto
             <div className="flex gap-2">
               {onViewPortfolio && (
                 <Button 
-                  variant="outline" 
                   size="sm"
                   onClick={onViewPortfolio}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                  className="bg-gray-800 hover:bg-gray-700 text-white border-gray-600 text-xs px-3 py-1"
                 >
                   <i className="fas fa-chart-pie mr-1"></i>
                   Portfolio
@@ -64,10 +63,9 @@ export default function PortfolioSummary({ positions, isLiveTrading, onViewHisto
               )}
               {onViewHistory && (
                 <Button 
-                  variant="outline" 
                   size="sm"
                   onClick={onViewHistory}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                  className="bg-gray-800 hover:bg-gray-700 text-white border-gray-600 text-xs px-3 py-1"
                 >
                   <i className="fas fa-history mr-1"></i>
                   History
