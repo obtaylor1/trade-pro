@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { type TradingOpportunity, type TradeResult } from "@shared/schema";
+import { BarChart3 } from "lucide-react";
+import OptionsDetailsModal from './OptionsDetailsModal';
 
 interface TradeCardProps {
   opportunity: TradingOpportunity;
@@ -12,6 +14,7 @@ interface TradeCardProps {
 
 export default function TradeCard({ opportunity, onTradeExecuted, animationDelay, userProfile }: TradeCardProps) {
   const queryClient = useQueryClient();
+  const [showChart, setShowChart] = useState(false);
   
   const executeTradeMutation = useMutation({
     mutationFn: async () => {
@@ -31,6 +34,15 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
 
   const handleExecuteTrade = () => {
     executeTradeMutation.mutate();
+  };
+
+  const handleTradeFromModal = async (opportunity: TradingOpportunity) => {
+    return new Promise<void>((resolve, reject) => {
+      executeTradeMutation.mutate(undefined, {
+        onSuccess: () => resolve(),
+        onError: (error) => reject(error)
+      });
+    });
   };
 
   const actionColor = opportunity.action === "BUY" ? "bg-trading-success" : "bg-trading-warning";
@@ -150,23 +162,44 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
           </div>
         </div>
 
-        <button 
-          onClick={handleExecuteTrade}
-          disabled={executeTradeMutation.isPending}
-          className="w-full bg-trading-light-blue hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-        >
-          {executeTradeMutation.isPending ? (
-            <>
-              <i className="fas fa-spinner fa-spin mr-2"></i>
-              Executing...
-            </>
-          ) : (
-            <>
-              <i className="fas fa-play mr-2"></i>
-              Execute Trade
-            </>
+        <div className="space-y-3">
+          {opportunity.market === 'options' && (
+            <button 
+              onClick={() => setShowChart(true)}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              View Real-Time Chart
+            </button>
           )}
-        </button>
+          
+          <button 
+            onClick={handleExecuteTrade}
+            disabled={executeTradeMutation.isPending}
+            className="w-full bg-trading-light-blue hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {executeTradeMutation.isPending ? (
+              <>
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                Executing...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-play mr-2"></i>
+                Execute Trade
+              </>
+            )}
+          </button>
+        </div>
+        
+        {opportunity.market === 'options' && (
+          <OptionsDetailsModal
+            opportunity={opportunity}
+            isOpen={showChart}
+            onClose={() => setShowChart(false)}
+            onExecuteTrade={handleTradeFromModal}
+          />
+        )}
       </div>
     </div>
   );

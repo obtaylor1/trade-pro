@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { marketDataService } from "./marketDataService";
+import { chartDataService } from "./chartDataService";
 import { tradeExecutionSchema, userRegistrationSchema, userLoginSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -205,6 +206,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to calculate balance" });
     }
   });
+
+  // Chart data endpoints
+  app.get("/api/charts/stock/:symbol/:timeframe", chartDataService.getStockChart);
+  app.get("/api/charts/option/:optionId/:timeframe", chartDataService.getOptionChart);
 
   const httpServer = createServer(app);
   
