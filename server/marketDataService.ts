@@ -640,59 +640,63 @@ export class MarketDataService {
     ];
 
     optionsStocks.forEach((stock, index) => {
-      // Generate call options (betting stock goes up)
+      // Generate micro call options (betting stock goes up) - 1/100th size for affordability
       const callStrike = Math.round(stock.currentPrice * 1.05); // 5% out of the money
-      const callPremium = this.calculateOptionPremium(stock.currentPrice, callStrike, 30, stock.volatility, "CALL");
-      const callContractValue = callPremium * 100; // 1 contract = 100 shares
+      const fullCallPremium = this.calculateOptionPremium(stock.currentPrice, callStrike, 30, stock.volatility, "CALL");
+      const callPremium = Math.max(0.25, Math.min(0.90, fullCallPremium / 100)); // Scale to $0.25-$0.90 range
+      const callContractValue = callPremium * 1; // Micro contract = 1 share equivalent
       
       opportunities.push({
         id: `call-${stock.symbol.toLowerCase()}-${callStrike}`,
-        name: `${stock.name} Call`,
+        name: `Micro ${stock.name} Call`,
         type: `${callStrike} Call • 30 Days`,
         entryPrice: `$${callPremium.toFixed(2)}`,
-        risk: `-$${callContractValue.toFixed(0)}`,
-        potentialGain: `+$${(callContractValue * 4).toFixed(0)}`,
-        netProfit: `+$${(callContractValue * 3).toFixed(0)}`,
+        risk: `-$${callPremium.toFixed(2)}`,
+        potentialGain: `+$${(callPremium * 8).toFixed(2)}`,
+        netProfit: `+$${(callPremium * 7).toFixed(2)}`,
         confidence: Math.round(75 - (stock.volatility * 50)),
         action: "BUY",
         market: "options",
         rationale: this.generateOptionsRationale(stock, "CALL", callStrike, callPremium),
-        isMicro: false,
+        isMicro: true,
         optionType: "CALL",
         strikePrice: `$${callStrike}`,
         expirationDate: this.getExpirationDate(30),
         premium: `$${callPremium.toFixed(2)}`,
         underlyingPrice: `$${stock.currentPrice.toFixed(2)}`,
         impliedVolatility: `${(stock.volatility * 100).toFixed(1)}%`,
-        contractSize: "100 shares per contract"
+        contractSize: "1 share per micro contract",
+        minimumTrade: `$${callPremium.toFixed(2)}`
       });
 
-      // Generate put options (betting stock goes down) - only for first 3 stocks
+      // Generate micro put options (betting stock goes down) - only for first 3 stocks
       if (index < 3) {
         const putStrike = Math.round(stock.currentPrice * 0.95); // 5% out of the money
-        const putPremium = this.calculateOptionPremium(stock.currentPrice, putStrike, 30, stock.volatility, "PUT");
-        const putContractValue = putPremium * 100;
+        const fullPutPremium = this.calculateOptionPremium(stock.currentPrice, putStrike, 30, stock.volatility, "PUT");
+        const putPremium = Math.max(0.25, Math.min(0.90, fullPutPremium / 100)); // Scale to $0.25-$0.90 range
+        const putContractValue = putPremium * 1; // Micro contract = 1 share equivalent
         
         opportunities.push({
           id: `put-${stock.symbol.toLowerCase()}-${putStrike}`,
-          name: `${stock.name} Put`,
+          name: `Micro ${stock.name} Put`,
           type: `${putStrike} Put • 30 Days`,
           entryPrice: `$${putPremium.toFixed(2)}`,
-          risk: `-$${putContractValue.toFixed(0)}`,
-          potentialGain: `+$${(putContractValue * 3).toFixed(0)}`,
-          netProfit: `+$${(putContractValue * 2).toFixed(0)}`,
+          risk: `-$${putPremium.toFixed(2)}`,
+          potentialGain: `+$${(putPremium * 6).toFixed(2)}`,
+          netProfit: `+$${(putPremium * 5).toFixed(2)}`,
           confidence: Math.round(70 - (stock.volatility * 40)),
           action: "BUY",
           market: "options",
           rationale: this.generateOptionsRationale(stock, "PUT", putStrike, putPremium),
-          isMicro: false,
+          isMicro: true,
           optionType: "PUT",
           strikePrice: `$${putStrike}`,
           expirationDate: this.getExpirationDate(30),
           premium: `$${putPremium.toFixed(2)}`,
           underlyingPrice: `$${stock.currentPrice.toFixed(2)}`,
           impliedVolatility: `${(stock.volatility * 100).toFixed(1)}%`,
-          contractSize: "100 shares per contract"
+          contractSize: "1 share per micro contract",
+          minimumTrade: `$${putPremium.toFixed(2)}`
         });
       }
     });
@@ -719,7 +723,7 @@ export class MarketDataService {
       ? `Technical indicators suggest ${direction} momentum. Breaking above resistance levels with strong volume confirmation.`
       : `Market showing signs of weakness. Support levels vulnerable with increasing selling pressure.`;
     
-    return `${reasonText} Option provides leveraged exposure with limited risk to premium paid ($${(premium * 100).toFixed(0)} max loss). ${strategy.charAt(0).toUpperCase() + strategy.slice(1)} position targeting ${stock.symbol} move beyond $${strikePrice} strike price. High liquidity ensures easy entry/exit. Time decay requires directional move within 30 days for profitability.`;
+    return `${reasonText} Micro option provides leveraged exposure with limited risk to premium paid ($${premium.toFixed(2)} max loss). ${strategy.charAt(0).toUpperCase() + strategy.slice(1)} position targeting ${stock.symbol} move beyond $${strikePrice} strike price. High liquidity ensures easy entry/exit. Time decay requires directional move within 30 days for profitability.`;
   }
 
   private getExpirationDate(daysFromNow: number): string {
