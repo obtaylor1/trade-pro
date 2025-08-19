@@ -37,10 +37,7 @@ export default function UserAuthModal({ isVisible, onUserAuthenticated, onClose 
 
   const registerMutation = useMutation({
     mutationFn: async (data: UserRegistration) => {
-      const response = await apiRequest('/api/auth/register', {
-        method: 'POST',
-        body: data
-      });
+      const response = await apiRequest('POST', '/api/auth/register', data);
       return response.json();
     },
     onSuccess: (user: AuthenticatedUser) => {
@@ -61,10 +58,7 @@ export default function UserAuthModal({ isVisible, onUserAuthenticated, onClose 
 
   const loginMutation = useMutation({
     mutationFn: async (data: UserLogin) => {
-      const response = await apiRequest('/api/auth/login', {
-        method: 'POST',
-        body: data
-      });
+      const response = await apiRequest('POST', '/api/auth/login', data);
       return response.json();
     },
     onSuccess: (user: AuthenticatedUser) => {
