@@ -11,7 +11,8 @@ export const tradingOpportunitySchema = z.object({
   netProfit: z.string(),
   confidence: z.number().min(0).max(100),
   action: z.enum(["BUY", "SELL"]),
-  market: z.enum(["stocks", "commodities", "crypto"])
+  market: z.enum(["stocks", "commodities", "crypto"]),
+  rationale: z.string()
 });
 
 export const tradeExecutionSchema = z.object({

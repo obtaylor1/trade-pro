@@ -29,7 +29,8 @@ export class MemStorage implements IStorage {
         netProfit: "+$325",
         confidence: 87,
         action: "BUY",
-        market: "stocks"
+        market: "stocks",
+        rationale: "Strong Q4 earnings beat with iPhone 15 driving revenue growth. Technical analysis shows bullish momentum with RSI at 65 and breaking key resistance at $175. AI chip demand boosting services revenue."
       },
       {
         id: "stock-2",
@@ -41,7 +42,8 @@ export class MemStorage implements IStorage {
         netProfit: "+$480",
         confidence: 92,
         action: "BUY",
-        market: "stocks"
+        market: "stocks",
+        rationale: "Azure cloud growth accelerating at 29% YoY, exceeding analyst expectations. Copilot AI integration driving enterprise adoption. Strong balance sheet with $130B cash provides stability in volatile market."
       },
       {
         id: "stock-3",
@@ -53,7 +55,8 @@ export class MemStorage implements IStorage {
         netProfit: "+$195",
         confidence: 74,
         action: "SELL",
-        market: "stocks"
+        market: "stocks",
+        rationale: "Overvalued at current levels with P/E ratio at 65x. Recent delivery numbers missing targets and increasing competition from Ford/GM. Technical indicators showing bearish divergence."
       },
       // Commodities
       {
@@ -66,7 +69,8 @@ export class MemStorage implements IStorage {
         netProfit: "+$450",
         confidence: 85,
         action: "BUY",
-        market: "commodities"
+        market: "commodities",
+        rationale: "Federal Reserve signaling pause in rate hikes with inflation cooling to 3.2%. Geopolitical tensions in Eastern Europe creating safe-haven demand. Dollar weakening against major currencies supports gold rally."
       },
       {
         id: "commodity-2",
@@ -78,7 +82,8 @@ export class MemStorage implements IStorage {
         netProfit: "+$270",
         confidence: 79,
         action: "BUY",
-        market: "commodities"
+        market: "commodities",
+        rationale: "OPEC+ production cuts of 1.2M barrels/day taking effect. U.S. strategic petroleum reserve at lowest levels since 1983. Summer driving season approaching with refinery maintenance reducing supply."
       },
       {
         id: "commodity-3",
@@ -90,7 +95,8 @@ export class MemStorage implements IStorage {
         netProfit: "+$200",
         confidence: 71,
         action: "BUY",
-        market: "commodities"
+        market: "commodities",
+        rationale: "Industrial demand from solar panel production up 18% YoY. Silver-to-gold ratio at 85:1, historically high suggesting silver undervalued. Green energy transition driving long-term structural demand."
       },
       // Crypto
       {
@@ -103,7 +109,8 @@ export class MemStorage implements IStorage {
         netProfit: "+$700",
         confidence: 88,
         action: "BUY",
-        market: "crypto"
+        market: "crypto",
+        rationale: "Bitcoin ETF approval driving institutional adoption with $2.1B inflows this month. Halving event in April historically creates supply shock. Technical breakout above $42K resistance with strong volume confirmation."
       },
       {
         id: "crypto-2",
@@ -115,7 +122,8 @@ export class MemStorage implements IStorage {
         netProfit: "+$500",
         confidence: 82,
         action: "BUY",
-        market: "crypto"
+        market: "crypto",
+        rationale: "Ethereum 2.0 staking yields at 4.2% attracting institutional capital. Layer 2 scaling solutions reducing gas fees by 90%. DeFi total value locked growing 25% monthly indicating strong ecosystem growth."
       },
       {
         id: "crypto-3",
@@ -127,7 +135,8 @@ export class MemStorage implements IStorage {
         netProfit: "+$160",
         confidence: 76,
         action: "BUY",
-        market: "crypto"
+        market: "crypto",
+        rationale: "Chang hard fork implementing smart contract improvements launching Q2. Partnerships with African governments for digital identity solutions expanding. ADA staking participation at 71% showing strong community commitment."
       }
     ];
 

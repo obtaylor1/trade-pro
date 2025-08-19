@@ -82,6 +82,16 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
           </div>
         </div>
 
+        <div className="mb-6 p-3 bg-gray-800 rounded-lg border-l-4 border-trading-light-blue">
+          <div className="flex items-start space-x-2">
+            <i className="fas fa-lightbulb text-trading-light-blue text-sm mt-1"></i>
+            <div>
+              <h4 className="text-sm font-semibold text-white mb-1">Why Trade Now</h4>
+              <p className="text-xs text-gray-300 leading-relaxed">{opportunity.rationale}</p>
+            </div>
+          </div>
+        </div>
+
         <button 
           onClick={handleExecuteTrade}
           disabled={executeTradeMutation.isPending}
