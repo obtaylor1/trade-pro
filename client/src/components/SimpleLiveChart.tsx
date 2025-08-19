@@ -3,9 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 interface SimpleLiveChartProps {
+  symbol?: string;
+  name?: string;
+  isMicro?: boolean;
+}
+
+interface CommodityOption {
   symbol: string;
   name: string;
-  isMicro?: boolean;
+  price: number;
+  isMicro: boolean;
 }
 
 interface DataPoint {
@@ -13,13 +20,25 @@ interface DataPoint {
   price: number;
 }
 
-export default function SimpleLiveChart({ symbol, name, isMicro = false }: SimpleLiveChartProps) {
+export default function SimpleLiveChart({ symbol: initialSymbol = "MGC", name: initialName, isMicro: initialIsMicro = false }: SimpleLiveChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [priceChange, setPriceChange] = useState<number>(0);
   const [dataPoints, setDataPoints] = useState<DataPoint[]>([]);
+  const [selectedSymbol, setSelectedSymbol] = useState(initialSymbol);
+
+  // Available commodity options
+  const commodityOptions: CommodityOption[] = [
+    { symbol: 'MGC', name: 'Micro Gold (MGC)', price: 20.36, isMicro: true },
+    { symbol: 'MCL', name: 'Micro Crude Oil (MCL)', price: 7.83, isMicro: true },
+    { symbol: 'MSI', name: 'Micro Silver (MSI)', price: 2.35, isMicro: true },
+    { symbol: 'NCP', name: 'Nano Copper (NCP)', price: 0.38, isMicro: true },
+    { symbol: 'NNG', name: 'Nano Natural Gas (NNG)', price: 0.32, isMicro: true }
+  ];
+
+  const currentCommodity = commodityOptions.find(c => c.symbol === selectedSymbol) || commodityOptions[0];
 
   // Get base price for different symbols
   const getBasePrice = (symbol: string): number => {
@@ -142,7 +161,7 @@ export default function SimpleLiveChart({ symbol, name, isMicro = false }: Simpl
   };
 
   useEffect(() => {
-    const basePrice = getBasePrice(symbol);
+    const basePrice = getBasePrice(selectedSymbol);
     const initialData = generateInitialData(basePrice);
     setDataPoints(initialData);
     setCurrentPrice(initialData[initialData.length - 1].price);
@@ -156,11 +175,11 @@ export default function SimpleLiveChart({ symbol, name, isMicro = false }: Simpl
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('WebSocket connected for chart:', symbol);
+        console.log('WebSocket connected for chart:', selectedSymbol);
         setIsConnected(true);
         ws.send(JSON.stringify({ 
           action: 'subscribe', 
-          symbol: symbol,
+          symbol: selectedSymbol,
           type: 'price'
         }));
       };
@@ -168,7 +187,7 @@ export default function SimpleLiveChart({ symbol, name, isMicro = false }: Simpl
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.symbol === symbol && data.type === 'price_update') {
+          if (data.symbol === selectedSymbol && data.type === 'price_update') {
             const newPrice = data.price;
             const change = newPrice - (currentPrice || basePrice);
             
@@ -208,14 +227,14 @@ export default function SimpleLiveChart({ symbol, name, isMicro = false }: Simpl
         wsRef.current.close();
       }
     };
-  }, [symbol]);
+  }, [selectedSymbol]);
 
   // Simulate price updates if WebSocket is not connected
   useEffect(() => {
     if (isConnected || dataPoints.length === 0) return;
 
     const interval = setInterval(() => {
-      const lastPrice = dataPoints[dataPoints.length - 1]?.price || getBasePrice(symbol);
+      const lastPrice = dataPoints[dataPoints.length - 1]?.price || getBasePrice(selectedSymbol);
       const change = (Math.random() - 0.5) * 0.01; // ±0.5% change
       const newPrice = lastPrice * (1 + change);
       const priceChange = newPrice - lastPrice;
@@ -233,7 +252,7 @@ export default function SimpleLiveChart({ symbol, name, isMicro = false }: Simpl
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [isConnected, dataPoints]);
+  }, [isConnected, dataPoints, selectedSymbol]);
 
   // Redraw chart when data changes
   useEffect(() => {
@@ -245,20 +264,29 @@ export default function SimpleLiveChart({ symbol, name, isMicro = false }: Simpl
   return (
     <Card className="w-full bg-gray-900 border-gray-700">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <CardTitle className="text-xl text-white">{name}</CardTitle>
-            {isMicro && (
-              <Badge variant="outline" className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-yellow-400">
-                MICRO
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
+            <CardTitle className="text-xl text-white">Live Market Chart</CardTitle>
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
             <span className="text-xs text-gray-400">
               {isConnected ? 'Live' : 'Simulated'}
             </span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <select 
+              value={selectedSymbol} 
+              onChange={(e) => setSelectedSymbol(e.target.value)}
+              className="w-[280px] bg-gray-800 border border-gray-600 text-white rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {commodityOptions.map((commodity) => (
+                <option key={commodity.symbol} value={commodity.symbol}>
+                  {commodity.name} {commodity.symbol.startsWith('N') ? '(NANO)' : '(MICRO)'}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         
@@ -287,7 +315,7 @@ export default function SimpleLiveChart({ symbol, name, isMicro = false }: Simpl
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
               <span className="text-gray-400">Symbol:</span>
-              <span className="ml-2 text-white font-medium">{symbol}</span>
+              <span className="ml-2 text-white font-medium">{selectedSymbol}</span>
             </div>
             <div>
               <span className="text-gray-400">High:</span>

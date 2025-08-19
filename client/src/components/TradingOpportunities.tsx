@@ -117,11 +117,7 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted }
       {/* Live Chart for Commodities */}
       {selectedMarket === "commodities" && (
         <div className="mb-8">
-          <SimpleLiveChart 
-            symbol="MGC" 
-            name="Micro Gold Futures (MGC)" 
-            isMicro={true} 
-          />
+          <SimpleLiveChart />
         </div>
       )}
 
