@@ -104,21 +104,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Simulate real-time price updates for demo purposes
   const priceSimulation = () => {
-    const symbols = ['MGC', 'MCL', 'MSI', 'NCP', 'NNG', 'MBT', 'MET'];
+    const symbols = ['MGC', 'MCL', 'MSI', 'NCP', 'NNG', 'MBT', 'MET', 'NSL', 'NAV', 'NPG', 'NDT'];
     const basePrices: Record<string, number> = {
+      // Commodities
       'MGC': 20.36,
       'MCL': 7.83,
       'MSI': 2.35,
       'NCP': 0.38,
       'NNG': 0.32,
+      // Crypto
       'MBT': 6847.50,
-      'MET': 268.00
+      'MET': 268.00,
+      'NSL': 2.15,
+      'NAV': 2.67,
+      'NPG': 0.87,
+      'NDT': 0.64
     };
     
     symbols.forEach(symbol => {
       if (basePrices[symbol]) {
-        // Simulate price movement (±0.5% change)
-        const change = (Math.random() - 0.5) * 0.01;
+        // Higher volatility for crypto symbols
+        const isCrypto = ['MBT', 'MET', 'NSL', 'NAV', 'NPG', 'NDT'].includes(symbol);
+        const volatility = isCrypto ? 0.015 : 0.005; // 1.5% for crypto, 0.5% for commodities
+        
+        const change = (Math.random() - 0.5) * volatility;
         const newPrice = basePrices[symbol] * (1 + change);
         basePrices[symbol] = newPrice;
         

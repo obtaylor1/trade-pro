@@ -6,6 +6,7 @@ interface SimpleLiveChartProps {
   symbol?: string;
   name?: string;
   isMicro?: boolean;
+  market?: string;
 }
 
 interface CommodityOption {
@@ -20,25 +21,40 @@ interface DataPoint {
   price: number;
 }
 
-export default function SimpleLiveChart({ symbol: initialSymbol = "MGC", name: initialName, isMicro: initialIsMicro = false }: SimpleLiveChartProps) {
+export default function SimpleLiveChart({ symbol: initialSymbol, name: initialName, isMicro: initialIsMicro = false, market = "commodities" }: SimpleLiveChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [priceChange, setPriceChange] = useState<number>(0);
   const [dataPoints, setDataPoints] = useState<DataPoint[]>([]);
-  const [selectedSymbol, setSelectedSymbol] = useState(initialSymbol);
+  // Available trading options based on market
+  const getOptionsForMarket = (market: string): CommodityOption[] => {
+    if (market === 'crypto') {
+      return [
+        { symbol: 'MBT', name: 'Micro Bitcoin (MBT)', price: 6847.50, isMicro: true },
+        { symbol: 'MET', name: 'Micro Ethereum (MET)', price: 268.00, isMicro: true },
+        { symbol: 'NSL', name: 'Nano Solana (NSL)', price: 2.15, isMicro: true },
+        { symbol: 'NAV', name: 'Nano Avalanche (NAV)', price: 2.67, isMicro: true },
+        { symbol: 'NPG', name: 'Nano Polygon (NPG)', price: 0.87, isMicro: true },
+        { symbol: 'NDT', name: 'Nano Polkadot (NDT)', price: 0.64, isMicro: true }
+      ];
+    }
+    // Default to commodities
+    return [
+      { symbol: 'MGC', name: 'Micro Gold (MGC)', price: 20.36, isMicro: true },
+      { symbol: 'MCL', name: 'Micro Crude Oil (MCL)', price: 7.83, isMicro: true },
+      { symbol: 'MSI', name: 'Micro Silver (MSI)', price: 2.35, isMicro: true },
+      { symbol: 'NCP', name: 'Nano Copper (NCP)', price: 0.38, isMicro: true },
+      { symbol: 'NNG', name: 'Nano Natural Gas (NNG)', price: 0.32, isMicro: true }
+    ];
+  };
 
-  // Available commodity options
-  const commodityOptions: CommodityOption[] = [
-    { symbol: 'MGC', name: 'Micro Gold (MGC)', price: 20.36, isMicro: true },
-    { symbol: 'MCL', name: 'Micro Crude Oil (MCL)', price: 7.83, isMicro: true },
-    { symbol: 'MSI', name: 'Micro Silver (MSI)', price: 2.35, isMicro: true },
-    { symbol: 'NCP', name: 'Nano Copper (NCP)', price: 0.38, isMicro: true },
-    { symbol: 'NNG', name: 'Nano Natural Gas (NNG)', price: 0.32, isMicro: true }
-  ];
+  const tradingOptions = getOptionsForMarket(market);
+  const [selectedSymbol, setSelectedSymbol] = useState(initialSymbol || tradingOptions[0].symbol);
+  const [timeFrame, setTimeFrame] = useState<'1m' | '5m' | '1h'>('1m');
 
-  const currentCommodity = commodityOptions.find(c => c.symbol === selectedSymbol) || commodityOptions[0];
+  const currentAsset = tradingOptions.find((c: CommodityOption) => c.symbol === selectedSymbol) || tradingOptions[0];
 
   // Get base price for different symbols
   const getBasePrice = (symbol: string): number => {
@@ -49,24 +65,34 @@ export default function SimpleLiveChart({ symbol: initialSymbol = "MGC", name: i
       'NCP': 0.38,   // Nano Copper
       'NNG': 0.32,   // Nano Natural Gas
       'MBT': 6847.50, // Micro Bitcoin
-      'MET': 268.00   // Micro Ethereum
+      'MET': 268.00,  // Micro Ethereum
+      'NSL': 2.15,    // Nano Solana
+      'NAV': 2.67,    // Nano Avalanche
+      'NPG': 0.87,    // Nano Polygon
+      'NDT': 0.64     // Nano Polkadot
     };
     return prices[symbol] || 20.00;
   };
 
-  // Generate initial historical data
-  const generateInitialData = (basePrice: number): DataPoint[] => {
+  // Generate initial historical data based on timeframe
+  const generateInitialData = (basePrice: number, timeFrame: string): DataPoint[] => {
     const data: DataPoint[] = [];
     let price = basePrice;
     const now = Date.now();
+    
+    // Adjust interval and volatility based on timeframe
+    const intervals = { '1m': 60000, '5m': 300000, '1h': 3600000 };
+    const interval = intervals[timeFrame as keyof typeof intervals] || 60000;
+    const dataPoints = timeFrame === '1h' ? 24 : 50; // 24 hours for 1h, 50 points for others
+    const volatility = market === 'crypto' ? 0.025 : 0.015; // Higher volatility for crypto
 
-    for (let i = 50; i >= 0; i--) {
-      const change = (Math.random() - 0.5) * 0.02; // ±1% change
+    for (let i = dataPoints; i >= 0; i--) {
+      const change = (Math.random() - 0.5) * volatility;
       price = price * (1 + change);
       
       data.push({
-        time: new Date(now - i * 60000).toISOString(), // 1 minute intervals
-        price: parseFloat(price.toFixed(4))
+        time: new Date(now - i * interval).toISOString(),
+        price: parseFloat(price.toFixed(market === 'crypto' ? 4 : 2))
       });
     }
 
@@ -162,7 +188,7 @@ export default function SimpleLiveChart({ symbol: initialSymbol = "MGC", name: i
 
   useEffect(() => {
     const basePrice = getBasePrice(selectedSymbol);
-    const initialData = generateInitialData(basePrice);
+    const initialData = generateInitialData(basePrice, timeFrame);
     setDataPoints(initialData);
     setCurrentPrice(initialData[initialData.length - 1].price);
 
@@ -254,6 +280,14 @@ export default function SimpleLiveChart({ symbol: initialSymbol = "MGC", name: i
     return () => clearInterval(interval);
   }, [isConnected, dataPoints, selectedSymbol]);
 
+  // Update data when timeFrame changes
+  useEffect(() => {
+    const basePrice = getBasePrice(selectedSymbol);
+    const newData = generateInitialData(basePrice, timeFrame);
+    setDataPoints(newData);
+    setCurrentPrice(newData[newData.length - 1].price);
+  }, [timeFrame, selectedSymbol]);
+
   // Redraw chart when data changes
   useEffect(() => {
     if (canvasRef.current && dataPoints.length > 0) {
@@ -274,20 +308,36 @@ export default function SimpleLiveChart({ symbol: initialSymbol = "MGC", name: i
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <select 
               value={selectedSymbol} 
               onChange={(e) => setSelectedSymbol(e.target.value)}
               className="w-[280px] bg-gray-800 border border-gray-600 text-white rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {commodityOptions.map((commodity) => (
-                <option key={commodity.symbol} value={commodity.symbol}>
-                  {commodity.name} {commodity.symbol.startsWith('N') ? '(NANO)' : '(MICRO)'}
+              {tradingOptions.map((option: CommodityOption) => (
+                <option key={option.symbol} value={option.symbol}>
+                  {option.name} {option.symbol.startsWith('N') ? '(NANO)' : '(MICRO)'}
                 </option>
               ))}
             </select>
           </div>
+
+          {/* Time Frame Selector for Crypto */}
+          {market === 'crypto' && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-400">Timeframe:</span>
+              <select 
+                value={timeFrame} 
+                onChange={(e) => setTimeFrame(e.target.value as '1m' | '5m' | '1h')}
+                className="bg-gray-800 border border-gray-600 text-white rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="1m">1 Minute</option>
+                <option value="5m">5 Minutes</option>
+                <option value="1h">1 Hour</option>
+              </select>
+            </div>
+          )}
         </div>
         
         {currentPrice && (

@@ -117,7 +117,14 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted }
       {/* Live Chart for Commodities */}
       {selectedMarket === "commodities" && (
         <div className="mb-8">
-          <SimpleLiveChart />
+          <SimpleLiveChart market="commodities" />
+        </div>
+      )}
+
+      {/* Live Chart for Crypto */}
+      {selectedMarket === "crypto" && (
+        <div className="mb-8">
+          <SimpleLiveChart market="crypto" />
         </div>
       )}
 
