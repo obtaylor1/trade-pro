@@ -4,6 +4,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { type TradingOpportunity, type TradeResult } from "@shared/schema";
 import { BarChart3 } from "lucide-react";
 import OptionsDetailsModal from './OptionsDetailsModal';
+import OptionsTradeModal from './OptionsTradeModal';
 
 interface TradeCardProps {
   opportunity: TradingOpportunity;
@@ -15,6 +16,7 @@ interface TradeCardProps {
 export default function TradeCard({ opportunity, onTradeExecuted, animationDelay, userProfile }: TradeCardProps) {
   const queryClient = useQueryClient();
   const [showChart, setShowChart] = useState(false);
+  const [showTradeModal, setShowTradeModal] = useState(false);
   
   const executeTradeMutation = useMutation({
     mutationFn: async () => {
@@ -42,6 +44,34 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
         onSuccess: () => resolve(),
         onError: (error) => reject(error)
       });
+    });
+  };
+
+  const handleOptionsTradeExecute = async (opportunity: TradingOpportunity, duration: 'weekly' | 'monthly', contracts: number) => {
+    return new Promise<void>((resolve, reject) => {
+      // Enhanced trade data with duration and contract count
+      const enhancedTradeMutation = useMutation({
+        mutationFn: async () => {
+          const response = await apiRequest("POST", "/api/trades/execute", {
+            opportunityId: opportunity.id,
+            userId: userProfile?.id || 'user-1',
+            selectedBroker: userProfile?.selectedBroker || 'ninjatrader-sim',
+            isLiveTrading: userProfile?.isLiveTrading || false,
+            duration: duration,
+            contractCount: contracts,
+            optionType: opportunity.optionType
+          });
+          return response.json();
+        },
+        onSuccess: (result: TradeResult) => {
+          onTradeExecuted(result);
+          queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
+          resolve();
+        },
+        onError: (error) => reject(error)
+      });
+      
+      enhancedTradeMutation.mutate();
     });
   };
 
@@ -174,7 +204,7 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
           )}
           
           <button 
-            onClick={handleExecuteTrade}
+            onClick={opportunity.market === 'options' ? () => setShowTradeModal(true) : handleExecuteTrade}
             disabled={executeTradeMutation.isPending}
             className="w-full bg-trading-light-blue hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
@@ -186,19 +216,27 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
             ) : (
               <>
                 <i className="fas fa-play mr-2"></i>
-                Execute Trade
+                {opportunity.market === 'options' ? 'Configure & Execute' : 'Execute Trade'}
               </>
             )}
           </button>
         </div>
         
         {opportunity.market === 'options' && (
-          <OptionsDetailsModal
-            opportunity={opportunity}
-            isOpen={showChart}
-            onClose={() => setShowChart(false)}
-            onExecuteTrade={handleTradeFromModal}
-          />
+          <>
+            <OptionsDetailsModal
+              opportunity={opportunity}
+              isOpen={showChart}
+              onClose={() => setShowChart(false)}
+              onExecuteTrade={handleTradeFromModal}
+            />
+            <OptionsTradeModal
+              opportunity={opportunity}
+              isOpen={showTradeModal}
+              onClose={() => setShowTradeModal(false)}
+              onExecuteTrade={handleOptionsTradeExecute}
+            />
+          </>
         )}
       </div>
     </div>
