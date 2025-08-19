@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useUserBalance } from '@/hooks/useUserBalance';
 import { type UserProfile, type Broker } from '@shared/schema';
 
 interface UserProfileCardProps {
@@ -9,6 +11,10 @@ interface UserProfileCardProps {
 }
 
 export default function UserProfileCard({ userProfile, onToggleTradingMode, onResetSimulator }: UserProfileCardProps) {
+  // Get real-time balance for authenticated users
+  const { data: balanceData } = useUserBalance(userProfile.id, userProfile.id !== 'demo-user');
+  const currentBalance = balanceData?.currentBalance ?? userProfile.availableFunds;
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -95,10 +101,15 @@ export default function UserProfileCard({ userProfile, onToggleTradingMode, onRe
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-gray-400">Available Funds</h3>
             <div className="text-2xl font-bold text-white">
-              {formatCurrency(userProfile.isLiveTrading ? userProfile.availableFunds : userProfile.virtualFunds)}
+              {formatCurrency(currentBalance)}
             </div>
             <div className="text-xs text-gray-500">
-              {userProfile.isLiveTrading ? 'Real Money' : 'Virtual Currency'}
+              {userProfile.isLiveTrading ? 'Real Money' : 'Paper Trading Balance'}
+              {userProfile.id !== 'demo-user' && (
+                <span className="ml-2 text-gray-600">
+                  (Started: {formatCurrency(userProfile.virtualFunds)})
+                </span>
+              )}
             </div>
           </div>
 

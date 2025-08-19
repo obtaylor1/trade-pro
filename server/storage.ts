@@ -167,6 +167,14 @@ export class MemStorage implements IStorage {
         };
 
         await this.savePaperTrade(paperTrade);
+        
+        // Update user's current balance based on trade result
+        const user = await this.getUserById(userId);
+        if (user) {
+          const currentBalance = parseFloat(user.currentBalance);
+          const newBalance = currentBalance + netProfitAfterFees - amount; // Subtract position size, add net P&L
+          await this.updateUserBalance(userId, newBalance);
+        }
       } catch (error) {
         console.error('Error saving paper trade:', error);
       }
@@ -329,6 +337,16 @@ export class MemStorage implements IStorage {
     return this.loginUser(email);
   }
 
+  async getUserById(userId: string): Promise<DatabaseUser | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    return user || null;
+  }
+
   async updateUserBalance(userId: string, newBalance: number): Promise<void> {
     await db
       .update(users)
@@ -337,6 +355,24 @@ export class MemStorage implements IStorage {
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId));
+  }
+
+  async calculateUserCurrentBalance(userId: string): Promise<number> {
+    const user = await this.getUserById(userId);
+    if (!user) return 0;
+
+    const trades = await this.getUserTrades(userId);
+    const startingBalance = parseFloat(user.startingCapital);
+    
+    // Calculate total P&L from all trades
+    const totalPnL = trades.reduce((sum, trade) => sum + trade.netPnL, 0);
+    
+    // Calculate total amount currently invested in open positions
+    const openTrades = trades.filter(t => t.status === 'OPEN');
+    const totalInvested = openTrades.reduce((sum, trade) => sum + trade.positionSize, 0);
+    
+    // Current balance = starting balance + total P&L - invested amount
+    return startingBalance + totalPnL - totalInvested;
   }
 }
 

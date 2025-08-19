@@ -39,7 +39,7 @@ export default function Home() {
       name: authenticatedUser.name,
       accountType: "individual",
       availableFunds: authenticatedUser.currentBalance,
-      virtualFunds: authenticatedUser.currentBalance,
+      virtualFunds: authenticatedUser.startingCapital, // Store starting capital separately
       selectedBroker: authenticatedUser.selectedBroker,
       isLiveTrading: authenticatedUser.isLiveTrading
     });

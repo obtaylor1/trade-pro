@@ -143,28 +143,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user profile
+  // Get user profile with calculated current balance
   app.get("/api/auth/user/:userId", async (req, res) => {
     try {
       const { userId } = req.params;
-      const user = await storage.loginUser(userId); // Using loginUser as it returns by ID or email
+      const user = await storage.getUserById(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+      
+      // Calculate real-time current balance based on trades
+      const currentBalance = await storage.calculateUserCurrentBalance(userId);
       
       res.json({
         id: user.id,
         name: user.name,
         email: user.email,
         startingCapital: parseFloat(user.startingCapital),
-        currentBalance: parseFloat(user.currentBalance),
+        currentBalance: currentBalance,
         selectedBroker: user.selectedBroker,
         isLiveTrading: user.isLiveTrading,
       });
     } catch (error) {
       console.error('Error fetching user profile:', error);
       res.status(500).json({ message: "Failed to fetch user profile" });
+    }
+  });
+
+  // Get user's current balance (real-time calculation)
+  app.get("/api/auth/balance/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const currentBalance = await storage.calculateUserCurrentBalance(userId);
+      res.json({ currentBalance });
+    } catch (error) {
+      console.error('Error calculating user balance:', error);
+      res.status(500).json({ message: "Failed to calculate balance" });
     }
   });
 

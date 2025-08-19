@@ -7,9 +7,12 @@ This is a comprehensive web-based trading application simulator built as a paper
 The application features a modern, responsive interface with real-time market data integration, professional trading card layouts, comprehensive feedback systems, and detailed trading rationales. Each trading opportunity includes expert analysis explaining why it's the optimal choice at the current moment, covering technical indicators, market conditions, and fundamental factors. The system uses live market data from Alpha Vantage API combined with innovative micro and nano trading contracts, providing users with an intuitive way to understand trading concepts and strategies.
 
 **Key Features:**
+- **User Authentication**: Email-based registration and login for persistent trading accounts
+- **Dynamic Portfolio Balance**: Real-time calculations based on user's starting capital and trading performance
 - **Micro Trading**: Fractional commodity contracts (1/10th to 1/250th standard size) starting from $0.30
 - **Micro Crypto Futures**: 0.1 BTC and 0.1 ETH contracts based on real market prices
 - **Real-Time Data**: Live stock prices from Alpha Vantage API with smart caching
+- **Trade History Tracking**: Complete audit trail tied to individual user accounts
 - **Educational Focus**: Trading rationales and risk management for all experience levels
 
 ## User Preferences
@@ -37,15 +40,16 @@ Key architectural decisions:
 - **Development optimization**: Integrated Vite middleware for hot reloading during development
 
 ### Data Storage Solutions
-The application uses a **hybrid storage system** combining real-world market data with intelligent caching for optimal performance.
+The application uses a **PostgreSQL database** for persistent data storage combined with real-world market data integration.
 
 Storage architecture:
+- **PostgreSQL Database**: Stores user accounts, trade history, and portfolio performance data
+- **User Authentication**: Email-based registration with custom starting capital and broker selection
+- **Real-time Balance Calculations**: Dynamic portfolio values based on starting capital plus trade P&L
+- **Trade Audit Trail**: Complete record of all trades tied to specific user accounts
 - **Real-time market data**: Alpha Vantage API integration for live stock, crypto, and commodity prices
 - **Smart caching layer**: 5-minute cache duration to respect API rate limits while maintaining fresh data
-- **Fallback mechanisms**: Graceful degradation when API limits are reached
-- **Runtime state management**: Temporary storage of trade executions and results
 - **Type-safe schemas**: Zod validation ensures data integrity across the application
-- **Performance optimization**: Concurrent API calls with retry logic and error handling
 
 ### Authentication and Authorization
 Currently, the application operates without authentication to maintain simplicity and focus on core trading simulation features. This design choice supports the educational and demonstration purposes of the platform.

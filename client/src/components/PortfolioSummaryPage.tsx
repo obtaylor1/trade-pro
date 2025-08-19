@@ -55,9 +55,10 @@ export default function PortfolioSummaryPage({ userProfile, isVisible, onClose }
   const calculatePerformanceMetrics = () => {
     const paperTrades = trades as PaperTrade[];
     const currentBalance = userProfile.availableFunds || userProfile.virtualFunds;
-    const startingBalance = 10000; // Default starting capital
+    const startingBalance = userProfile.availableFunds || userProfile.virtualFunds; // Use actual starting balance
     const totalPnL = paperTrades.reduce((sum, trade) => sum + trade.netPnL, 0);
-    const performancePercent = ((currentBalance - startingBalance) / startingBalance) * 100;
+    const actualCurrentBalance = startingBalance + totalPnL;
+    const performancePercent = startingBalance > 0 ? ((actualCurrentBalance - startingBalance) / startingBalance) * 100 : 0;
     
     const profitableTrades = paperTrades.filter(t => t.netPnL > 0);
     const avgProfit = profitableTrades.length > 0 ? 
@@ -70,7 +71,7 @@ export default function PortfolioSummaryPage({ userProfile, isVisible, onClose }
     const riskRewardRatio = avgLoss > 0 ? avgProfit / avgLoss : 0;
 
     return {
-      currentBalance,
+      currentBalance: actualCurrentBalance,
       startingBalance,
       totalPnL,
       performancePercent,
