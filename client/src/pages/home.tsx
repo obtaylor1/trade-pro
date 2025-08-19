@@ -6,7 +6,7 @@ import TradeResultModal from "@/components/TradeResultModal";
 import { type TradeResult } from "@shared/schema";
 
 export default function Home() {
-  const [selectedMarket, setSelectedMarket] = useState<"stocks" | "commodities" | "crypto">("stocks");
+  const [selectedMarket, setSelectedMarket] = useState<"stocks" | "commodities" | "crypto">("commodities");
   const [tradeResult, setTradeResult] = useState<TradeResult | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 

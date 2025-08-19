@@ -6,12 +6,6 @@ interface MarketSelectorProps {
 export default function MarketSelector({ selectedMarket, onSelectMarket }: MarketSelectorProps) {
   const markets = [
     {
-      id: "stocks" as const,
-      name: "Stocks",
-      icon: "fas fa-chart-bar",
-      description: "S&P 500, NASDAQ"
-    },
-    {
       id: "commodities" as const,
       name: "Commodities", 
       icon: "fas fa-coins",
@@ -21,7 +15,13 @@ export default function MarketSelector({ selectedMarket, onSelectMarket }: Marke
       id: "crypto" as const,
       name: "Crypto",
       icon: "fab fa-bitcoin", 
-      description: "BTC, ETH, ADA"
+      description: "BTC, ETH, SOL"
+    },
+    {
+      id: "stocks" as const,
+      name: "Stocks",
+      icon: "fas fa-chart-bar",
+      description: "S&P 500, NASDAQ"
     }
   ];
 
