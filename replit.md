@@ -4,7 +4,7 @@
 
 This is a comprehensive web-based trading application simulator built as a paper-trading platform. The application allows users to simulate sophisticated trading bot functionality by selecting different markets (commodities, stocks, crypto), viewing AI-generated trading opportunities, and executing simulated trades. The entire system is designed to provide a realistic trading experience without real financial risk, making it perfect for educational purposes and strategy testing.
 
-The application features a modern, responsive interface with real-time-like updates, professional trading card layouts, and comprehensive feedback systems. It uses mock data to simulate market analysis and trading opportunities, providing users with an intuitive way to understand trading concepts and strategies.
+The application features a modern, responsive interface with real-time-like updates, professional trading card layouts, comprehensive feedback systems, and detailed trading rationales. Each trading opportunity includes expert analysis explaining why it's the optimal choice at the current moment, covering technical indicators, market conditions, and fundamental factors. The system uses realistic mock data to simulate market analysis and trading opportunities, providing users with an intuitive way to understand trading concepts and strategies.
 
 ## User Preferences
 
