@@ -2,9 +2,15 @@
 
 ## Overview
 
-This is a comprehensive web-based trading application simulator built as a paper-trading platform. The application allows users to simulate sophisticated trading bot functionality by selecting different markets (commodities, stocks, crypto), viewing AI-generated trading opportunities, and executing simulated trades. The entire system is designed to provide a realistic trading experience without real financial risk, making it perfect for educational purposes and strategy testing.
+This is a comprehensive web-based trading application simulator built as a paper-trading platform. The application allows users to simulate sophisticated trading bot functionality by selecting different markets (commodities, crypto, stocks), viewing AI-generated trading opportunities, and executing simulated trades. The entire system is designed to provide a realistic trading experience without real financial risk, making it perfect for educational purposes and strategy testing.
 
-The application features a modern, responsive interface with real-time-like updates, professional trading card layouts, comprehensive feedback systems, and detailed trading rationales. Each trading opportunity includes expert analysis explaining why it's the optimal choice at the current moment, covering technical indicators, market conditions, and fundamental factors. The system uses realistic mock data to simulate market analysis and trading opportunities, providing users with an intuitive way to understand trading concepts and strategies.
+The application features a modern, responsive interface with real-time market data integration, professional trading card layouts, comprehensive feedback systems, and detailed trading rationales. Each trading opportunity includes expert analysis explaining why it's the optimal choice at the current moment, covering technical indicators, market conditions, and fundamental factors. The system uses live market data from Alpha Vantage API combined with innovative micro and nano trading contracts, providing users with an intuitive way to understand trading concepts and strategies.
+
+**Key Features:**
+- **Micro Trading**: Fractional commodity contracts (1/10th to 1/250th standard size) starting from $0.30
+- **Micro Crypto Futures**: 0.1 BTC and 0.1 ETH contracts based on real market prices
+- **Real-Time Data**: Live stock prices from Alpha Vantage API with smart caching
+- **Educational Focus**: Trading rationales and risk management for all experience levels
 
 ## User Preferences
 
