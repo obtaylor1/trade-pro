@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type TradingOpportunity, type TradeResult } from "@shared/schema";
 import TradeCard from "./TradeCard";
+import SimpleLiveChart from "./SimpleLiveChart";
 
 interface TradingOpportunitiesProps {
   selectedMarket: string;
@@ -110,6 +111,17 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted }
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Live Chart for Commodities */}
+      {selectedMarket === "commodities" && (
+        <div className="mb-8">
+          <SimpleLiveChart 
+            symbol="MGC" 
+            name="Micro Gold Futures (MGC)" 
+            isMicro={true} 
+          />
         </div>
       )}
 
