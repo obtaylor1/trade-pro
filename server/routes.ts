@@ -2,11 +2,16 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
+import { marketDataService } from "./marketDataService";
 import { tradeExecutionSchema, userRegistrationSchema, userLoginSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get trading opportunities for a specific market
+  // In-memory cache for stock data to avoid repeated API calls
+  const stockCache = new Map<string, { data: any[], timestamp: number }>();
+  const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes for stocks
+
   app.get("/api/opportunities/:market", async (req, res) => {
     try {
       const { market } = req.params;
@@ -15,9 +20,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid market type" });
       }
 
-      const opportunities = await storage.getTradingOpportunities(market);
+      // Check cache first for stocks to avoid long wait times
+      if (market === 'stocks') {
+        const cached = stockCache.get(market);
+        if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+          console.log(`Using cached data for ${market}`);
+          return res.json(cached.data);
+        }
+      }
+      
+      console.log(`Fetching fresh data for ${market}`);
+      
+      const opportunities = await marketDataService.generateTradingOpportunities(market);
+      
+      // Cache stock data
+      if (market === 'stocks') {
+        stockCache.set(market, { data: opportunities, timestamp: Date.now() });
+      }
+      
       res.json(opportunities);
     } catch (error) {
+      console.error('Error fetching opportunities:', error);
       res.status(500).json({ message: "Failed to fetch trading opportunities" });
     }
   });

@@ -311,7 +311,7 @@ export class MarketDataService {
                 throw new Error(`No API data for ${stock.symbol}`);
               }
             } catch (apiError) {
-              console.warn(`API failed for ${stock.symbol}, using realistic simulation data`);
+              console.log(`API failed for ${stock.symbol}, using realistic simulation data`);
               // Generate realistic market data based on current market conditions
               const simulatedData = this.generateRealisticStockData(stock);
               currentPrice = simulatedData.price;

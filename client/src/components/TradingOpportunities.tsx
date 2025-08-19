@@ -15,8 +15,10 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
   const { data: opportunities, isLoading, error, isFetching } = useQuery<TradingOpportunity[]>({
     queryKey: ["/api/opportunities", selectedMarket],
     enabled: !!selectedMarket,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
+    staleTime: selectedMarket === 'stocks' ? 10 * 60 * 1000 : 5 * 60 * 1000, // 10 minutes for stocks due to API delays
+    refetchInterval: selectedMarket === 'stocks' ? 10 * 60 * 1000 : 5 * 60 * 1000, // Longer interval for stocks
+    gcTime: 15 * 60 * 1000, // Keep cached data for 15 minutes
+    retry: 1, // Reduced retries for faster failure
   });
 
   const handleRefresh = () => {
@@ -26,8 +28,15 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-trading-light-blue"></div>
-        <span className="ml-4 text-gray-300">Loading opportunities...</span>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
+        <div className="ml-4 text-gray-300">
+          <div>Loading {selectedMarket} opportunities...</div>
+          {selectedMarket === 'stocks' && (
+            <div className="text-sm text-gray-500 mt-1">
+              Fetching real-time market data - this may take up to 60 seconds
+            </div>
+          )}
+        </div>
       </div>
     );
   }
