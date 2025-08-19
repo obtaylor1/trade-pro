@@ -1,0 +1,74 @@
+What Are Stock Options?
+
+Stock options are contracts that give you the right — but not the obligation — to buy or sell a stock at a specific price (called the strike price) before a certain date (the expiration date).
+
+There are two types:
+
+Call Options → Right to buy a stock at the strike price.
+
+Put Options → Right to sell a stock at the strike price.
+
+💰 Buying a Call Option (Betting the Stock Will Go Up)
+
+Suppose Apple stock (AAPL) trades at $150.
+
+You buy a call option with a strike price of $160, expiring in 1 month.
+
+Premium (cost of the option) = $3 per share = $300 total (since 1 contract = 100 shares).
+
+👉 Two outcomes:
+
+If AAPL goes to $175 → You can buy at $160 and sell at $175.
+
+Profit = ($175 – $160 – $3) × 100 = $1,200.
+
+If AAPL stays below $160 → Option expires worthless.
+
+Loss = $300 (the premium you paid).
+
+📉 Buying a Put Option (Betting the Stock Will Go Down)
+
+Same Apple example, at $150.
+
+You buy a put option with a strike of $140, expiring in 1 month.
+
+Premium = $2 per share = $200 total.
+
+👉 Two outcomes:
+
+If AAPL falls to $120 → You can sell at $140 while market is $120.
+
+Profit = ($140 – $120 – $2) × 100 = $1,800.
+
+If AAPL stays above $140 → Option expires worthless.
+
+Loss = $200.
+
+⚖️ Key Features When Purchasing Stock Options
+
+Premium: The price you pay upfront. This is the maximum you can lose as a buyer.
+
+Strike Price: The stock price at which you can buy (call) or sell (put).
+
+Expiration Date: Options don’t last forever — they lose value as expiration nears (time decay).
+
+Leverage: You control 100 shares of stock for a fraction of the cost. This means big profits or big losses quickly.
+
+Risk/Reward: Buying options = limited risk (premium) but potentially large rewards.
+
+✅ Why People Buy Options
+
+Speculation: To bet on a stock moving up or down without owning it.
+
+Leverage: To control more shares with less money.
+
+Hedging: To protect a portfolio (example: buying puts as insurance against a stock market crash).
+
+📌 Simple Analogy (6th Grade Style):
+Buying a stock option is like buying a movie ticket 🎟️.
+
+You pay for the ticket (premium).
+
+If you use it before the showtime (expiration), you see the movie (buy/sell at strike price).
+
+If you don’t, the ticket expires worthless.

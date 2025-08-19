@@ -615,6 +615,10 @@ export class MarketDataService {
         });
       }
 
+      if (market === "options") {
+        return this.generateOptionsOpportunities();
+      }
+
     } catch (error) {
       console.error("Error generating trading opportunities:", error);
       throw new Error("Failed to fetch market data");
