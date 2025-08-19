@@ -31,13 +31,15 @@ Key architectural decisions:
 - **Development optimization**: Integrated Vite middleware for hot reloading during development
 
 ### Data Storage Solutions
-The application uses an **in-memory storage system** implemented through a custom `MemStorage` class. This approach was chosen for simplicity and to eliminate external dependencies while providing realistic trading simulation data.
+The application uses a **hybrid storage system** combining real-world market data with intelligent caching for optimal performance.
 
 Storage architecture:
-- **Mock data generation**: Pre-populated trading opportunities across three market categories
+- **Real-time market data**: Alpha Vantage API integration for live stock, crypto, and commodity prices
+- **Smart caching layer**: 5-minute cache duration to respect API rate limits while maintaining fresh data
+- **Fallback mechanisms**: Graceful degradation when API limits are reached
 - **Runtime state management**: Temporary storage of trade executions and results
 - **Type-safe schemas**: Zod validation ensures data integrity across the application
-- **Scalable design**: Storage interface allows for easy migration to persistent databases
+- **Performance optimization**: Concurrent API calls with retry logic and error handling
 
 ### Authentication and Authorization
 Currently, the application operates without authentication to maintain simplicity and focus on core trading simulation features. This design choice supports the educational and demonstration purposes of the platform.
