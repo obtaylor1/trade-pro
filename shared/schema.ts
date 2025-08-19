@@ -12,7 +12,10 @@ export const tradingOpportunitySchema = z.object({
   confidence: z.number().min(0).max(100),
   action: z.enum(["BUY", "SELL"]),
   market: z.enum(["stocks", "commodities", "crypto"]),
-  rationale: z.string()
+  rationale: z.string(),
+  isMicro: z.boolean().default(false),
+  contractSize: z.string().optional(),
+  minimumTrade: z.string().optional()
 });
 
 export const tradeExecutionSchema = z.object({

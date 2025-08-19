@@ -32,16 +32,33 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
   const actionColor = opportunity.action === "BUY" ? "bg-trading-success" : "bg-trading-warning";
   const confidenceBarColor = opportunity.confidence >= 80 ? "bg-trading-success" : "bg-trading-warning";
 
+  const cardClassName = opportunity.isMicro 
+    ? "trade-card bg-gradient-to-br from-trading-gray to-purple-900/20 rounded-xl shadow-xl border border-purple-500/30 overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-purple-400/50 animate-slide-up"
+    : "trade-card bg-trading-gray rounded-xl shadow-xl border border-gray-700 overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl animate-slide-up";
+
   return (
     <div 
-      className="trade-card bg-trading-gray rounded-xl shadow-xl border border-gray-700 overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl animate-slide-up"
+      className={cardClassName}
       style={{ animationDelay: `${animationDelay}ms` }}
     >
       <div className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="text-xl font-bold text-white">{opportunity.name}</h3>
+            <div className="flex items-center space-x-2 mb-1">
+              <h3 className="text-xl font-bold text-white">{opportunity.name}</h3>
+              {opportunity.isMicro && (
+                <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                  MICRO
+                </span>
+              )}
+            </div>
             <p className="text-gray-400 text-sm">{opportunity.type}</p>
+            {opportunity.isMicro && opportunity.contractSize && (
+              <p className="text-purple-300 text-xs mt-1">
+                <i className="fas fa-atom mr-1"></i>
+                Contract: {opportunity.contractSize}
+              </p>
+            )}
           </div>
           <div className={`${actionColor} text-white px-2 py-1 rounded-full text-xs font-semibold`}>
             <span>{opportunity.action}</span>
@@ -53,6 +70,12 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
             <span className="text-gray-300">Entry Price:</span>
             <span className="text-white font-semibold">{opportunity.entryPrice}</span>
           </div>
+          {opportunity.isMicro && opportunity.minimumTrade && (
+            <div className="flex justify-between items-center">
+              <span className="text-purple-300 text-sm">Min. Trade:</span>
+              <span className="text-purple-300 font-semibold text-sm">{opportunity.minimumTrade}</span>
+            </div>
+          )}
           <div className="flex justify-between items-center">
             <span className="text-gray-300">Risk:</span>
             <span className="text-trading-error font-semibold">{opportunity.risk}</span>

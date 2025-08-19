@@ -1,0 +1,23 @@
+Micro trading in options refers to trading in micro-sized contracts that are a fraction of the size of standard options. It's a strategy designed to make options trading more accessible and affordable for individual investors who have less capital or want to manage their risk more precisely.
+
+
+Here’s a breakdown of how it works:
+
+How Micro-Sized Contracts Work
+Standard Options: A standard options contract typically represents 100 shares of the underlying asset (like a stock or ETF). This means if you buy one options contract, you are controlling 100 shares.
+
+
+Micro-Sized Options: A micro-sized options contract, like mini-options or nano options, is a much smaller version. For example, a mini-option might represent only 10 shares, and a nano option can represent as little as 1 share.
+
+This smaller size has two main advantages:
+
+Lower Cost: Since the premium (the price you pay for the contract) is tied to the number of shares, a micro-sized contract costs significantly less than a standard one. This makes it possible for traders with a small amount of capital to get started.
+
+Increased Precision: The smaller size allows you to fine-tune your trading strategies. For instance, if you want to hedge a portfolio of 75 shares of a stock, you could buy eight mini-options (80 shares) to get close to your desired exposure.
+
+Why is it used?
+For Beginners: It provides a great way for new traders to get practical experience with options without risking a large amount of money. You can learn how options work, understand concepts like premiums and strike prices, and see how market movements affect your position in a low-stakes environment.
+
+For Risk Management: Even experienced traders use micro-options to manage their risk more effectively. It allows for more precise adjustments to a portfolio, and it can be a tool for testing new strategies with minimal financial exposure.
+
+In essence, micro trading in options is like buying a single slice of pizza instead of the whole pie. You get to taste the flavor and see if you like it without committing to the full cost and size.

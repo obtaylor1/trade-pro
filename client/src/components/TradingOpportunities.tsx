@@ -48,6 +48,8 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted }
     );
   }
 
+  const hasMicroTrades = opportunities?.some(opp => opp.isMicro);
+
   return (
     <div className="animate-fade-in">
       <div className="flex justify-between items-center mb-6">
@@ -70,6 +72,26 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted }
           </div>
         </div>
       </div>
+
+      {selectedMarket === "commodities" && hasMicroTrades && (
+        <div className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-500/30 rounded-xl p-4 mb-6">
+          <div className="flex items-start space-x-3">
+            <i className="fas fa-atom text-purple-400 text-xl mt-1"></i>
+            <div>
+              <h3 className="text-white font-semibold mb-2">Micro & Nano Trading Available</h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Trade commodities with fractional contracts starting as low as $0.30. Micro contracts represent 1/10th to 1/250th of standard size, 
+                enabling precise risk management and accessible entry points for all investors.
+              </p>
+              <div className="flex items-center space-x-4 mt-2 text-xs text-purple-300">
+                <span><i className="fas fa-check-circle mr-1"></i>Lower capital requirements</span>
+                <span><i className="fas fa-check-circle mr-1"></i>Precise position sizing</span>
+                <span><i className="fas fa-check-circle mr-1"></i>Reduced risk exposure</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {opportunities.map((opportunity, index) => (
