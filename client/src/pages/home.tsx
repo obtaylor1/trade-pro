@@ -6,12 +6,14 @@ import TradeResultModal from "@/components/TradeResultModal";
 import UserProfileCard from "@/components/UserProfileCard";
 import PortfolioSummary from "@/components/PortfolioSummary";
 import BrokerDashboard from "@/components/BrokerDashboard";
-import { type TradeResult, type UserProfile, type PortfolioPosition } from "@shared/schema";
+import SimulatorSetupModal from "@/components/SimulatorSetup";
+import { type TradeResult, type UserProfile, type PortfolioPosition, type SimulatorSetup } from "@shared/schema";
 
 export default function Home() {
   const [selectedMarket, setSelectedMarket] = useState<"stocks" | "commodities" | "crypto">("commodities");
   const [tradeResult, setTradeResult] = useState<TradeResult | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showSetup, setShowSetup] = useState(true);
   
   // Mock user profile - in a real app this would come from authentication
   const [userProfile, setUserProfile] = useState<UserProfile>({
@@ -20,6 +22,7 @@ export default function Home() {
     accountType: "individual",
     availableFunds: 25000,
     virtualFunds: 100000,
+    selectedBroker: "ninjatrader-sim",
     isLiveTrading: false
   });
 
@@ -63,6 +66,21 @@ export default function Home() {
     }));
   };
 
+  const handleSimulatorSetup = (setup: SimulatorSetup) => {
+    setUserProfile(prev => ({
+      ...prev,
+      name: setup.userName,
+      virtualFunds: setup.initialCapital,
+      selectedBroker: setup.selectedBroker,
+      accountType: setup.accountType,
+    }));
+    setShowSetup(false);
+  };
+
+  const handleResetSimulator = () => {
+    setShowSetup(true);
+  };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setTradeResult(null);
@@ -79,6 +97,7 @@ export default function Home() {
             <UserProfileCard 
               userProfile={userProfile}
               onToggleTradingMode={handleToggleTradingMode}
+              onResetSimulator={handleResetSimulator}
             />
           </div>
           <div>
@@ -115,6 +134,14 @@ export default function Home() {
         tradeResult={tradeResult}
         onClose={handleCloseModal}
       />
+
+      {/* Simulator Setup Modal */}
+      {showSetup && (
+        <SimulatorSetupModal
+          onSetupComplete={handleSimulatorSetup}
+          onCancel={() => setShowSetup(false)}
+        />
+      )}
     </div>
   );
 }

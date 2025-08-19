@@ -5,9 +5,10 @@ import { type UserProfile } from '@shared/schema';
 interface UserProfileCardProps {
   userProfile: UserProfile;
   onToggleTradingMode: (isLive: boolean) => void;
+  onResetSimulator?: () => void;
 }
 
-export default function UserProfileCard({ userProfile, onToggleTradingMode }: UserProfileCardProps) {
+export default function UserProfileCard({ userProfile, onToggleTradingMode, onResetSimulator }: UserProfileCardProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -122,6 +123,18 @@ export default function UserProfileCard({ userProfile, onToggleTradingMode }: Us
                   <strong>Live Trading Active:</strong> All trades will use real money from your connected broker account.
                 </div>
               </div>
+            </div>
+          )}
+
+          {!userProfile.isLiveTrading && onResetSimulator && (
+            <div className="mt-3 pt-3 border-t border-gray-700">
+              <button
+                onClick={onResetSimulator}
+                className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+              >
+                <i className="fas fa-cog"></i>
+                Reconfigure Simulator
+              </button>
             </div>
           )}
         </div>

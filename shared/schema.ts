@@ -41,7 +41,16 @@ export const userProfileSchema = z.object({
   accountType: z.enum(["individual", "joint", "retirement"]),
   availableFunds: z.number(),
   virtualFunds: z.number(),
+  selectedBroker: z.string().optional(),
   isLiveTrading: z.boolean().default(false),
+});
+
+// Simulator Setup Schema
+export const simulatorSetupSchema = z.object({
+  userName: z.string().min(1, "Name is required"),
+  initialCapital: z.number().min(100, "Minimum starting balance is $100"),
+  selectedBroker: z.string().min(1, "Please select a broker"),
+  accountType: z.enum(["individual", "joint", "retirement"]).default("individual"),
 });
 
 // Broker Schema
@@ -52,6 +61,14 @@ export const brokerSchema = z.object({
   logoUrl: z.string().optional(),
   features: z.array(z.string()),
   rating: z.number().min(1).max(5),
+  fees: z.object({
+    stockCommission: z.number().default(0),
+    optionCommission: z.number().default(0),
+    futuresCommission: z.number().default(0),
+    cryptoFee: z.number().default(0), // percentage
+    marginRate: z.number().default(0), // percentage
+    inactivityFee: z.number().default(0),
+  }),
 });
 
 // Portfolio Position Schema
@@ -74,3 +91,4 @@ export type TradeResult = z.infer<typeof tradeResultSchema>;
 export type UserProfile = z.infer<typeof userProfileSchema>;
 export type Broker = z.infer<typeof brokerSchema>;
 export type PortfolioPosition = z.infer<typeof portfolioPositionSchema>;
+export type SimulatorSetup = z.infer<typeof simulatorSetupSchema>;

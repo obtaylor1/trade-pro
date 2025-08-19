@@ -4,7 +4,7 @@ import { marketDataService } from "./marketDataService";
 
 export interface IStorage {
   getTradingOpportunities(market: string): Promise<TradingOpportunity[]>;
-  executeTrade(opportunityId: string): Promise<TradeResult>;
+  executeTrade(opportunityId: string, amount?: number, isLiveTrading?: boolean, selectedBroker?: string): Promise<TradeResult>;
 }
 
 // Cache for market data to avoid hitting API limits
@@ -70,20 +70,58 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async executeTrade(opportunityId: string): Promise<TradeResult> {
+  async executeTrade(
+    opportunityId: string, 
+    amount: number = 1000,
+    isLiveTrading: boolean = false,
+    selectedBroker?: string
+  ): Promise<TradeResult> {
     const opportunity = this.opportunities.get(opportunityId);
     
     if (!opportunity) {
       throw new Error("Trading opportunity not found");
     }
 
+    // Get broker fee structure based on selected broker
+    const getBrokerFees = (brokerId: string | undefined) => {
+      const brokerFees: Record<string, any> = {
+        'td-ameritrade-sim': { futuresCommission: 2.25, optionCommission: 0.65, stockCommission: 0 },
+        'interactive-brokers-sim': { futuresCommission: 0.85, optionCommission: 0.70, stockCommission: 0.005 },
+        'ninjatrader-sim': { futuresCommission: 0.53, optionCommission: 0, stockCommission: 0 },
+        'tastytrade-sim': { futuresCommission: 1.25, optionCommission: 1.00, stockCommission: 0 },
+        'coinbase-pro-sim': { cryptoFee: 0.50, futuresCommission: 0, stockCommission: 0 }
+      };
+      return brokerFees[brokerId || 'ninjatrader-sim'] || brokerFees['ninjatrader-sim'];
+    };
+
+    const fees = getBrokerFees(selectedBroker);
+    
+    // Calculate fees based on trade type
+    let commission = 0;
+    if (opportunityId.includes('micro-commodity') || opportunityId.includes('futures')) {
+      commission = fees.futuresCommission || 0.53;
+    } else if (opportunityId.includes('crypto')) {
+      commission = (amount * (fees.cryptoFee || 0.50)) / 100;
+    } else if (opportunityId.includes('option')) {
+      commission = fees.optionCommission || 0.65;
+    } else {
+      commission = fees.stockCommission || 0;
+    }
+
+    // Parse the original net profit and subtract commission
+    const originalProfit = parseFloat(opportunity.netProfit.replace(/[^-0-9.]/g, '')) || 0;
+    const netProfitAfterFees = originalProfit - commission;
+    const success = Math.random() > 0.15; // 85% success rate
+
     const tradeResult: TradeResult = {
       id: randomUUID(),
       opportunityId,
       executedAt: new Date().toISOString(),
-      success: true,
-      message: `Your trade for ${opportunity.name} has been executed successfully.`,
-      expectedProfit: opportunity.netProfit
+      success,
+      message: success 
+        ? `Trade for ${opportunity.name} executed successfully. Commission: $${commission.toFixed(2)}` 
+        : 'Trade failed - insufficient margin or market conditions',
+      expectedProfit: `$${netProfitAfterFees.toFixed(2)}`
     };
 
     this.tradeResults.set(tradeResult.id, tradeResult);

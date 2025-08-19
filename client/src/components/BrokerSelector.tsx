@@ -18,21 +18,45 @@ const MOCK_BROKERS: Record<string, Broker[]> = {
       name: 'TD Ameritrade',
       assetClass: 'stocks',
       features: ['Commission-free stocks', 'Advanced research', 'Mobile app'],
-      rating: 4.5
+      rating: 4.5,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0.65,
+        futuresCommission: 2.25,
+        cryptoFee: 0,
+        marginRate: 8.75,
+        inactivityFee: 0,
+      }
     },
     {
       id: 'charles-schwab',
       name: 'Charles Schwab',
       assetClass: 'stocks',
       features: ['No minimums', 'Fractional shares', '24/7 support'],
-      rating: 4.7
+      rating: 4.7,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0.65,
+        futuresCommission: 2.25,
+        cryptoFee: 0,
+        marginRate: 7.75,
+        inactivityFee: 0,
+      }
     },
     {
       id: 'fidelity',
       name: 'Fidelity',
       assetClass: 'stocks',
       features: ['Zero expense ratio funds', 'Research tools', 'Educational resources'],
-      rating: 4.6
+      rating: 4.6,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0.65,
+        futuresCommission: 2.25,
+        cryptoFee: 0,
+        marginRate: 8.25,
+        inactivityFee: 0,
+      }
     }
   ],
   commodities: [
@@ -41,21 +65,45 @@ const MOCK_BROKERS: Record<string, Broker[]> = {
       name: 'Interactive Brokers',
       assetClass: 'commodities',
       features: ['Low commissions', 'Global markets', 'Micro futures'],
-      rating: 4.4
+      rating: 4.4,
+      fees: {
+        stockCommission: 0.005,
+        optionCommission: 0.70,
+        futuresCommission: 0.85,
+        cryptoFee: 0.20,
+        marginRate: 6.83,
+        inactivityFee: 20,
+      }
     },
     {
       id: 'td-ameritrade-futures',
       name: 'TD Ameritrade Futures',
       assetClass: 'commodities',
       features: ['Futures trading', 'Options on futures', 'Advanced platform'],
-      rating: 4.3
+      rating: 4.3,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0.65,
+        futuresCommission: 2.25,
+        cryptoFee: 0,
+        marginRate: 8.75,
+        inactivityFee: 0,
+      }
     },
     {
       id: 'ninjatrader',
       name: 'NinjaTrader',
       assetClass: 'commodities',
       features: ['Professional platform', 'Advanced charting', 'Low margins'],
-      rating: 4.2
+      rating: 4.2,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0.53,
+        cryptoFee: 0,
+        marginRate: 0,
+        inactivityFee: 0,
+      }
     }
   ],
   crypto: [
@@ -64,21 +112,45 @@ const MOCK_BROKERS: Record<string, Broker[]> = {
       name: 'Coinbase Pro',
       assetClass: 'crypto',
       features: ['Institutional grade', 'Low fees', 'Advanced trading'],
-      rating: 4.1
+      rating: 4.1,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0,
+        cryptoFee: 0.50,
+        marginRate: 0,
+        inactivityFee: 0,
+      }
     },
     {
       id: 'kraken',
       name: 'Kraken',
       assetClass: 'crypto',
       features: ['Security focused', 'Margin trading', 'Staking rewards'],
-      rating: 4.3
+      rating: 4.3,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0,
+        cryptoFee: 0.26,
+        marginRate: 0,
+        inactivityFee: 0,
+      }
     },
     {
       id: 'binance-us',
       name: 'Binance.US',
       assetClass: 'crypto',
       features: ['Low trading fees', 'Large coin selection', 'Mobile app'],
-      rating: 4.0
+      rating: 4.0,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0,
+        cryptoFee: 0.10,
+        marginRate: 0,
+        inactivityFee: 0,
+      }
     }
   ],
   options: [
@@ -87,14 +159,30 @@ const MOCK_BROKERS: Record<string, Broker[]> = {
       name: 'tastytrade',
       assetClass: 'options',
       features: ['Options focused', 'Low commissions', 'Education'],
-      rating: 4.5
+      rating: 4.5,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 1.00,
+        futuresCommission: 1.25,
+        cryptoFee: 0,
+        marginRate: 9.75,
+        inactivityFee: 0,
+      }
     },
     {
       id: 'etrade-options',
       name: 'E*TRADE Options',
       assetClass: 'options',
       features: ['Advanced platform', 'Research tools', 'Mobile trading'],
-      rating: 4.2
+      rating: 4.2,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0.65,
+        futuresCommission: 1.50,
+        cryptoFee: 0,
+        marginRate: 9.25,
+        inactivityFee: 0,
+      }
     }
   ]
 };

@@ -26,7 +26,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/trades/execute", async (req, res) => {
     try {
       const validatedData = tradeExecutionSchema.parse(req.body);
-      const result = await storage.executeTrade(validatedData.opportunityId);
+      const result = await storage.executeTrade(
+        validatedData.opportunityId, 
+        validatedData.amount || 1000,
+        validatedData.isLiveTrading || false,
+        validatedData.selectedBroker
+      );
       res.json(result);
     } catch (error) {
       if (error instanceof z.ZodError) {
