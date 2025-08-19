@@ -1,6 +1,6 @@
 interface MarketSelectorProps {
-  selectedMarket: "stocks" | "commodities" | "crypto";
-  onSelectMarket: (market: "stocks" | "commodities" | "crypto") => void;
+  selectedMarket: "stocks" | "commodities" | "crypto" | "options";
+  onSelectMarket: (market: "stocks" | "commodities" | "crypto" | "options") => void;
 }
 
 export default function MarketSelector({ selectedMarket, onSelectMarket }: MarketSelectorProps) {
@@ -22,6 +22,12 @@ export default function MarketSelector({ selectedMarket, onSelectMarket }: Marke
       name: "Stocks",
       icon: "fas fa-chart-bar",
       description: "S&P 500, NASDAQ"
+    },
+    {
+      id: "options" as const,
+      name: "Options",
+      icon: "fas fa-chart-line",
+      description: "Calls, Puts, Leverage"
     }
   ];
 

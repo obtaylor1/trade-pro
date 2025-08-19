@@ -12,7 +12,7 @@ export const tradingOpportunitySchema = z.object({
   netProfit: z.string(),
   confidence: z.number().min(0).max(100),
   action: z.enum(["BUY", "SELL"]),
-  market: z.enum(["stocks", "commodities", "crypto"]),
+  market: z.enum(["stocks", "commodities", "crypto", "options"]),
   rationale: z.string(),
   isMicro: z.boolean().default(false),
   contractSize: z.string().optional(),
@@ -20,7 +20,14 @@ export const tradingOpportunitySchema = z.object({
   exchange: z.string().optional(),
   sector: z.string().optional(),
   volume: z.string().optional(),
-  riskLevel: z.string().optional()
+  riskLevel: z.string().optional(),
+  // Options-specific fields
+  optionType: z.enum(["CALL", "PUT"]).optional(),
+  strikePrice: z.string().optional(),
+  expirationDate: z.string().optional(),
+  premium: z.string().optional(),
+  underlyingPrice: z.string().optional(),
+  impliedVolatility: z.string().optional()
 });
 
 export const tradeExecutionSchema = z.object({

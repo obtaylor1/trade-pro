@@ -63,6 +63,19 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
                 Contract: {opportunity.contractSize}
               </p>
             )}
+            {opportunity.market === "options" && (
+              <div className="flex items-center space-x-3 mt-2">
+                <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                  opportunity.optionType === "CALL" 
+                    ? "bg-green-500/20 text-green-400" 
+                    : "bg-red-500/20 text-red-400"
+                }`}>
+                  {opportunity.optionType}
+                </span>
+                <span className="text-gray-300 text-xs">Strike: {opportunity.strikePrice}</span>
+                <span className="text-gray-300 text-xs">Exp: {opportunity.expirationDate?.split('-').slice(1).join('/')}</span>
+              </div>
+            )}
           </div>
           <div className={`${actionColor} text-white px-2 py-1 rounded-full text-xs font-semibold`}>
             <span>{opportunity.action}</span>
@@ -78,6 +91,24 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
             <div className="flex justify-between items-center">
               <span className="text-purple-300 text-sm">Min. Trade:</span>
               <span className="text-purple-300 font-semibold text-sm">{opportunity.minimumTrade}</span>
+            </div>
+          )}
+          {opportunity.market === "options" && opportunity.premium && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-300">Premium:</span>
+              <span className="text-white font-semibold">{opportunity.premium}</span>
+            </div>
+          )}
+          {opportunity.market === "options" && opportunity.underlyingPrice && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-300">Underlying:</span>
+              <span className="text-white font-semibold">{opportunity.underlyingPrice}</span>
+            </div>
+          )}
+          {opportunity.market === "options" && opportunity.impliedVolatility && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-300">IV:</span>
+              <span className="text-white font-semibold">{opportunity.impliedVolatility}</span>
             </div>
           )}
           <div className="flex justify-between items-center">

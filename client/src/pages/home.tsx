@@ -13,7 +13,7 @@ import UserAuthModal from "@/components/UserAuthModal";
 import { type TradeResult, type UserProfile, type PortfolioPosition, type SimulatorSetup } from "@shared/schema";
 
 export default function Home() {
-  const [selectedMarket, setSelectedMarket] = useState<"stocks" | "commodities" | "crypto">("commodities");
+  const [selectedMarket, setSelectedMarket] = useState<"stocks" | "commodities" | "crypto" | "options">("commodities");
   const [tradeResult, setTradeResult] = useState<TradeResult | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSetup, setShowSetup] = useState(false);

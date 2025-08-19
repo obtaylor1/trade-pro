@@ -622,6 +622,107 @@ export class MarketDataService {
 
     return opportunities;
   }
+
+  private generateOptionsOpportunities(): TradingOpportunity[] {
+    const opportunities: TradingOpportunity[] = [];
+    
+    // Popular stocks for options trading
+    const optionsStocks = [
+      { symbol: "AAPL", name: "Apple Inc.", currentPrice: 195.25, volatility: 0.25 },
+      { symbol: "TSLA", name: "Tesla Inc.", currentPrice: 248.50, volatility: 0.35 },
+      { symbol: "MSFT", name: "Microsoft Corp.", currentPrice: 420.80, volatility: 0.22 },
+      { symbol: "NVDA", name: "NVIDIA Corp.", currentPrice: 875.30, volatility: 0.40 },
+      { symbol: "SPY", name: "SPDR S&P 500 ETF", currentPrice: 445.60, volatility: 0.18 }
+    ];
+
+    optionsStocks.forEach((stock, index) => {
+      // Generate call options (betting stock goes up)
+      const callStrike = Math.round(stock.currentPrice * 1.05); // 5% out of the money
+      const callPremium = this.calculateOptionPremium(stock.currentPrice, callStrike, 30, stock.volatility, "CALL");
+      const callContractValue = callPremium * 100; // 1 contract = 100 shares
+      
+      opportunities.push({
+        id: `call-${stock.symbol.toLowerCase()}-${callStrike}`,
+        name: `${stock.name} Call`,
+        type: `${callStrike} Call • 30 Days`,
+        entryPrice: `$${callPremium.toFixed(2)}`,
+        risk: `-$${callContractValue.toFixed(0)}`,
+        potentialGain: `+$${(callContractValue * 4).toFixed(0)}`,
+        netProfit: `+$${(callContractValue * 3).toFixed(0)}`,
+        confidence: Math.round(75 - (stock.volatility * 50)),
+        action: "BUY",
+        market: "options",
+        rationale: this.generateOptionsRationale(stock, "CALL", callStrike, callPremium),
+        isMicro: false,
+        optionType: "CALL",
+        strikePrice: `$${callStrike}`,
+        expirationDate: this.getExpirationDate(30),
+        premium: `$${callPremium.toFixed(2)}`,
+        underlyingPrice: `$${stock.currentPrice.toFixed(2)}`,
+        impliedVolatility: `${(stock.volatility * 100).toFixed(1)}%`,
+        contractSize: "100 shares per contract"
+      });
+
+      // Generate put options (betting stock goes down) - only for first 3 stocks
+      if (index < 3) {
+        const putStrike = Math.round(stock.currentPrice * 0.95); // 5% out of the money
+        const putPremium = this.calculateOptionPremium(stock.currentPrice, putStrike, 30, stock.volatility, "PUT");
+        const putContractValue = putPremium * 100;
+        
+        opportunities.push({
+          id: `put-${stock.symbol.toLowerCase()}-${putStrike}`,
+          name: `${stock.name} Put`,
+          type: `${putStrike} Put • 30 Days`,
+          entryPrice: `$${putPremium.toFixed(2)}`,
+          risk: `-$${putContractValue.toFixed(0)}`,
+          potentialGain: `+$${(putContractValue * 3).toFixed(0)}`,
+          netProfit: `+$${(putContractValue * 2).toFixed(0)}`,
+          confidence: Math.round(70 - (stock.volatility * 40)),
+          action: "BUY",
+          market: "options",
+          rationale: this.generateOptionsRationale(stock, "PUT", putStrike, putPremium),
+          isMicro: false,
+          optionType: "PUT",
+          strikePrice: `$${putStrike}`,
+          expirationDate: this.getExpirationDate(30),
+          premium: `$${putPremium.toFixed(2)}`,
+          underlyingPrice: `$${stock.currentPrice.toFixed(2)}`,
+          impliedVolatility: `${(stock.volatility * 100).toFixed(1)}%`,
+          contractSize: "100 shares per contract"
+        });
+      }
+    });
+
+    return opportunities;
+  }
+
+  private calculateOptionPremium(currentPrice: number, strikePrice: number, daysToExpiration: number, volatility: number, optionType: string): number {
+    // Simplified Black-Scholes approximation for educational purposes
+    const timeValue = Math.sqrt(daysToExpiration / 365) * volatility * currentPrice * 0.4;
+    const intrinsicValue = optionType === "CALL" 
+      ? Math.max(0, currentPrice - strikePrice)
+      : Math.max(0, strikePrice - currentPrice);
+    
+    const premium = intrinsicValue + timeValue;
+    return Math.max(0.05, premium); // Minimum premium of $0.05
+  }
+
+  private generateOptionsRationale(stock: any, optionType: string, strikePrice: number, premium: number): string {
+    const direction = optionType === "CALL" ? "upward" : "downward";
+    const strategy = optionType === "CALL" ? "bullish" : "bearish";
+    
+    const reasonText = optionType === "CALL" 
+      ? `Technical indicators suggest ${direction} momentum. Breaking above resistance levels with strong volume confirmation.`
+      : `Market showing signs of weakness. Support levels vulnerable with increasing selling pressure.`;
+    
+    return `${reasonText} Option provides leveraged exposure with limited risk to premium paid ($${(premium * 100).toFixed(0)} max loss). ${strategy.charAt(0).toUpperCase() + strategy.slice(1)} position targeting ${stock.symbol} move beyond $${strikePrice} strike price. High liquidity ensures easy entry/exit. Time decay requires directional move within 30 days for profitability.`;
+  }
+
+  private getExpirationDate(daysFromNow: number): string {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromNow);
+    return date.toISOString().split('T')[0];
+  }
 }
 
 export const marketDataService = new MarketDataService();
