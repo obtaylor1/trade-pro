@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { type UserProfile } from '@shared/schema';
+import { type UserProfile, type Broker } from '@shared/schema';
 
 interface UserProfileCardProps {
   userProfile: UserProfile;
@@ -25,6 +25,40 @@ export default function UserProfileCard({ userProfile, onToggleTradingMode, onRe
     };
     return colors[accountType as keyof typeof colors] || colors.individual;
   };
+
+  // Get broker information based on selected broker ID
+  const getBrokerInfo = (brokerId: string | undefined) => {
+    const brokers: Record<string, { name: string; commission: string; specialty: string }> = {
+      'td-ameritrade-sim': { 
+        name: 'TD Ameritrade', 
+        commission: '$2.25 futures', 
+        specialty: 'Research & Education'
+      },
+      'interactive-brokers-sim': { 
+        name: 'Interactive Brokers', 
+        commission: '$0.85 futures', 
+        specialty: 'Global Markets'
+      },
+      'ninjatrader-sim': { 
+        name: 'NinjaTrader', 
+        commission: '$0.53 futures', 
+        specialty: 'Professional Platform'
+      },
+      'tastytrade-sim': { 
+        name: 'tastytrade', 
+        commission: '$1.25 futures', 
+        specialty: 'Options Focus'
+      },
+      'coinbase-pro-sim': { 
+        name: 'Coinbase Pro', 
+        commission: '0.50% crypto', 
+        specialty: 'Digital Assets'
+      }
+    };
+    return brokers[brokerId || 'ninjatrader-sim'] || brokers['ninjatrader-sim'];
+  };
+
+  const brokerInfo = getBrokerInfo(userProfile.selectedBroker);
 
   return (
     <Card className="bg-gray-900 border-gray-700">
@@ -68,17 +102,18 @@ export default function UserProfileCard({ userProfile, onToggleTradingMode, onRe
             </div>
           </div>
 
-          {!userProfile.isLiveTrading && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-gray-400">Virtual Balance</h3>
-              <div className="text-lg font-semibold text-green-400">
-                {formatCurrency(userProfile.virtualFunds)}
-              </div>
-              <div className="text-xs text-gray-500">
-                Practice trading funds
-              </div>
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-400">Selected Broker</h3>
+            <div className="flex items-center gap-2">
+              <div className="text-lg font-semibold text-white">{brokerInfo.name}</div>
+              <Badge variant="secondary" className="text-xs bg-gray-700 text-gray-300">
+                {brokerInfo.specialty}
+              </Badge>
             </div>
-          )}
+            <div className="text-xs text-gray-500">
+              Commission: {brokerInfo.commission}
+            </div>
+          </div>
         </div>
 
         <div className="border-t border-gray-700 pt-4">
@@ -126,15 +161,26 @@ export default function UserProfileCard({ userProfile, onToggleTradingMode, onRe
             </div>
           )}
 
-          {!userProfile.isLiveTrading && onResetSimulator && (
-            <div className="mt-3 pt-3 border-t border-gray-700">
-              <button
-                onClick={onResetSimulator}
-                className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
-              >
-                <i className="fas fa-cog"></i>
-                Reconfigure Simulator
-              </button>
+          {!userProfile.isLiveTrading && (
+            <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-2">
+                  <i className="fas fa-chart-line text-green-400 text-sm mt-0.5"></i>
+                  <div className="text-xs text-green-300">
+                    <strong>Simulator Active:</strong> Trading with {brokerInfo.name} fee structure. 
+                    All commissions ({brokerInfo.commission}) are calculated realistically.
+                  </div>
+                </div>
+                {onResetSimulator && (
+                  <button
+                    onClick={onResetSimulator}
+                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 ml-3"
+                  >
+                    <i className="fas fa-cog"></i>
+                    Reconfigure
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
