@@ -1,13 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { type PortfolioPosition } from '@shared/schema';
 
 interface PortfolioSummaryProps {
   positions: PortfolioPosition[];
   isLiveTrading: boolean;
+  onViewHistory?: () => void;
 }
 
-export default function PortfolioSummary({ positions, isLiveTrading }: PortfolioSummaryProps) {
+export default function PortfolioSummary({ positions, isLiveTrading, onViewHistory }: PortfolioSummaryProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -38,13 +40,26 @@ export default function PortfolioSummary({ positions, isLiveTrading }: Portfolio
   return (
     <Card className="bg-gray-900 border-gray-700">
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          <i className="fas fa-chart-pie text-blue-400"></i>
-          Portfolio Summary
-          <Badge variant="outline" className={isLiveTrading ? 'border-red-500/30 text-red-400' : 'border-green-500/30 text-green-400'}>
-            {isLiveTrading ? 'Live' : 'Simulated'}
-          </Badge>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-white flex items-center gap-2">
+            <i className="fas fa-chart-pie text-blue-400"></i>
+            Portfolio Summary
+            <Badge variant="outline" className={isLiveTrading ? 'border-red-500/30 text-red-400' : 'border-green-500/30 text-green-400'}>
+              {isLiveTrading ? 'Live' : 'Simulated'}
+            </Badge>
+          </CardTitle>
+          {!isLiveTrading && onViewHistory && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onViewHistory}
+              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            >
+              <i className="fas fa-history mr-1"></i>
+              History
+            </Button>
+          )}
+        </div>
       </CardHeader>
 
       <CardContent>

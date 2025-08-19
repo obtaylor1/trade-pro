@@ -7,15 +7,19 @@ interface TradeCardProps {
   opportunity: TradingOpportunity;
   onTradeExecuted: (result: TradeResult) => void;
   animationDelay: number;
+  userProfile?: { id: string; selectedBroker?: string; isLiveTrading: boolean };
 }
 
-export default function TradeCard({ opportunity, onTradeExecuted, animationDelay }: TradeCardProps) {
+export default function TradeCard({ opportunity, onTradeExecuted, animationDelay, userProfile }: TradeCardProps) {
   const queryClient = useQueryClient();
   
   const executeTradeMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/trades/execute", {
         opportunityId: opportunity.id,
+        userId: userProfile?.id || 'user-1',
+        selectedBroker: userProfile?.selectedBroker || 'ninjatrader-sim',
+        isLiveTrading: userProfile?.isLiveTrading || false,
       });
       return response.json();
     },

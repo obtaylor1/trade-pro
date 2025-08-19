@@ -7,6 +7,7 @@ import UserProfileCard from "@/components/UserProfileCard";
 import PortfolioSummary from "@/components/PortfolioSummary";
 import BrokerDashboard from "@/components/BrokerDashboard";
 import SimulatorSetupModal from "@/components/SimulatorSetup";
+import TradeHistory from "@/components/TradeHistory";
 import { type TradeResult, type UserProfile, type PortfolioPosition, type SimulatorSetup } from "@shared/schema";
 
 export default function Home() {
@@ -14,6 +15,7 @@ export default function Home() {
   const [tradeResult, setTradeResult] = useState<TradeResult | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSetup, setShowSetup] = useState(true);
+  const [showTradeHistory, setShowTradeHistory] = useState(false);
   
   // Mock user profile - in a real app this would come from authentication
   const [userProfile, setUserProfile] = useState<UserProfile>({
@@ -104,6 +106,7 @@ export default function Home() {
             <PortfolioSummary 
               positions={portfolioPositions}
               isLiveTrading={userProfile.isLiveTrading}
+              onViewHistory={() => setShowTradeHistory(true)}
             />
           </div>
         </div>
@@ -126,6 +129,7 @@ export default function Home() {
         <TradingOpportunities 
           selectedMarket={selectedMarket}
           onTradeExecuted={handleTradeExecuted}
+          userProfile={userProfile}
         />
       </main>
 
@@ -142,6 +146,13 @@ export default function Home() {
           onCancel={() => setShowSetup(false)}
         />
       )}
+
+      {/* Trade History Modal */}
+      <TradeHistory
+        userId={userProfile.id}
+        isVisible={showTradeHistory}
+        onClose={() => setShowTradeHistory(false)}
+      />
     </div>
   );
 }

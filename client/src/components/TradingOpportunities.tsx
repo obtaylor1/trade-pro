@@ -6,9 +6,10 @@ import SimpleLiveChart from "./SimpleLiveChart";
 interface TradingOpportunitiesProps {
   selectedMarket: string;
   onTradeExecuted: (result: TradeResult) => void;
+  userProfile?: { id: string; selectedBroker?: string; isLiveTrading: boolean };
 }
 
-export default function TradingOpportunities({ selectedMarket, onTradeExecuted }: TradingOpportunitiesProps) {
+export default function TradingOpportunities({ selectedMarket, onTradeExecuted, userProfile }: TradingOpportunitiesProps) {
   const queryClient = useQueryClient();
   
   const { data: opportunities, isLoading, error, isFetching } = useQuery<TradingOpportunity[]>({
@@ -135,6 +136,7 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted }
             opportunity={opportunity}
             onTradeExecuted={onTradeExecuted}
             animationDelay={index * 100}
+            userProfile={userProfile}
           />
         ))}
       </div>

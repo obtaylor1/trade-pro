@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { pgTable, text, timestamp, numeric, integer, boolean } from "drizzle-orm/pg-core";
 
 // Trading opportunity schema
 export const tradingOpportunitySchema = z.object({
@@ -85,6 +86,82 @@ export const portfolioPositionSchema = z.object({
   assetClass: z.string(),
 });
 
+// Paper Trade Schema for detailed trade tracking
+export const paperTradeSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  tradeId: z.string(),
+  timestamp: z.string(),
+  broker: z.string(),
+  symbol: z.string(),
+  assetName: z.string(),
+  assetClass: z.string(),
+  direction: z.enum(["BUY", "SELL"]),
+  quantity: z.number(),
+  entryPrice: z.number(),
+  currentPrice: z.number(),
+  positionSize: z.number(),
+  stopLoss: z.number().optional(),
+  takeProfit: z.number().optional(),
+  commission: z.number(),
+  margin: z.number(),
+  grossPnL: z.number(),
+  netPnL: z.number(),
+  status: z.enum(["OPEN", "CLOSED", "PENDING"]),
+  successRate: z.number(), // % progress toward target
+  executedAt: z.string(),
+  closedAt: z.string().optional(),
+});
+
+// Trade Summary Schema for aggregated statistics
+export const tradeSummarySchema = z.object({
+  userId: z.string(),
+  totalTrades: z.number(),
+  openTrades: z.number(),
+  closedTrades: z.number(),
+  winRate: z.number(),
+  avgReturnPerTrade: z.number(),
+  largestGain: z.number(),
+  largestLoss: z.number(),
+  netAccountGrowth: z.number(),
+  totalCommissions: z.number(),
+  totalVolume: z.number(),
+});
+
+// Database Tables
+export const paperTrades = pgTable("paper_trades", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  tradeId: text("trade_id").notNull(),
+  timestamp: timestamp("timestamp").notNull(),
+  broker: text("broker").notNull(),
+  symbol: text("symbol").notNull(),
+  assetName: text("asset_name").notNull(),
+  assetClass: text("asset_class").notNull(),
+  direction: text("direction").notNull(), // BUY or SELL
+  quantity: numeric("quantity").notNull(),
+  entryPrice: numeric("entry_price").notNull(),
+  currentPrice: numeric("current_price").notNull(),
+  positionSize: numeric("position_size").notNull(),
+  stopLoss: numeric("stop_loss"),
+  takeProfit: numeric("take_profit"),
+  commission: numeric("commission").notNull(),
+  margin: numeric("margin").notNull(),
+  grossPnL: numeric("gross_pnl").notNull(),
+  netPnL: numeric("net_pnl").notNull(),
+  status: text("status").notNull(), // OPEN, CLOSED, PENDING
+  successRate: numeric("success_rate").notNull(),
+  executedAt: timestamp("executed_at").notNull(),
+  closedAt: timestamp("closed_at"),
+});
+
+export const users = pgTable("users", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export type TradingOpportunity = z.infer<typeof tradingOpportunitySchema>;
 export type TradeExecution = z.infer<typeof tradeExecutionSchema>;
 export type TradeResult = z.infer<typeof tradeResultSchema>;
@@ -92,3 +169,5 @@ export type UserProfile = z.infer<typeof userProfileSchema>;
 export type Broker = z.infer<typeof brokerSchema>;
 export type PortfolioPosition = z.infer<typeof portfolioPositionSchema>;
 export type SimulatorSetup = z.infer<typeof simulatorSetupSchema>;
+export type PaperTrade = z.infer<typeof paperTradeSchema>;
+export type TradeSummary = z.infer<typeof tradeSummarySchema>;

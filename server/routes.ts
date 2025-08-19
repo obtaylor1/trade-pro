@@ -30,7 +30,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.opportunityId, 
         validatedData.amount || 1000,
         validatedData.isLiveTrading || false,
-        validatedData.selectedBroker
+        validatedData.selectedBroker,
+        req.body.userId || 'user-1' // Default user ID for demo
       );
       res.json(result);
     } catch (error) {
@@ -43,6 +44,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(500).json({ message: "Failed to execute trade" });
+    }
+  });
+
+  // Get user's trade history
+  app.get("/api/trades/history/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const trades = await storage.getUserTrades(userId, limit);
+      res.json(trades);
+    } catch (error) {
+      console.error('Error fetching trade history:', error);
+      res.status(500).json({ message: "Failed to fetch trade history" });
+    }
+  });
+
+  // Get user's trade summary statistics
+  app.get("/api/trades/summary/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const summary = await storage.getTradeSummary(userId);
+      res.json(summary);
+    } catch (error) {
+      console.error('Error fetching trade summary:', error);
+      res.status(500).json({ message: "Failed to fetch trade summary" });
+    }
+  });
+
+  // Update trade status (for closing positions)
+  app.patch("/api/trades/:tradeId/status", async (req, res) => {
+    try {
+      const { tradeId } = req.params;
+      const { status, currentPrice } = req.body;
+      await storage.updateTradeStatus(tradeId, status, currentPrice);
+      res.json({ message: "Trade status updated successfully" });
+    } catch (error) {
+      console.error('Error updating trade status:', error);
+      res.status(500).json({ message: "Failed to update trade status" });
     }
   });
 
