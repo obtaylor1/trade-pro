@@ -1,0 +1,22 @@
+Trading simulator and live trading platform features
+Simulator
+In the trading simulator, the platform would display the following information, obtained from the linked broker:
+User's name: Clearly visible on the simulator interface.
+Available funds (to trade): Presented as a virtual cash balance, allowing users to practice trading without using real money.
+Other relevant broker-provided information: This could include:
+Account type: (e.g., individual, joint, retirement).
+Portfolio summary: A list of currently held positions, their current value, and performance history within the simulator.
+Watchlists: To track specific assets or practice strategies.
+Trade history: A record of all simulated trades.
+Real-time market data: To make the simulation as realistic as possible.
+Educational resources and research tools: Provided by the broker, like charts, analyst ratings, and financial news. 
+Live trading
+When switching to live trading, the platform should incorporate the following functionality:
+Broker selection dropdown: Each asset class (e.g., commodities, stocks, options) would have a corresponding card. Within each card, a dropdown menu would allow users to select their preferred broker for that asset class.
+Asset-specific broker listing: The dropdown for each card would only display brokers specializing in that particular asset class, (e.g., the commodities card would only list commodities brokers).
+Confirmation dialogs: To prevent accidental trades, the platform should offer confirmation dialogues before executing any orders.
+Security features: Robust security measures, including data encryption and two-factor authentication, should be in place to protect the user's sensitive information during live trading. 
+Important considerations
+Clear visual design: Ensure that the dropdown menus are clearly visible and easy to use.
+User feedback: Provide clear feedback to users after every action, like placing an order or selecting a broker.
+Security and privacy: Emphasize the importance of secure logins and data protection during both simulator and live trading. 

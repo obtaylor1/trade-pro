@@ -1,0 +1,263 @@
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { type Broker } from '@shared/schema';
+
+interface BrokerSelectorProps {
+  assetClass: 'stocks' | 'commodities' | 'crypto' | 'options';
+  selectedBroker?: Broker;
+  onBrokerSelect: (broker: Broker) => void;
+  isLiveTrading: boolean;
+}
+
+const MOCK_BROKERS: Record<string, Broker[]> = {
+  stocks: [
+    {
+      id: 'td-ameritrade',
+      name: 'TD Ameritrade',
+      assetClass: 'stocks',
+      features: ['Commission-free stocks', 'Advanced research', 'Mobile app'],
+      rating: 4.5
+    },
+    {
+      id: 'charles-schwab',
+      name: 'Charles Schwab',
+      assetClass: 'stocks',
+      features: ['No minimums', 'Fractional shares', '24/7 support'],
+      rating: 4.7
+    },
+    {
+      id: 'fidelity',
+      name: 'Fidelity',
+      assetClass: 'stocks',
+      features: ['Zero expense ratio funds', 'Research tools', 'Educational resources'],
+      rating: 4.6
+    }
+  ],
+  commodities: [
+    {
+      id: 'interactive-brokers',
+      name: 'Interactive Brokers',
+      assetClass: 'commodities',
+      features: ['Low commissions', 'Global markets', 'Micro futures'],
+      rating: 4.4
+    },
+    {
+      id: 'td-ameritrade-futures',
+      name: 'TD Ameritrade Futures',
+      assetClass: 'commodities',
+      features: ['Futures trading', 'Options on futures', 'Advanced platform'],
+      rating: 4.3
+    },
+    {
+      id: 'ninjatrader',
+      name: 'NinjaTrader',
+      assetClass: 'commodities',
+      features: ['Professional platform', 'Advanced charting', 'Low margins'],
+      rating: 4.2
+    }
+  ],
+  crypto: [
+    {
+      id: 'coinbase-pro',
+      name: 'Coinbase Pro',
+      assetClass: 'crypto',
+      features: ['Institutional grade', 'Low fees', 'Advanced trading'],
+      rating: 4.1
+    },
+    {
+      id: 'kraken',
+      name: 'Kraken',
+      assetClass: 'crypto',
+      features: ['Security focused', 'Margin trading', 'Staking rewards'],
+      rating: 4.3
+    },
+    {
+      id: 'binance-us',
+      name: 'Binance.US',
+      assetClass: 'crypto',
+      features: ['Low trading fees', 'Large coin selection', 'Mobile app'],
+      rating: 4.0
+    }
+  ],
+  options: [
+    {
+      id: 'tastytrade',
+      name: 'tastytrade',
+      assetClass: 'options',
+      features: ['Options focused', 'Low commissions', 'Education'],
+      rating: 4.5
+    },
+    {
+      id: 'etrade-options',
+      name: 'E*TRADE Options',
+      assetClass: 'options',
+      features: ['Advanced platform', 'Research tools', 'Mobile trading'],
+      rating: 4.2
+    }
+  ]
+};
+
+export default function BrokerSelector({ assetClass, selectedBroker, onBrokerSelect, isLiveTrading }: BrokerSelectorProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const brokers = MOCK_BROKERS[assetClass] || [];
+
+  const handleBrokerSelect = (broker: Broker) => {
+    onBrokerSelect(broker);
+    setIsOpen(false);
+  };
+
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <i 
+        key={i} 
+        className={`fas fa-star text-xs ${i < Math.floor(rating) ? 'text-yellow-400' : 'text-gray-600'}`}
+      />
+    ));
+  };
+
+  if (!isLiveTrading) {
+    return (
+      <div className="text-center py-4 text-gray-500 text-sm">
+        <i className="fas fa-info-circle mr-2"></i>
+        Broker selection available in live trading mode
+      </div>
+    );
+  }
+
+  return (
+    <Card className="bg-gray-800 border-gray-700">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm text-gray-300">
+          {assetClass.charAt(0).toUpperCase() + assetClass.slice(1)} Broker
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent>
+        {selectedBroker ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-white">{selectedBroker.name}</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex gap-1">{renderStars(selectedBroker.rating)}</div>
+                  <span className="text-xs text-gray-400">{selectedBroker.rating}</span>
+                </div>
+              </div>
+              <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
+                Connected
+              </Badge>
+            </div>
+            
+            <div className="flex flex-wrap gap-1">
+              {selectedBroker.features.slice(0, 2).map((feature, index) => (
+                <Badge key={index} variant="secondary" className="text-xs bg-gray-700 text-gray-300">
+                  {feature}
+                </Badge>
+              ))}
+            </div>
+
+            <div className="relative">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full border-gray-600 text-gray-300 hover:bg-gray-700"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                Change Broker
+              </Button>
+              
+              {isOpen && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-gray-900 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="p-3 border-b border-gray-700">
+                    <h3 className="font-medium text-white">
+                      Select {assetClass.charAt(0).toUpperCase() + assetClass.slice(1)} Broker
+                    </h3>
+                  </div>
+                  
+                  <div className="p-2 space-y-2">
+                    {brokers.map((broker) => (
+                      <div 
+                        key={broker.id}
+                        onClick={() => handleBrokerSelect(broker)}
+                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                          selectedBroker?.id === broker.id 
+                            ? 'border-blue-500 bg-blue-500/10' 
+                            : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-medium text-white">{broker.name}</h3>
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-1">{renderStars(broker.rating)}</div>
+                            <span className="text-xs text-gray-400">{broker.rating}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-1">
+                          {broker.features.map((feature, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs bg-gray-700 text-gray-300">
+                              {feature}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="relative">
+            <Button 
+              variant="outline" 
+              className="w-full border-dashed border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-300"
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              <i className="fas fa-plus mr-2"></i>
+              Select Broker
+            </Button>
+            
+            {isOpen && (
+              <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-gray-900 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="p-3 border-b border-gray-700">
+                  <h3 className="font-medium text-white">
+                    Select {assetClass.charAt(0).toUpperCase() + assetClass.slice(1)} Broker
+                  </h3>
+                </div>
+                
+                <div className="p-2 space-y-2">
+                  {brokers.map((broker) => (
+                    <div 
+                      key={broker.id}
+                      onClick={() => handleBrokerSelect(broker)}
+                      className="p-3 rounded-lg border border-gray-700 hover:border-gray-600 hover:bg-gray-800 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium text-white">{broker.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1">{renderStars(broker.rating)}</div>
+                          <span className="text-xs text-gray-400">{broker.rating}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-1">
+                        {broker.features.map((feature, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs bg-gray-700 text-gray-300">
+                            {feature}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
