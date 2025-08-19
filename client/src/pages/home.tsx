@@ -19,8 +19,9 @@ export default function Home() {
   const [showSetup, setShowSetup] = useState(false);
   const [showTradeHistory, setShowTradeHistory] = useState(false);
   const [showPortfolioSummary, setShowPortfolioSummary] = useState(false);
-  const [showAuth, setShowAuth] = useState(true);
+  const [showAuth, setShowAuth] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [requiresAuth, setRequiresAuth] = useState(false);
   
   // User profile from authentication
   const [userProfile, setUserProfile] = useState<UserProfile>({
@@ -45,6 +46,7 @@ export default function Home() {
     });
     setIsAuthenticated(true);
     setShowAuth(false);
+    setRequiresAuth(false);
   };
 
   // Mock portfolio positions
@@ -76,11 +78,25 @@ export default function Home() {
   ]);
 
   const handleTradeExecuted = (result: TradeResult) => {
+    // Check if user is authenticated for simulator mode
+    if (!userProfile.isLiveTrading && !isAuthenticated) {
+      setRequiresAuth(true);
+      setShowAuth(true);
+      return;
+    }
+    
     setTradeResult(result);
     setIsModalOpen(true);
   };
 
   const handleToggleTradingMode = (isLive: boolean) => {
+    // If switching to simulator mode and not authenticated, prompt for auth
+    if (!isLive && !isAuthenticated) {
+      setRequiresAuth(true);
+      setShowAuth(true);
+      return;
+    }
+    
     setUserProfile(prev => ({
       ...prev,
       isLiveTrading: isLive
@@ -107,25 +123,35 @@ export default function Home() {
     setTradeResult(null);
   };
 
-  // Show authentication screen if not authenticated
-  if (!isAuthenticated && showAuth) {
-    return (
-      <div className="bg-trading-dark text-white font-inter min-h-screen">
-        <Header />
-        <UserAuthModal
-          isVisible={showAuth && !isAuthenticated}
-          onUserAuthenticated={handleUserAuthenticated}
-          onClose={() => setShowAuth(false)}
-        />
-      </div>
-    );
-  }
+  // Show demo message for unauthenticated users in simulator mode
+  const showDemoMessage = !isAuthenticated && !userProfile.isLiveTrading;
 
   return (
     <div className="bg-trading-dark text-white font-inter min-h-screen">
       <Header />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Demo Notice for Unauthenticated Users */}
+        {showDemoMessage && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-lg">
+            <div className="flex items-center gap-3">
+              <i className="fas fa-info-circle text-blue-400 text-xl"></i>
+              <div>
+                <h3 className="text-white font-semibold">Demo Mode</h3>
+                <p className="text-gray-300 text-sm">
+                  You're viewing the trading platform in demo mode. To save your trades and track performance, 
+                  <button 
+                    onClick={() => setShowAuth(true)} 
+                    className="text-blue-400 hover:text-blue-300 underline ml-1"
+                  >
+                    create a free account
+                  </button>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* User Profile and Trading Mode */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2">
@@ -139,8 +165,8 @@ export default function Home() {
             <PortfolioSummary 
               positions={portfolioPositions}
               isLiveTrading={userProfile.isLiveTrading}
-              onViewHistory={() => setShowTradeHistory(true)}
-              onViewPortfolio={() => setShowPortfolioSummary(true)}
+              onViewHistory={() => isAuthenticated ? setShowTradeHistory(true) : setShowAuth(true)}
+              onViewPortfolio={() => isAuthenticated ? setShowPortfolioSummary(true) : setShowAuth(true)}
             />
           </div>
         </div>
@@ -199,7 +225,10 @@ export default function Home() {
       <UserAuthModal
         isVisible={showAuth && !isAuthenticated}
         onUserAuthenticated={handleUserAuthenticated}
-        onClose={() => setShowAuth(false)}
+        onClose={() => {
+          setShowAuth(false);
+          setRequiresAuth(false);
+        }}
       />
     </div>
   );

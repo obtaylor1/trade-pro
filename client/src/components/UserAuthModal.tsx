@@ -146,8 +146,8 @@ export default function UserAuthModal({ isVisible, onUserAuthenticated, onClose 
           </CardTitle>
           <p className="text-gray-400 text-center text-sm">
             {mode === 'login' 
-              ? 'Enter your email to access your trading history'
-              : 'Set up your paper trading account to track your progress'
+              ? 'Enter your email to access your trading history and continue where you left off'
+              : 'Create a free account to track your trades, save your progress, and access detailed performance analytics'
             }
           </p>
         </CardHeader>
