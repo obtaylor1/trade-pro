@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type TradingOpportunity, type TradeResult } from "@shared/schema";
 import TradeCard from "./TradeCard";
 
@@ -8,10 +8,18 @@ interface TradingOpportunitiesProps {
 }
 
 export default function TradingOpportunities({ selectedMarket, onTradeExecuted }: TradingOpportunitiesProps) {
-  const { data: opportunities, isLoading, error } = useQuery<TradingOpportunity[]>({
+  const queryClient = useQueryClient();
+  
+  const { data: opportunities, isLoading, error, isFetching } = useQuery<TradingOpportunity[]>({
     queryKey: ["/api/opportunities", selectedMarket],
     enabled: !!selectedMarket,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
   });
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/opportunities", selectedMarket] });
+  };
 
   if (isLoading) {
     return (
@@ -45,10 +53,21 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted }
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-white">
           {selectedMarket.charAt(0).toUpperCase() + selectedMarket.slice(1)} Trading Opportunities
+          {isFetching && <i className="fas fa-spinner fa-spin ml-3 text-trading-light-blue"></i>}
         </h2>
-        <div className="flex items-center text-sm text-gray-400">
-          <i className="fas fa-clock mr-2"></i>
-          <span>Last updated: 2 min ago</span>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handleRefresh}
+            disabled={isLoading || isFetching}
+            className="flex items-center text-sm text-trading-light-blue hover:text-blue-400 transition-colors disabled:opacity-50"
+          >
+            <i className={`fas fa-sync-alt mr-2 ${isFetching ? 'fa-spin' : ''}`}></i>
+            Refresh Data
+          </button>
+          <div className="flex items-center text-sm text-gray-400">
+            <i className="fas fa-wifi mr-2 text-trading-success"></i>
+            <span>Live Data</span>
+          </div>
         </div>
       </div>
 
