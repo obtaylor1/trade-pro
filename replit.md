@@ -11,7 +11,7 @@ The application features a modern, responsive interface with real-time market da
 - **Dynamic Portfolio Balance**: Real-time calculations based on user's starting capital and trading performance
 - **Micro Trading**: Fractional commodity contracts (1/10th to 1/250th standard size) starting from $0.30
 - **Micro Crypto Futures**: 0.1 BTC and 0.1 ETH contracts based on real market prices
-- **Real-Time Data**: Live stock prices from Alpha Vantage API with smart caching
+- **Real-Time Data**: Live stock prices from Alpha Vantage API with intelligent fallback to realistic market simulation
 - **Trade History Tracking**: Complete audit trail tied to individual user accounts
 - **Educational Focus**: Trading rationales and risk management for all experience levels
 
@@ -47,7 +47,7 @@ Storage architecture:
 - **User Authentication**: Email-based registration with custom starting capital and broker selection
 - **Real-time Balance Calculations**: Dynamic portfolio values based on starting capital plus trade P&L
 - **Trade Audit Trail**: Complete record of all trades tied to specific user accounts
-- **Real-time market data**: Alpha Vantage API integration for live stock, crypto, and commodity prices
+- **Real-time market data**: Alpha Vantage API integration with realistic market simulation fallback for continuous availability
 - **Smart caching layer**: 5-minute cache duration to respect API rate limits while maintaining fresh data
 - **Type-safe schemas**: Zod validation ensures data integrity across the application
 
