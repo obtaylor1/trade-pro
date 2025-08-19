@@ -93,6 +93,26 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted }
         </div>
       )}
 
+      {selectedMarket === "crypto" && hasMicroTrades && (
+        <div className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-500/30 rounded-xl p-4 mb-6">
+          <div className="flex items-start space-x-3">
+            <i className="fab fa-bitcoin text-purple-400 text-xl mt-1"></i>
+            <div>
+              <h3 className="text-white font-semibold mb-2">Micro Crypto Futures Available</h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Trade cryptocurrency futures with fractional contract sizes starting from $0.06. Micro Bitcoin (0.1 BTC) and Micro Ethereum (0.1 ETH) 
+                contracts provide precise exposure to major cryptocurrencies with reduced capital requirements.
+              </p>
+              <div className="flex items-center space-x-4 mt-2 text-xs text-purple-300">
+                <span><i className="fas fa-check-circle mr-1"></i>Fractional crypto exposure</span>
+                <span><i className="fas fa-check-circle mr-1"></i>CME-style micro contracts</span>
+                <span><i className="fas fa-check-circle mr-1"></i>Precise risk control</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {opportunities.map((opportunity, index) => (
           <TradeCard

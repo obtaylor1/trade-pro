@@ -47,8 +47,8 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
             <div className="flex items-center space-x-2 mb-1">
               <h3 className="text-xl font-bold text-white">{opportunity.name}</h3>
               {opportunity.isMicro && (
-                <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                  MICRO
+                <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-semibold animate-pulse">
+                  {opportunity.type.includes("Nano") ? "NANO" : "MICRO"}
                 </span>
               )}
             </div>
