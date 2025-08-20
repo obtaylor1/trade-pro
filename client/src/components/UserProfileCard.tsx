@@ -8,12 +8,13 @@ interface UserProfileCardProps {
   userProfile: UserProfile;
   onToggleTradingMode: (isLive: boolean) => void;
   onResetSimulator?: () => void;
+  onResetPortfolio?: () => void;
 }
 
-export default function UserProfileCard({ userProfile, onToggleTradingMode, onResetSimulator }: UserProfileCardProps) {
+export default function UserProfileCard({ userProfile, onToggleTradingMode, onResetSimulator, onResetPortfolio }: UserProfileCardProps) {
   // Get real-time balance for authenticated users
   const { data: balanceData } = useUserBalance(userProfile.id, userProfile.id !== 'demo-user');
-  const currentBalance = balanceData?.currentBalance ?? userProfile.availableFunds;
+  const currentBalance = (balanceData as any)?.currentBalance ?? userProfile.availableFunds;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -182,15 +183,26 @@ export default function UserProfileCard({ userProfile, onToggleTradingMode, onRe
                     All commissions ({brokerInfo.commission}) are calculated realistically.
                   </div>
                 </div>
-                {onResetSimulator && (
-                  <button
-                    onClick={onResetSimulator}
-                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 ml-3"
-                  >
-                    <i className="fas fa-cog"></i>
-                    Reconfigure
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  {onResetSimulator && (
+                    <button
+                      onClick={onResetSimulator}
+                      className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                    >
+                      <i className="fas fa-cog"></i>
+                      Reconfigure
+                    </button>
+                  )}
+                  {onResetPortfolio && (
+                    <button
+                      onClick={onResetPortfolio}
+                      className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                    >
+                      <i className="fas fa-undo"></i>
+                      Reset Portfolio
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

@@ -39,6 +39,10 @@ export default function FuturesTradeCard({
     onSuccess: (result) => {
       onTradeExecuted(result);
       queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
+      // Invalidate user balance to refresh portfolio
+      if (userProfile?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/auth/balance/${userProfile.id}`] });
+      }
     },
     onError: (error) => {
       console.error("Trade execution failed:", error);

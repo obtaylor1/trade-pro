@@ -32,6 +32,10 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
     onSuccess: (result: TradeResult) => {
       onTradeExecuted(result);
       queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
+      // Invalidate user balance to refresh portfolio
+      if (userProfile?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/auth/balance/${userProfile.id}`] });
+      }
     },
   });
 
@@ -67,6 +71,10 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
         onSuccess: (result: TradeResult) => {
           onTradeExecuted(result);
           queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
+          // Invalidate user balance to refresh portfolio
+          if (userProfile?.id) {
+            queryClient.invalidateQueries({ queryKey: [`/api/auth/balance/${userProfile.id}`] });
+          }
           resolve();
         },
         onError: (error) => reject(error)

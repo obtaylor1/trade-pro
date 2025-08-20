@@ -87,6 +87,15 @@ export default function Home() {
     
     setTradeResult(result);
     setIsModalOpen(true);
+    
+    // Update user balance for simulation (for authenticated users, balance is updated server-side)
+    if (!isAuthenticated && result.success) {
+      const profitAmount = parseFloat(result.expectedProfit.replace(/[$,+-]/g, ''));
+      setUserProfile(prev => ({
+        ...prev,
+        availableFunds: Math.max(0, prev.availableFunds + profitAmount)
+      }));
+    }
   };
 
   const handleToggleTradingMode = (isLive: boolean) => {
@@ -116,6 +125,33 @@ export default function Home() {
 
   const handleResetSimulator = () => {
     setShowSetup(true);
+  };
+
+  const handleResetPortfolio = async () => {
+    if (isAuthenticated && userProfile.id !== 'demo-user') {
+      // Reset authenticated user's balance to starting capital
+      try {
+        const response = await fetch(`/api/auth/reset-balance/${userProfile.id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUserProfile(prev => ({
+            ...prev,
+            availableFunds: data.currentBalance
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to reset portfolio:', error);
+      }
+    } else {
+      // Reset demo user's balance to virtual funds
+      setUserProfile(prev => ({
+        ...prev,
+        availableFunds: prev.virtualFunds
+      }));
+    }
   };
 
   const handleCloseModal = () => {
@@ -159,6 +195,7 @@ export default function Home() {
               userProfile={userProfile}
               onToggleTradingMode={handleToggleTradingMode}
               onResetSimulator={handleResetSimulator}
+              onResetPortfolio={handleResetPortfolio}
             />
           </div>
           <div>

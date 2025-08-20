@@ -207,6 +207,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reset user's portfolio balance to starting capital
+  app.post("/api/auth/reset-balance/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const user = await storage.getUserById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Reset balance to starting capital
+      await storage.updateUserBalance(userId, parseFloat(user.startingCapital));
+      
+      res.json({
+        currentBalance: parseFloat(user.startingCapital),
+        startingCapital: parseFloat(user.startingCapital),
+        message: "Portfolio reset successfully"
+      });
+    } catch (error) {
+      console.error('Error resetting user balance:', error);
+      res.status(500).json({ message: "Failed to reset portfolio" });
+    }
+  });
+
   // Chart data endpoints
   app.get("/api/charts/stock/:symbol/:timeframe", chartDataService.getStockChart);
   app.get("/api/charts/option/:optionId/:timeframe", chartDataService.getOptionChart);
