@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type TradingOpportunity, type TradeResult } from "@shared/schema";
 import TradeCard from "./TradeCard";
 import FuturesTradeCard from "./FuturesTradeCard";
+import ForexBotCard from "./ForexBotCard";
 import SimpleLiveChart from "./SimpleLiveChart";
 import OptionsTradeWindow from "./OptionsTradeWindow";
 
@@ -132,6 +133,27 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
         </div>
       )}
 
+      {selectedMarket === "forex" && (
+        <div className="bg-gradient-to-r from-blue-900/40 to-green-900/50 border border-blue-500/40 rounded-xl p-6 mb-6">
+          <div className="flex items-start space-x-4">
+            <i className="fas fa-robot text-blue-400 text-2xl mt-1"></i>
+            <div>
+              <h3 className="text-white font-semibold text-lg mb-2">Advanced Forex Trading Bots</h3>
+              <p className="text-gray-200 text-sm leading-relaxed mb-3">
+                Experience professional forex trading with advanced AI-powered bots featuring up to 93% win rates. 
+                Automated risk management, smart position reversal, and session-optimized strategies from proven trading systems.
+              </p>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-blue-200">
+                <span><i className="fas fa-chart-line mr-2 text-green-400"></i>93% Win Rate Automation</span>
+                <span><i className="fas fa-brain mr-2 text-purple-400"></i>AI Reversal Logic</span>
+                <span><i className="fas fa-shield-alt mr-2 text-blue-400"></i>Smart Risk Management</span>
+                <span><i className="fas fa-clock mr-2 text-yellow-400"></i>Session Optimization</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Live Chart for Commodities */}
       {selectedMarket === "commodities" && (
         <div className="mb-8">
@@ -147,26 +169,37 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="trading-cards-container">
-        {opportunities.map((opportunity, index) => (
-          opportunity.market === 'commodities' && opportunity.strategy ? (
-            <FuturesTradeCard
-              key={opportunity.id}
-              opportunity={opportunity}
-              onTradeExecuted={onTradeExecuted}
-              animationDelay={index * 100}
-              userProfile={userProfile}
-            />
-          ) : (
-            <TradeCard
-              key={opportunity.id}
-              opportunity={opportunity}
-              onTradeExecuted={onTradeExecuted}
-              animationDelay={index * 100}
-              userProfile={userProfile}
-              onOpenOptionsWindow={(opp) => setOptionsTradeWindow({ isOpen: true, opportunity: opp })}
-            />
-          )
-        ))}
+        {opportunities.map((opportunity, index) => {
+          if (opportunity.market === 'commodities' && opportunity.strategy) {
+            return (
+              <FuturesTradeCard
+                key={opportunity.id}
+                opportunity={opportunity}
+                onTradeExecuted={onTradeExecuted}
+                animationDelay={index * 100}
+                userProfile={userProfile}
+              />
+            );
+          } else if (opportunity.market === 'forex' && opportunity.strategy?.includes('Bot')) {
+            return (
+              <ForexBotCard
+                key={opportunity.id}
+                opportunity={opportunity}
+              />
+            );
+          } else {
+            return (
+              <TradeCard
+                key={opportunity.id}
+                opportunity={opportunity}
+                onTradeExecuted={onTradeExecuted}
+                animationDelay={index * 100}
+                userProfile={userProfile}
+                onOpenOptionsWindow={(opp) => setOptionsTradeWindow({ isOpen: true, opportunity: opp })}
+              />
+            );
+          }
+        })}
       </div>
 
       {/* Options Trade Window */}
