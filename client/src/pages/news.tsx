@@ -37,6 +37,7 @@ export default function NewsPage() {
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [bookmarkedArticles, setBookmarkedArticles] = useState<string[]>([]);
   const [readLaterArticles, setReadLaterArticles] = useState<string[]>([]);
+  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -292,7 +293,10 @@ export default function NewsPage() {
                       </span>
                     </div>
                     
-                    <h3 className="font-semibold text-white mb-2 line-clamp-2">
+                    <h3 
+                      className="font-semibold text-white mb-2 line-clamp-2 cursor-pointer hover:text-trading-light-blue transition-colors"
+                      onClick={() => setSelectedArticle(article)}
+                    >
                       {article.title}
                     </h3>
                     
@@ -327,14 +331,13 @@ export default function NewsPage() {
                           <Clock className="h-4 w-4" />
                         </button>
                         
-                        <a
-                          href={article.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          onClick={() => setSelectedArticle(article)}
                           className="p-1 text-gray-400 hover:text-trading-light-blue transition-colors"
+                          title="Read article"
                         >
                           <ExternalLink className="h-4 w-4" />
-                        </a>
+                        </button>
                       </div>
                     </div>
                   </article>
@@ -477,14 +480,13 @@ export default function NewsPage() {
                             <h4 className="font-medium text-white text-sm mb-1">{article.title}</h4>
                             <p className="text-xs text-gray-400">{article.source} • {timeAgo(article.publishedAt)}</p>
                           </div>
-                          <a
-                            href={article.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={() => setSelectedArticle(article)}
                             className="ml-2 p-1 text-gray-400 hover:text-trading-light-blue transition-colors"
+                            title="Read article"
                           >
                             <ExternalLink className="h-4 w-4" />
-                          </a>
+                          </button>
                         </div>
                       </div>
                     ))
@@ -500,6 +502,159 @@ export default function NewsPage() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Article Reader Modal */}
+      {selectedArticle && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedArticle(null);
+            }
+          }}
+        >
+          <div className="bg-trading-card rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-700">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <div className="flex items-center gap-3">
+                <img 
+                  src={selectedArticle.sourceFavicon} 
+                  alt={selectedArticle.source}
+                  className="w-5 h-5"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <span className="text-gray-400 text-sm">{selectedArticle.source}</span>
+                <span className="text-gray-500 text-xs">•</span>
+                <span className="text-gray-500 text-xs" title={new Date(selectedArticle.publishedAt).toLocaleString()}>
+                  {timeAgo(selectedArticle.publishedAt)}
+                </span>
+                {selectedArticle.sentiment && (
+                  <>
+                    <span className="text-gray-500 text-xs">•</span>
+                    <div className={`w-2 h-2 rounded-full ${getSentimentColor(selectedArticle.sentiment)}`}></div>
+                  </>
+                )}
+              </div>
+              <button 
+                onClick={() => setSelectedArticle(null)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="overflow-y-auto max-h-[calc(90vh-200px)]">
+              <div className="p-6">
+                <h1 className="text-2xl font-bold text-white mb-4 leading-tight">
+                  {selectedArticle.title}
+                </h1>
+                
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <span className={`px-3 py-1 text-sm rounded-full ${getCategoryColor(selectedArticle.category)}`}>
+                    {selectedArticle.category}
+                  </span>
+                  {selectedArticle.tickers.map((ticker) => (
+                    <span key={ticker} className="px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded-full">
+                      {ticker}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="prose prose-invert max-w-none">
+                  <p className="text-gray-300 text-lg leading-relaxed mb-6">
+                    {selectedArticle.summary}
+                  </p>
+                  
+                  {/* Article content iframe */}
+                  <div className="bg-trading-dark rounded-lg border border-gray-700 overflow-hidden">
+                    <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+                      <span className="text-sm text-gray-400">Full Article Content</span>
+                      <a
+                        href={selectedArticle.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-trading-light-blue hover:text-white transition-colors flex items-center gap-1"
+                      >
+                        Open Original <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                    <iframe
+                      src={selectedArticle.url}
+                      className="w-full h-96 bg-white"
+                      title={selectedArticle.title}
+                      sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                      onError={() => {
+                        // If iframe fails to load, show message
+                        const iframe = document.querySelector(`iframe[src="${selectedArticle.url}"]`);
+                        if (iframe?.parentElement) {
+                          iframe.parentElement.innerHTML = `
+                            <div class="p-8 text-center">
+                              <p class="text-gray-400 mb-4">Unable to load article content directly.</p>
+                              <a href="${selectedArticle.url}" target="_blank" rel="noopener noreferrer" 
+                                 class="inline-flex items-center gap-2 px-4 py-2 bg-trading-light-blue text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                Read on ${selectedArticle.source} <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                              </a>
+                            </div>
+                          `;
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between p-6 border-t border-gray-700 bg-trading-dark/50">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => toggleBookmark(selectedArticle.id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    bookmarkedArticles.includes(selectedArticle.id) 
+                      ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-500/30' 
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  <Star className="h-4 w-4" fill={bookmarkedArticles.includes(selectedArticle.id) ? 'currentColor' : 'none'} />
+                  {bookmarkedArticles.includes(selectedArticle.id) ? 'Bookmarked' : 'Bookmark'}
+                </button>
+                
+                <button
+                  onClick={() => toggleReadLater(selectedArticle.id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    readLaterArticles.includes(selectedArticle.id) 
+                      ? 'bg-trading-light-blue/20 text-trading-light-blue border border-trading-light-blue/30' 
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  <Clock className="h-4 w-4" />
+                  {readLaterArticles.includes(selectedArticle.id) ? 'Saved for Later' : 'Read Later'}
+                </button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <a
+                  href={selectedArticle.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-trading-light-blue text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                >
+                  Open Original <ExternalLink className="h-4 w-4" />
+                </a>
+                <button
+                  onClick={() => setSelectedArticle(null)}
+                  className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
