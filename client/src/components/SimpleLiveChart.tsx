@@ -18,7 +18,17 @@ interface CommodityOption {
 
 interface DataPoint {
   time: string;
-  price: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+interface MovingAverages {
+  ema9: number;
+  ema21: number;
+  sma200: number;
 }
 
 export default function SimpleLiveChart({ symbol: initialSymbol, name: initialName, isMicro: initialIsMicro = false, market = "commodities" }: SimpleLiveChartProps) {
@@ -28,6 +38,9 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [priceChange, setPriceChange] = useState<number>(0);
   const [dataPoints, setDataPoints] = useState<DataPoint[]>([]);
+  const [showVolume, setShowVolume] = useState(true);
+  const [showMAs, setShowMAs] = useState(true);
+  const [chartType, setChartType] = useState<'candlestick' | 'line'>('candlestick');
   // Available trading options based on market
   const getOptionsForMarket = (market: string): CommodityOption[] => {
     if (market === 'crypto') {
@@ -87,16 +100,63 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
     const volatility = market === 'crypto' ? 0.025 : 0.015; // Higher volatility for crypto
 
     for (let i = dataPoints; i >= 0; i--) {
+      const open = price;
       const change = (Math.random() - 0.5) * volatility;
-      price = price * (1 + change);
+      const close = price * (1 + change);
+      
+      // Generate realistic OHLC data
+      const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.5);
+      const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.5);
+      const volume = Math.floor(Math.random() * 10000) + 1000; // Random volume between 1000-11000
       
       data.push({
         time: new Date(now - i * interval).toISOString(),
-        price: parseFloat(price.toFixed(market === 'crypto' ? 4 : 2))
+        open: parseFloat(open.toFixed(market === 'crypto' ? 4 : 2)),
+        high: parseFloat(high.toFixed(market === 'crypto' ? 4 : 2)),
+        low: parseFloat(low.toFixed(market === 'crypto' ? 4 : 2)),
+        close: parseFloat(close.toFixed(market === 'crypto' ? 4 : 2)),
+        volume
       });
+      
+      price = close;
     }
 
     return data;
+  };
+
+  // Calculate moving averages
+  const calculateMovingAverages = (data: DataPoint[]): MovingAverages[] => {
+    const result: MovingAverages[] = [];
+    
+    for (let i = 0; i < data.length; i++) {
+      const ema9 = calculateEMA(data, i, 9);
+      const ema21 = calculateEMA(data, i, 21);
+      const sma200 = calculateSMA(data, i, 200);
+      
+      result.push({ ema9, ema21, sma200 });
+    }
+    
+    return result;
+  };
+
+  const calculateEMA = (data: DataPoint[], index: number, period: number): number => {
+    if (index < period - 1) return data[index].close;
+    
+    const multiplier = 2 / (period + 1);
+    let ema = data[0].close;
+    
+    for (let i = 1; i <= index; i++) {
+      ema = (data[i].close * multiplier) + (ema * (1 - multiplier));
+    }
+    
+    return ema;
+  };
+
+  const calculateSMA = (data: DataPoint[], index: number, period: number): number => {
+    const start = Math.max(0, index - period + 1);
+    const slice = data.slice(start, index + 1);
+    const sum = slice.reduce((acc, point) => acc + point.close, 0);
+    return sum / slice.length;
   };
 
   // Draw the chart on canvas
@@ -110,25 +170,27 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
     ctx.scale(devicePixelRatio, devicePixelRatio);
 
     const width = rect.width;
-    const height = rect.height;
+    const chartHeight = showVolume ? rect.height * 0.75 : rect.height;
+    const volumeHeight = showVolume ? rect.height * 0.25 : 0;
 
     // Clear canvas
     ctx.fillStyle = '#111827';
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, width, rect.height);
 
     // Calculate price range
-    const prices = data.map(d => d.price);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    const minPrice = Math.min(...lows);
+    const maxPrice = Math.max(...highs);
     const priceRange = maxPrice - minPrice || 1;
 
-    // Draw grid lines
+    // Draw grid lines for price chart
     ctx.strokeStyle = '#374151';
     ctx.lineWidth = 1;
     
     // Horizontal grid lines
     for (let i = 0; i <= 5; i++) {
-      const y = (height / 5) * i;
+      const y = (chartHeight / 5) * i;
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(width, y);
@@ -136,31 +198,126 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
     }
 
     // Vertical grid lines
-    for (let i = 0; i <= 10; i++) {
-      const x = (width / 10) * i;
+    const gridCount = Math.min(10, data.length);
+    for (let i = 0; i <= gridCount; i++) {
+      const x = (width / gridCount) * i;
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
+      ctx.lineTo(x, chartHeight);
       ctx.stroke();
     }
 
-    // Draw price line
-    ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
+    // Calculate moving averages if enabled
+    const movingAverages = showMAs ? calculateMovingAverages(data) : [];
 
-    data.forEach((point, index) => {
-      const x = (index / (data.length - 1)) * width;
-      const y = height - ((point.price - minPrice) / priceRange) * height;
+    // Draw candlesticks or line chart
+    if (chartType === 'candlestick') {
+      data.forEach((point, index) => {
+        const x = (index / (data.length - 1)) * width;
+        const candleWidth = Math.max(2, width / data.length * 0.8);
+        
+        const openY = chartHeight - ((point.open - minPrice) / priceRange) * chartHeight;
+        const closeY = chartHeight - ((point.close - minPrice) / priceRange) * chartHeight;
+        const highY = chartHeight - ((point.high - minPrice) / priceRange) * chartHeight;
+        const lowY = chartHeight - ((point.low - minPrice) / priceRange) * chartHeight;
 
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    });
+        const isGreen = point.close >= point.open;
+        
+        // Draw wick (high-low line)
+        ctx.strokeStyle = isGreen ? '#10b981' : '#ef4444';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, highY);
+        ctx.lineTo(x, lowY);
+        ctx.stroke();
 
-    ctx.stroke();
+        // Draw body (open-close rectangle)
+        ctx.fillStyle = isGreen ? '#10b981' : '#ef4444';
+        ctx.strokeStyle = isGreen ? '#10b981' : '#ef4444';
+        ctx.lineWidth = 1;
+        
+        const bodyHeight = Math.abs(closeY - openY);
+        const bodyY = Math.min(openY, closeY);
+        
+        if (isGreen) {
+          ctx.fillRect(x - candleWidth / 2, bodyY, candleWidth, bodyHeight || 1);
+        } else {
+          ctx.strokeRect(x - candleWidth / 2, bodyY, candleWidth, bodyHeight || 1);
+        }
+      });
+    } else {
+      // Draw line chart
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      data.forEach((point, index) => {
+        const x = (index / (data.length - 1)) * width;
+        const y = chartHeight - ((point.close - minPrice) / priceRange) * chartHeight;
+
+        if (index === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+
+      ctx.stroke();
+    }
+
+    // Draw moving averages
+    if (showMAs && movingAverages.length > 0) {
+      // Draw 9 EMA (fast)
+      ctx.strokeStyle = '#fbbf24'; // yellow
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      movingAverages.forEach((ma, index) => {
+        const x = (index / (data.length - 1)) * width;
+        const y = chartHeight - ((ma.ema9 - minPrice) / priceRange) * chartHeight;
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // Draw 21 EMA (medium)
+      ctx.strokeStyle = '#8b5cf6'; // purple
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      movingAverages.forEach((ma, index) => {
+        const x = (index / (data.length - 1)) * width;
+        const y = chartHeight - ((ma.ema21 - minPrice) / priceRange) * chartHeight;
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // Draw 200 SMA (trend filter)
+      ctx.strokeStyle = '#f97316'; // orange
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      movingAverages.forEach((ma, index) => {
+        const x = (index / (data.length - 1)) * width;
+        const y = chartHeight - ((ma.sma200 - minPrice) / priceRange) * chartHeight;
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    // Draw volume bars if enabled
+    if (showVolume) {
+      const maxVolume = Math.max(...data.map(d => d.volume));
+      const volumeY = chartHeight + 10;
+      
+      data.forEach((point, index) => {
+        const x = (index / (data.length - 1)) * width;
+        const barWidth = Math.max(1, width / data.length * 0.8);
+        const barHeight = (point.volume / maxVolume) * (volumeHeight - 20);
+        
+        ctx.fillStyle = point.close >= point.open ? '#10b98150' : '#ef444450';
+        ctx.fillRect(x - barWidth / 2, volumeY, barWidth, barHeight);
+      });
+    }
 
     // Draw price labels
     ctx.fillStyle = '#d1d5db';
@@ -169,7 +326,7 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
 
     for (let i = 0; i <= 5; i++) {
       const price = minPrice + (priceRange / 5) * (5 - i);
-      const y = (height / 5) * i + 4;
+      const y = (chartHeight / 5) * i + 4;
       ctx.fillText(formatPrice(price), width - 5, y);
     }
   };
@@ -190,7 +347,7 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
     const basePrice = getBasePrice(selectedSymbol);
     const initialData = generateInitialData(basePrice, timeFrame);
     setDataPoints(initialData);
-    setCurrentPrice(initialData[initialData.length - 1].price);
+    setCurrentPrice(initialData[initialData.length - 1].close);
 
     // Setup WebSocket connection
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -222,9 +379,14 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
 
             // Add new data point
             setDataPoints(prev => {
+              const lastPoint = prev[prev.length - 1];
               const newPoint: DataPoint = {
                 time: new Date().toISOString(),
-                price: newPrice
+                open: lastPoint?.close || newPrice,
+                high: Math.max(lastPoint?.close || newPrice, newPrice),
+                low: Math.min(lastPoint?.close || newPrice, newPrice),
+                close: newPrice,
+                volume: Math.floor(Math.random() * 5000) + 1000
               };
               const updated = [...prev.slice(1), newPoint]; // Keep last 51 points
               return updated;
@@ -260,7 +422,7 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
     if (isConnected || dataPoints.length === 0) return;
 
     const interval = setInterval(() => {
-      const lastPrice = dataPoints[dataPoints.length - 1]?.price || getBasePrice(selectedSymbol);
+      const lastPrice = dataPoints[dataPoints.length - 1]?.close || getBasePrice(selectedSymbol);
       const change = (Math.random() - 0.5) * 0.01; // ±0.5% change
       const newPrice = lastPrice * (1 + change);
       const priceChange = newPrice - lastPrice;
@@ -269,9 +431,14 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
       setPriceChange(priceChange);
 
       setDataPoints(prev => {
+        const lastPoint = prev[prev.length - 1];
         const newPoint: DataPoint = {
           time: new Date().toISOString(),
-          price: newPrice
+          open: lastPrice,
+          high: Math.max(lastPrice, newPrice),
+          low: Math.min(lastPrice, newPrice),
+          close: newPrice,
+          volume: Math.floor(Math.random() * 5000) + 1000
         };
         return [...prev.slice(1), newPoint]; // Keep last 51 points
       });
@@ -285,7 +452,7 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
     const basePrice = getBasePrice(selectedSymbol);
     const newData = generateInitialData(basePrice, timeFrame);
     setDataPoints(newData);
-    setCurrentPrice(newData[newData.length - 1].price);
+    setCurrentPrice(newData[newData.length - 1].close);
   }, [timeFrame, selectedSymbol]);
 
   // Redraw chart when data changes
@@ -321,24 +488,73 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
                 </option>
               ))}
             </select>
+            
+            <select 
+              value={chartType} 
+              onChange={(e) => setChartType(e.target.value as 'candlestick' | 'line')}
+              className="bg-gray-800 border border-gray-600 text-white rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="candlestick">Candlesticks</option>
+              <option value="line">Line Chart</option>
+            </select>
           </div>
-
-          {/* Time Frame Selector for Crypto */}
-          {market === 'crypto' && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">Timeframe:</span>
-              <select 
-                value={timeFrame} 
-                onChange={(e) => setTimeFrame(e.target.value as '1m' | '5m' | '1h')}
-                className="bg-gray-800 border border-gray-600 text-white rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="1m">1 Minute</option>
-                <option value="5m">5 Minutes</option>
-                <option value="1h">1 Hour</option>
-              </select>
-            </div>
-          )}
+          
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 text-sm text-gray-300">
+              <input
+                type="checkbox"
+                checked={showMAs}
+                onChange={(e) => setShowMAs(e.target.checked)}
+                className="rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-blue-500"
+              />
+              Moving Averages
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-300">
+              <input
+                type="checkbox"
+                checked={showVolume}
+                onChange={(e) => setShowVolume(e.target.checked)}
+                className="rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-blue-500"
+              />
+              Volume
+            </label>
+          </div>
         </div>
+
+        {/* Moving Averages Legend */}
+        {showMAs && (
+          <div className="flex items-center gap-4 mb-4 p-3 bg-gray-800 rounded-lg">
+            <div className="text-sm text-gray-300">Indicators:</div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-0.5 bg-yellow-400"></div>
+              <span className="text-xs text-gray-300">9 EMA</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-0.5 bg-purple-400"></div>
+              <span className="text-xs text-gray-300">21 EMA</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-1 bg-orange-500"></div>
+              <span className="text-xs text-gray-300">200 SMA (Trend Filter)</span>
+            </div>
+          </div>
+        )}
+
+        {/* Time Frame Selector for Crypto */}
+        {market === 'crypto' && (
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-sm text-gray-400">Timeframe:</span>
+            <select 
+              value={timeFrame} 
+              onChange={(e) => setTimeFrame(e.target.value as '1m' | '5m' | '1h')}
+              className="bg-gray-800 border border-gray-600 text-white rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="1m">1 Minute</option>
+              <option value="5m">5 Minutes</option>
+              <option value="1h">1 Hour</option>
+            </select>
+          </div>
+        )}
         
         {currentPrice && (
           <div className="flex items-center gap-4">
