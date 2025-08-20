@@ -220,25 +220,6 @@ export default function Home() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-6">Market Analysis Dashboard</h1>
           
-          {/* Professional Trading Platforms */}
-          <div className="mb-6 p-4 bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-lg border border-blue-500/30">
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <i className="fas fa-chart-line text-blue-400"></i>
-              Professional Trading Platforms
-            </h3>
-            <div className="flex gap-3">
-              <Link href="/forex">
-                <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-all duration-200">
-                  <i className="fas fa-exchange-alt text-lg"></i>
-                  <div className="text-left">
-                    <div>Forex Trading</div>
-                    <div className="text-xs opacity-80">Real-time quotes • 1:500 leverage</div>
-                  </div>
-                </Button>
-              </Link>
-            </div>
-          </div>
-          
           <MarketSelector 
             selectedMarket={selectedMarket} 
             onSelectMarket={setSelectedMarket} 

@@ -22,7 +22,7 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
   
   const { data: opportunities, isLoading, error, isFetching } = useQuery<TradingOpportunity[]>({
     queryKey: ["/api/opportunities", selectedMarket],
-    enabled: !!selectedMarket,
+    enabled: !!selectedMarket && selectedMarket !== 'forex', // Disable API calls for forex
     staleTime: selectedMarket === 'stocks' ? 10 * 60 * 1000 : 5 * 60 * 1000, // 10 minutes for stocks due to API delays
     refetchInterval: selectedMarket === 'stocks' ? 10 * 60 * 1000 : 5 * 60 * 1000, // Longer interval for stocks
     gcTime: 15 * 60 * 1000, // Keep cached data for 15 minutes
@@ -32,6 +32,41 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["/api/opportunities", selectedMarket] });
   };
+
+  // Special handling for forex - redirect to full trading platform
+  if (selectedMarket === 'forex') {
+    return (
+      <div className="animate-fade-in">
+        <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/50 border border-yellow-500/40 rounded-xl p-6 mb-6">
+          <div className="flex items-start space-x-4">
+            <i className="fas fa-dollar-sign text-yellow-400 text-2xl mt-1"></i>
+            <div>
+              <h3 className="text-white font-semibold text-lg mb-2">Professional Forex Trading</h3>
+              <p className="text-gray-200 text-sm leading-relaxed mb-3">
+                Trade major currency pairs with micro and nano lot sizes. Professional execution with tight spreads, 
+                1:500 leverage, and institutional-grade liquidity from global forex markets.
+              </p>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-yellow-200 mb-4">
+                <span><i className="fas fa-chart-line mr-2 text-green-400"></i>Real-time quotes</span>
+                <span><i className="fas fa-exchange-alt mr-2 text-blue-400"></i>Instant execution</span>
+                <span><i className="fas fa-shield-alt mr-2 text-red-400"></i>Risk management</span>
+                <span><i className="fas fa-globe mr-2 text-purple-400"></i>Global markets 24/5</span>
+              </div>
+              <div className="flex gap-3">
+                <a href="/forex" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-all duration-200 text-decoration-none">
+                  <i className="fas fa-external-link-alt text-lg"></i>
+                  <div className="text-left">
+                    <div>Open Forex Platform</div>
+                    <div className="text-xs opacity-80">Full trading interface with real-time data</div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -127,27 +162,6 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
                 <span><i className="fas fa-check-circle mr-1"></i>Fractional crypto exposure</span>
                 <span><i className="fas fa-check-circle mr-1"></i>CME-style micro contracts</span>
                 <span><i className="fas fa-check-circle mr-1"></i>Precise risk control</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selectedMarket === "forex" && (
-        <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/50 border border-yellow-500/40 rounded-xl p-6 mb-6">
-          <div className="flex items-start space-x-4">
-            <i className="fas fa-dollar-sign text-yellow-400 text-2xl mt-1"></i>
-            <div>
-              <h3 className="text-white font-semibold text-lg mb-2">Professional Forex Trading</h3>
-              <p className="text-gray-200 text-sm leading-relaxed mb-3">
-                Trade major currency pairs with micro and nano lot sizes. Professional execution with tight spreads, 
-                50:1 leverage, and institutional-grade liquidity from global forex markets.
-              </p>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-yellow-200">
-                <span><i className="fas fa-globe mr-2 text-green-400"></i>Major currency pairs</span>
-                <span><i className="fas fa-chart-line mr-2 text-blue-400"></i>Micro/Nano lot sizes</span>
-                <span><i className="fas fa-bullseye mr-2 text-red-400"></i>Precise pip targeting</span>
-                <span><i className="fas fa-bolt mr-2 text-purple-400"></i>50:1 leverage available</span>
               </div>
             </div>
           </div>
