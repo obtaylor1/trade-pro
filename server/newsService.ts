@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
-const fetch = require('node-fetch');
+import fetch, { Response } from 'node-fetch';
 
 export interface NewsArticle {
   id: string;
@@ -147,8 +147,7 @@ async function parseRSSFeed(source: { name: string; url: string; favicon: string
     const response = await fetch(source.url, {
       headers: {
         'User-Agent': 'Trading News Aggregator/1.0'
-      },
-      timeout: 10000
+      }
     });
     
     if (!response.ok) {
