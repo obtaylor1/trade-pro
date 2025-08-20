@@ -536,13 +536,13 @@ export class MarketDataService {
           tickValue: "$100.00 per $1.00 move",
           expirationDate: "2025-12-29",
           leverage: "24:1",
-          strategy: "Trend Following + Breakout",
+          strategy: "EMA Cross + SMA Filter (21/50 EMA above 200 SMA)",
           stopLoss: "$2,020.00",
           takeProfit: "$2,065.00",
           tradingTimeframe: "Swing Trading",
           timeframeDuration: "3-7 days",
-          chartTimeframe: "4-hour charts",
-          timeframeDescription: "Capturing precious metals momentum over multiple days"
+          chartTimeframe: "4-hour charts with 21/50 EMA",
+          timeframeDescription: "Using 21/50 EMA pullbacks above 200 SMA trend filter"
         });
 
         // Crude Oil Futures (CL) - NYMEX
@@ -565,13 +565,13 @@ export class MarketDataService {
           tickValue: "$10.00 per $0.01 move",
           expirationDate: "2025-12-19",
           leverage: "19:1",
-          strategy: "Supply-Demand + Momentum",
+          strategy: "200 SMA Trend Filter + Fundamental Analysis",
           stopLoss: "$76.50",
           takeProfit: "$83.00",
           tradingTimeframe: "Position Trading",
           timeframeDuration: "2-4 weeks",
-          chartTimeframe: "Daily charts",
-          timeframeDescription: "Long-term energy market fundamentals play"
+          chartTimeframe: "Daily charts with 100/200 SMA",
+          timeframeDescription: "Position above 200 SMA with supply-demand fundamentals"
         });
 
         // Corn Futures (C) - CBOT
@@ -652,13 +652,13 @@ export class MarketDataService {
           tickValue: "$10.00 per $0.001 move",
           expirationDate: "2025-12-29",
           leverage: "24:1",
-          strategy: "Storage Deficit + Seasonal",
+          strategy: "9/21 EMA Cross + VWAP Scalping",
           stopLoss: "$2.64",
           takeProfit: "$3.25",
           tradingTimeframe: "Day Trading",
           timeframeDuration: "1-4 hours",
-          chartTimeframe: "15-minute charts",
-          timeframeDescription: "Intraday volatility on weather and storage reports"
+          chartTimeframe: "5/15-min with 9/20 EMA + VWAP",
+          timeframeDescription: "Fast EMA crosses above VWAP for intraday momentum"
         });
 
         // S&P 500 Index Futures (ES) - CME
@@ -681,13 +681,13 @@ export class MarketDataService {
           tickValue: "$12.50 per 0.25 point move",
           expirationDate: "2025-12-19",
           leverage: "19:1",
-          strategy: "Index Momentum + Fed Policy",
+          strategy: "Automated 9/21 EMA Cross + 200 SMA Filter",
           stopLoss: "4,356.00",
           takeProfit: "4,556.00",
           tradingTimeframe: "Algorithmic Trading",
           timeframeDuration: "Automated execution",
-          chartTimeframe: "1-minute to 1-hour charts",
-          timeframeDescription: "Algorithm-driven index momentum strategies"
+          chartTimeframe: "1-min charts with EMA algorithms",
+          timeframeDescription: "High-frequency EMA cross signals above 200 SMA trend"
         });
       }
 

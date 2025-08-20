@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Calculator, TrendingUp, TrendingDown, Shield, DollarSign, Target, BookOpen, CheckCircle, ArrowRight, Download, Home, ArrowLeft } from 'lucide-react';
+import { Calculator, TrendingUp, TrendingDown, Shield, DollarSign, Target, BookOpen, CheckCircle, ArrowRight, Download, Home, ArrowLeft, BarChart3 } from 'lucide-react';
 
 // Strategy calculation functions
 const longCall = (S: number, K: number, premium: number) => Math.max(S - K, 0) - premium;
@@ -696,12 +696,32 @@ export default function LearnOptions() {
             </div>
             
             <div className="mt-6 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
-              <h3 className="font-bold text-blue-400 mb-2">Quick Summary</h3>
-              <div className="grid md:grid-cols-2 gap-2 text-sm text-gray-300">
+              <h3 className="font-bold text-blue-400 mb-3">Quick Summary & Moving Averages</h3>
+              <div className="grid md:grid-cols-2 gap-3 text-sm text-gray-300 mb-4">
                 <div>• <strong>Day traders:</strong> 5–60 min charts → done by day's end</div>
                 <div>• <strong>Swing traders:</strong> 4H–Daily → bigger moves, less screen time</div>
                 <div>• <strong>Position traders:</strong> Weekly–Monthly → long-term trends</div>
                 <div>• <strong>Algo traders:</strong> Any timeframe → code-driven</div>
+              </div>
+              <div className="border-t border-blue-700 pt-3">
+                <h4 className="font-semibold text-blue-300 mb-2">Best Moving Averages by Timeframe</h4>
+                <div className="grid md:grid-cols-3 gap-3 text-xs">
+                  <div className="bg-blue-800/30 p-2 rounded">
+                    <div className="text-blue-200 font-medium">Day Trading</div>
+                    <div className="text-gray-300">5 EMA, 9 EMA, 20 EMA</div>
+                    <div className="text-gray-400">Fast reaction for scalping</div>
+                  </div>
+                  <div className="bg-green-800/30 p-2 rounded">
+                    <div className="text-green-200 font-medium">Swing Trading</div>
+                    <div className="text-gray-300">21 EMA, 34 EMA, 50 SMA</div>
+                    <div className="text-gray-400">Trend pullback entries</div>
+                  </div>
+                  <div className="bg-purple-800/30 p-2 rounded">
+                    <div className="text-purple-200 font-medium">Position Trading</div>
+                    <div className="text-gray-300">100 SMA, 200 SMA</div>
+                    <div className="text-gray-400">Big-picture trend filter</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -730,6 +750,59 @@ export default function LearnOptions() {
 
         {/* Timeframes Section */}
         <section ref={sectionRefs.timeframes} className="space-y-8">
+          {/* Professional Futures Strategy */}
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+              <BarChart3 className="h-5 w-5 mr-2" />
+              Professional Futures Strategy: EMA Cross + SMA Filter
+            </h2>
+            
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-blue-800/30 p-4 rounded-lg border border-blue-600/30">
+                <h3 className="font-bold text-blue-300 mb-2">Indicators Used</h3>
+                <div className="space-y-1 text-sm text-gray-300">
+                  <div>• <strong>9 EMA:</strong> Fast momentum</div>
+                  <div>• <strong>21 EMA:</strong> Trend stabilizer</div>
+                  <div>• <strong>200 SMA:</strong> Long-term filter</div>
+                </div>
+              </div>
+              
+              <div className="bg-green-800/30 p-4 rounded-lg border border-green-600/30">
+                <h3 className="font-bold text-green-300 mb-2">Entry Rules</h3>
+                <div className="space-y-1 text-sm text-gray-300">
+                  <div>• Price above 200 SMA = Long only</div>
+                  <div>• 9 EMA crosses above 21 EMA = Buy</div>
+                  <div>• Price below 200 SMA = Short only</div>
+                  <div>• 9 EMA crosses below 21 EMA = Sell</div>
+                </div>
+              </div>
+              
+              <div className="bg-orange-800/30 p-4 rounded-lg border border-orange-600/30">
+                <h3 className="font-bold text-orange-300 mb-2">Risk Management</h3>
+                <div className="space-y-1 text-sm text-gray-300">
+                  <div>• Stop: 1-2 points from swing</div>
+                  <div>• Risk: 1-2% per trade max</div>
+                  <div>• Exit: EMA cross reversal</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700 p-4 rounded-lg">
+              <h3 className="font-bold text-white mb-3">Example Trade on ES (S&P 500 Futures)</h3>
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2 text-gray-300">
+                  <div><strong className="text-green-400">Setup:</strong> Price at 4500, above 200 SMA (bullish bias)</div>
+                  <div><strong className="text-blue-400">Entry:</strong> 9 EMA crosses above 21 EMA at 4502 → Enter long at 4503</div>
+                  <div><strong className="text-red-400">Stop Loss:</strong> 4498 (5-point risk = $250 per contract)</div>
+                </div>
+                <div className="space-y-2 text-gray-300">
+                  <div><strong className="text-yellow-400">Target 1:</strong> 4508 (+5 points = $250 profit)</div>
+                  <div><strong className="text-yellow-400">Target 2:</strong> 4515 (+12 points = $600 profit)</div>
+                  <div><strong className="text-purple-400">Exit:</strong> When 9 EMA crosses back below 21 EMA</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Strategy Sections */}
