@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type TradingOpportunity, type TradeResult } from "@shared/schema";
 import TradeCard from "./TradeCard";
 import SimpleLiveChart from "./SimpleLiveChart";
+import OptionsTradeWindow from "./OptionsTradeWindow";
 
 interface TradingOpportunitiesProps {
   selectedMarket: string;
@@ -11,6 +13,10 @@ interface TradingOpportunitiesProps {
 
 export default function TradingOpportunities({ selectedMarket, onTradeExecuted, userProfile }: TradingOpportunitiesProps) {
   const queryClient = useQueryClient();
+  const [optionsTradeWindow, setOptionsTradeWindow] = useState<{ isOpen: boolean; opportunity: TradingOpportunity | null }>({
+    isOpen: false,
+    opportunity: null
+  });
   
   const { data: opportunities, isLoading, error, isFetching } = useQuery<TradingOpportunity[]>({
     queryKey: ["/api/opportunities", selectedMarket],
@@ -138,7 +144,7 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="trading-cards-container">
         {opportunities.map((opportunity, index) => (
           <TradeCard
             key={opportunity.id}
@@ -146,9 +152,25 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
             onTradeExecuted={onTradeExecuted}
             animationDelay={index * 100}
             userProfile={userProfile}
+            onOpenOptionsWindow={(opp) => setOptionsTradeWindow({ isOpen: true, opportunity: opp })}
           />
         ))}
       </div>
+
+      {/* Options Trade Window */}
+      {optionsTradeWindow.isOpen && optionsTradeWindow.opportunity && (
+        <OptionsTradeWindow
+          opportunity={optionsTradeWindow.opportunity}
+          isOpen={optionsTradeWindow.isOpen}
+          onClose={() => setOptionsTradeWindow({ isOpen: false, opportunity: null })}
+          onExecuteTrade={async (opportunity, duration, contracts) => {
+            // Handle the trade execution here
+            console.log('Executing options trade:', opportunity, duration, contracts);
+            setOptionsTradeWindow({ isOpen: false, opportunity: null });
+          }}
+          containerRef={{ current: document.getElementById('trading-cards-container') }}
+        />
+      )}
     </div>
   );
 }

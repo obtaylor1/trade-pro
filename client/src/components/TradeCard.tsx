@@ -11,9 +11,10 @@ interface TradeCardProps {
   onTradeExecuted: (result: TradeResult) => void;
   animationDelay: number;
   userProfile?: { id: string; selectedBroker?: string; isLiveTrading: boolean };
+  onOpenOptionsWindow?: (opportunity: TradingOpportunity) => void;
 }
 
-export default function TradeCard({ opportunity, onTradeExecuted, animationDelay, userProfile }: TradeCardProps) {
+export default function TradeCard({ opportunity, onTradeExecuted, animationDelay, userProfile, onOpenOptionsWindow }: TradeCardProps) {
   const queryClient = useQueryClient();
   const [showChart, setShowChart] = useState(false);
   const [showTradeModal, setShowTradeModal] = useState(false);
@@ -204,7 +205,7 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
           )}
           
           <button 
-            onClick={opportunity.market === 'options' ? () => setShowTradeModal(true) : handleExecuteTrade}
+            onClick={opportunity.market === 'options' ? () => onOpenOptionsWindow?.(opportunity) : handleExecuteTrade}
             disabled={executeTradeMutation.isPending}
             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg border border-blue-500/30"
           >
@@ -222,21 +223,22 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
           </button>
         </div>
         
-        {opportunity.market === 'options' && (
-          <>
-            <OptionsDetailsModal
-              opportunity={opportunity}
-              isOpen={showChart}
-              onClose={() => setShowChart(false)}
-              onExecuteTrade={handleTradeFromModal}
-            />
-            <OptionsTradeModal
-              opportunity={opportunity}
-              isOpen={showTradeModal}
-              onClose={() => setShowTradeModal(false)}
-              onExecuteTrade={handleOptionsTradeExecute}
-            />
-          </>
+        {/* Render modals at document level to avoid card positioning issues */}
+        {opportunity.market === 'options' && showChart && (
+          <OptionsDetailsModal
+            opportunity={opportunity}
+            isOpen={showChart}
+            onClose={() => setShowChart(false)}
+            onExecuteTrade={handleTradeFromModal}
+          />
+        )}
+        {opportunity.market === 'options' && showTradeModal && (
+          <OptionsTradeModal
+            opportunity={opportunity}
+            isOpen={showTradeModal}
+            onClose={() => setShowTradeModal(false)}
+            onExecuteTrade={handleOptionsTradeExecute}
+          />
         )}
       </div>
     </div>
