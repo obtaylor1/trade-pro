@@ -125,6 +125,7 @@ export default function LearnOptions() {
 
   const sectionRefs = {
     overview: useRef<HTMLDivElement>(null),
+    timeframes: useRef<HTMLDivElement>(null),
     'long-call': useRef<HTMLDivElement>(null),
     'long-put': useRef<HTMLDivElement>(null),
     'covered-call': useRef<HTMLDivElement>(null),
@@ -547,7 +548,7 @@ export default function LearnOptions() {
             </div>
             
             <nav className="hidden md:flex items-center space-x-6">
-              {['overview', 'long-call', 'long-put', 'covered-call', 'cash-secured-put', 'vertical-spread', 'practice', 'quiz'].map((section) => (
+              {['overview', 'timeframes', 'long-call', 'long-put', 'covered-call', 'cash-secured-put', 'vertical-spread', 'practice', 'quiz'].map((section) => (
                 <button
                   key={section}
                   onClick={() => scrollToSection(section)}
@@ -612,6 +613,99 @@ export default function LearnOptions() {
             </div>
           </div>
           
+          {/* Trading Timeframes */}
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+              <Target className="h-5 w-5 mr-2" />
+              Trading Timeframes
+            </h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {[
+                {
+                  name: "Day Trading",
+                  timeframe: "5-min to 1-hour charts",
+                  duration: "Minutes to Hours",
+                  goal: "Open and close trades within the same day (no overnight risk)",
+                  whoFor: "Active traders who want to avoid overnight margin requirements",
+                  pros: "No overnight risk, clear daily profit/loss",
+                  cons: "Fast-paced; requires watching screens for hours",
+                  color: "blue"
+                },
+                {
+                  name: "Swing Trading", 
+                  timeframe: "4-hour to daily charts",
+                  duration: "Days to Weeks",
+                  goal: "Capture larger moves across multiple days",
+                  whoFor: "Traders with jobs/school who can't monitor all day",
+                  pros: "Less screen time, larger profit per trade possible",
+                  cons: "Overnight risk (news/events can gap prices)",
+                  color: "green"
+                },
+                {
+                  name: "Position Trading",
+                  timeframe: "Daily to monthly charts", 
+                  duration: "Weeks to Months",
+                  goal: "Take advantage of long-term supply/demand, seasonality, macroeconomic trends",
+                  whoFor: "Investors or hedgers (farmers, companies, funds)",
+                  pros: "Big-picture trading, less stressful",
+                  cons: "Requires patience and larger account to weather volatility",
+                  color: "purple"
+                },
+                {
+                  name: "Algorithmic Trading",
+                  timeframe: "Any (1-second to daily)",
+                  duration: "Automated",
+                  goal: "Use coded strategies to trade automatically",
+                  whoFor: "Programmers and institutional traders",
+                  pros: "Emotionless execution, can run 24/7",
+                  cons: "Requires coding skills and extensive backtesting",
+                  color: "orange"
+                }
+              ].map((timeframe, index) => (
+                <div key={index} className="p-4 bg-gray-700 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <div className={`w-3 h-3 rounded-full bg-${timeframe.color}-500`}></div>
+                    <h3 className="font-bold text-white">{timeframe.name}</h3>
+                    <span className="text-sm text-gray-400">({timeframe.duration})</span>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-gray-400">Timeframe:</span>
+                      <span className="text-white ml-2">{timeframe.timeframe}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Goal:</span>
+                      <span className="text-gray-300 ml-2">{timeframe.goal}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Who it's for:</span>
+                      <span className="text-gray-300 ml-2">{timeframe.whoFor}</span>
+                    </div>
+                    <div>
+                      <span className="text-green-400">Pros:</span>
+                      <span className="text-gray-300 ml-2">{timeframe.pros}</span>
+                    </div>
+                    <div>
+                      <span className="text-red-400">Cons:</span>
+                      <span className="text-gray-300 ml-2">{timeframe.cons}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-6 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
+              <h3 className="font-bold text-blue-400 mb-2">Quick Summary</h3>
+              <div className="grid md:grid-cols-2 gap-2 text-sm text-gray-300">
+                <div>• <strong>Day traders:</strong> 5–60 min charts → done by day's end</div>
+                <div>• <strong>Swing traders:</strong> 4H–Daily → bigger moves, less screen time</div>
+                <div>• <strong>Position traders:</strong> Weekly–Monthly → long-term trends</div>
+                <div>• <strong>Algo traders:</strong> Any timeframe → code-driven</div>
+              </div>
+            </div>
+          </div>
+
           {/* Glossary */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
             <h2 className="text-xl font-bold text-white mb-4 flex items-center">
@@ -632,6 +726,10 @@ export default function LearnOptions() {
               ))}
             </div>
           </div>
+        </section>
+
+        {/* Timeframes Section */}
+        <section ref={sectionRefs.timeframes} className="space-y-8">
         </section>
 
         {/* Strategy Sections */}

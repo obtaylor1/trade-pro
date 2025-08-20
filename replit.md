@@ -31,6 +31,7 @@ Preferred communication style: Simple, everyday language.
 **Learn to Trade Educational Module:**
 - Created comprehensive single-page trading education platform at /learn-options
 - Built 5 core options strategy sections with interactive payoff charts and real-time calculations
+- Added trading timeframes section covering day trading, swing trading, position trading, and algorithmic trading
 - Added practice calculator with dynamic inputs for all trading strategies
 - Implemented 5-question quiz system with instant feedback and explanations
 - Included market examples across stocks, futures, forex, and crypto markets
