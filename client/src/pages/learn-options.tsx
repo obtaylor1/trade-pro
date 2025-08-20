@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Calculator, TrendingUp, TrendingDown, Shield, DollarSign, Target, BookOpen, CheckCircle, ArrowRight, Download } from 'lucide-react';
+import { Calculator, TrendingUp, TrendingDown, Shield, DollarSign, Target, BookOpen, CheckCircle, ArrowRight, Download, Home, ArrowLeft } from 'lucide-react';
 
 // Strategy calculation functions
 const longCall = (S: number, K: number, premium: number) => Math.max(S - K, 0) - premium;
@@ -534,7 +534,17 @@ export default function LearnOptions() {
       <header className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold">Learn Options</h1>
+            <div className="flex items-center space-x-4">
+              <button 
+                onClick={() => window.location.href = '/'}
+                className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Trading</span>
+              </button>
+              <div className="h-6 w-px bg-gray-600"></div>
+              <h1 className="text-xl font-bold">Learn Options</h1>
+            </div>
             
             <nav className="hidden md:flex items-center space-x-6">
               {['overview', 'long-call', 'long-put', 'covered-call', 'cash-secured-put', 'vertical-spread', 'practice', 'quiz'].map((section) => (
@@ -550,13 +560,22 @@ export default function LearnOptions() {
               ))}
             </nav>
             
-            <button 
-              onClick={() => window.print()}
-              className="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white hover:bg-gray-700 transition-colors flex items-center space-x-2"
-            >
-              <Download className="h-4 w-4" />
-              <span>Download Notes</span>
-            </button>
+            <div className="flex items-center space-x-3">
+              <button 
+                onClick={() => window.location.href = '/'}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 border border-blue-500 rounded-lg text-white transition-colors flex items-center space-x-2"
+              >
+                <Home className="h-4 w-4" />
+                <span>Start Trading</span>
+              </button>
+              <button 
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white hover:bg-gray-700 transition-colors flex items-center space-x-2"
+              >
+                <Download className="h-4 w-4" />
+                <span>Download Notes</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>

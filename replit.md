@@ -28,6 +28,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Enhancements (August 2025)
 
+**Learn Options Educational Module:**
+- Created comprehensive single-page options education platform at /learn-options
+- Built 5 core strategy sections with interactive payoff charts and real-time calculations
+- Added practice calculator with dynamic inputs for all options strategies
+- Implemented 5-question quiz system with instant feedback and explanations
+- Included market examples across stocks, futures, forex, and crypto markets
+- Added navigation links between main trading app and educational module
+- Designed beginner-friendly interface with glossary and safety tips
+
 **Professional Futures Trading Implementation:**
 - Completely redesigned commodities market to focus on professional futures contracts
 - Added full contract specifications: margin requirements, tick values, leverage ratios, expiration dates
