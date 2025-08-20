@@ -34,7 +34,7 @@ export default function OptionsTradeWindow({
       
       setWindowPosition({
         left: rect.left,
-        top: rect.top + window.scrollY,
+        top: Math.max(100, rect.top + window.scrollY - 50), // Ensure it's not too low, with some padding from top
         width: windowWidth
       });
     }
@@ -82,14 +82,15 @@ export default function OptionsTradeWindow({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-start justify-start pt-20 pl-4">
       <div 
-        className="absolute bg-trading-card rounded-xl shadow-2xl border border-gray-600/50 overflow-y-auto max-h-[85vh]"
+        className="bg-trading-card rounded-xl shadow-2xl border border-gray-600/50 overflow-y-auto"
         style={{
-          left: `${windowPosition.left}px`,
-          top: `${windowPosition.top + 20}px`,
-          width: `${windowPosition.width}px`,
-          minWidth: '600px'
+          width: windowPosition.width > 0 ? `${windowPosition.width}px` : '800px',
+          minWidth: '600px',
+          maxWidth: '90vw',
+          maxHeight: '85vh',
+          height: 'auto'
         }}
       >
         {/* Header */}
@@ -107,7 +108,7 @@ export default function OptionsTradeWindow({
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 max-h-[calc(80vh-120px)] overflow-y-auto">
           {/* Option Details */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-gradient-to-br from-blue-800/60 to-indigo-800/80 p-4 rounded-lg border border-blue-600/30">
