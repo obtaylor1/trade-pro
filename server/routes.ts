@@ -17,7 +17,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { market } = req.params;
       
-      if (!["stocks", "commodities", "crypto", "options"].includes(market)) {
+      if (!["stocks", "commodities", "crypto", "options", "forex"].includes(market)) {
         return res.status(400).json({ message: "Invalid market type" });
       }
 

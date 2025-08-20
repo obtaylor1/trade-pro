@@ -667,6 +667,10 @@ export class MarketDataService {
         return this.generateOptionsOpportunities();
       }
 
+      if (market === "forex") {
+        return this.generateForexOpportunities();
+      }
+
     } catch (error) {
       console.error("Error generating trading opportunities:", error);
       throw new Error("Failed to fetch market data");
@@ -778,6 +782,92 @@ export class MarketDataService {
     const date = new Date();
     date.setDate(date.getDate() + daysFromNow);
     return date.toISOString().split('T')[0];
+  }
+
+  private generateForexOpportunities(): TradingOpportunity[] {
+    const opportunities: TradingOpportunity[] = [];
+    
+    // Major forex pairs with trend following and strategy suggestions
+    const forexPairs = [
+      {
+        pair: "EUR/USD",
+        name: "Euro / US Dollar",
+        currentPrice: 1.0845,
+        strategy: "Trend Following",
+        rationale: "ECB hawkish pivot vs Fed dovish stance creating EUR strength. Breaking above 1.0820 resistance with strong momentum. 50 EMA above 200 EMA confirming uptrend.",
+        confidence: 82
+      },
+      {
+        pair: "GBP/USD",
+        name: "British Pound / US Dollar",
+        currentPrice: 1.2685,
+        strategy: "Breakout Trading",
+        rationale: "BoE maintaining aggressive stance while Fed pauses. Breaking out of 1.2500-1.2600 consolidation range. Technical target at 1.2800 with strong momentum.",
+        confidence: 78
+      },
+      {
+        pair: "USD/JPY",
+        name: "US Dollar / Japanese Yen",
+        currentPrice: 149.25,
+        strategy: "Carry Trade",
+        rationale: "Fed-BoJ rate differential at multi-decade highs. Carry trade flows supporting USD/JPY. Technical support at 148.50 holding firm with intervention fears fading.",
+        confidence: 75
+      },
+      {
+        pair: "AUD/USD",
+        name: "Australian Dollar / US Dollar",
+        currentPrice: 0.6425,
+        strategy: "Range Trading",
+        rationale: "RBA holding rates steady while commodity prices stabilize. Trading in 0.6350-0.6500 range. Buy near support, sell near resistance with tight stops.",
+        confidence: 70
+      },
+      {
+        pair: "USD/CAD",
+        name: "US Dollar / Canadian Dollar", 
+        currentPrice: 1.3785,
+        strategy: "Swing Trading",
+        rationale: "Oil price weakness pressuring CAD. BoC likely done with hikes while Fed holds. Technical resistance at 1.3850. Medium-term USD strength expected.",
+        confidence: 73
+      }
+    ];
+
+    forexPairs.forEach((forex, index) => {
+      const isLong = Math.random() > 0.5;
+      const action = isLong ? "BUY" : "SELL";
+      const baseAmount = 50; // $50 minimum as requested
+      const leverage = 30; // Standard forex leverage
+      const positionSize = baseAmount * leverage; // $1,500 position with $50 margin
+      
+      const pips = Math.random() * 50 + 20; // 20-70 pips potential
+      const pipValue = 0.0001; // Standard pip value for most pairs
+      const potentialProfit = (pips * positionSize * pipValue).toFixed(2);
+      const risk = (positionSize * 0.02).toFixed(2); // 2% risk
+
+      opportunities.push({
+        id: `forex-${forex.pair.toLowerCase().replace('/', '')}`,
+        name: forex.name,
+        type: `${forex.pair} • ${forex.strategy}`,
+        entryPrice: forex.currentPrice.toFixed(4),
+        risk: `-$${risk}`,
+        potentialGain: `+$${potentialProfit}`,
+        netProfit: `+$${(parseFloat(potentialProfit) * 0.7).toFixed(2)}`,
+        confidence: forex.confidence,
+        action: action,
+        market: "forex",
+        rationale: forex.rationale,
+        isMicro: false,
+        minimumTrade: "$50.00",
+        leverage: "30:1",
+        spread: "0.8 pips",
+        swapLong: action === "BUY" ? "+$0.25/day" : "-$0.15/day",
+        swapShort: action === "SELL" ? "+$0.25/day" : "-$0.15/day",
+        strategy: forex.strategy,
+        lotSize: "1,000 units (micro lot)",
+        marginRequired: "$50.00"
+      });
+    });
+
+    return opportunities;
   }
 }
 

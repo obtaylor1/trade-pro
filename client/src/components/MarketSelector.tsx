@@ -1,6 +1,6 @@
 interface MarketSelectorProps {
-  selectedMarket: "stocks" | "commodities" | "crypto" | "options";
-  onSelectMarket: (market: "stocks" | "commodities" | "crypto" | "options") => void;
+  selectedMarket: "stocks" | "commodities" | "crypto" | "options" | "forex";
+  onSelectMarket: (market: "stocks" | "commodities" | "crypto" | "options" | "forex") => void;
 }
 
 export default function MarketSelector({ selectedMarket, onSelectMarket }: MarketSelectorProps) {
@@ -28,11 +28,17 @@ export default function MarketSelector({ selectedMarket, onSelectMarket }: Marke
       name: "Options",
       icon: "fas fa-chart-line",
       description: "Calls, Puts, Leverage"
+    },
+    {
+      id: "forex" as const,
+      name: "Forex",
+      icon: "fas fa-exchange-alt",
+      description: "EUR/USD, GBP/USD"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
       {markets.map((market) => {
         const isSelected = selectedMarket === market.id;
         
