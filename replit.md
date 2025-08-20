@@ -7,6 +7,7 @@ This is a comprehensive web-based trading application simulator built as a paper
 The application features a modern, responsive interface with real-time market data integration, professional trading card layouts, comprehensive feedback systems, and detailed trading rationales. Each trading opportunity includes expert analysis explaining why it's the optimal choice at the current moment, covering technical indicators, market conditions, and fundamental factors. The system uses live market data from Alpha Vantage API combined with innovative micro and nano trading contracts, providing users with an intuitive way to understand trading concepts and strategies.
 
 **Key Features:**
+- **Market News Aggregation**: Real-time financial news from Reuters, CNBC, MarketWatch with category filtering and modal article reader
 - **Professional Futures Trading**: Full contract specifications for major exchanges (CME, NYMEX, CBOT, ICE)
 - **Advanced Trading Strategies**: Trend following, supply-demand analysis, weather risk, and seasonal patterns
 - **Risk Management Tools**: Stop-loss and take-profit levels with real-time margin calculations
@@ -27,6 +28,17 @@ The application features a modern, responsive interface with real-time market da
 Preferred communication style: Simple, everyday language.
 
 ## Recent Enhancements (August 2025)
+
+**Market News Aggregation System:**
+- Built comprehensive Market News page (/news) with RSS feed aggregation from Reuters, CNBC, MarketWatch, and Yahoo Finance
+- Implemented category filtering system: All, Stocks, Futures, Forex, Crypto, Education with real-time article categorization
+- Added advanced search functionality, bookmarks, read-later system, and auto-refresh capabilities (1min/5min/15min)
+- Created professional article reader modal system with embedded iframe content display
+- Integrated sentiment analysis and ticker extraction from article titles and descriptions
+- Added trending tickers sidebar and education resource links for enhanced user experience
+- Implemented dark theme styling consistent with trading application design language
+- Added comprehensive filtering system with time range (1h/24h/7d) and source selection
+- Built responsive modal interface with click-outside-to-close, bookmark/read-later integration
 
 **Learn to Trade Educational Module:**
 - Created comprehensive single-page trading education platform at /learn-options
