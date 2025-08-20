@@ -145,6 +145,18 @@ export default function NewsPage() {
     }
   }, [newsData?.articles]);
 
+  // Handle video loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const loadingOverlay = document.getElementById('video-loading');
+      if (loadingOverlay) {
+        loadingOverlay.style.display = 'none';
+      }
+    }, 3000); // Hide loading after 3 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
   // Loading skeleton component
   const ArticleSkeleton = () => (
     <div className="bg-trading-card rounded-lg p-6 border border-gray-700 animate-pulse">
@@ -352,32 +364,27 @@ export default function NewsPage() {
           <div className="relative bg-black rounded-lg overflow-hidden shadow-2xl">
             <div className="aspect-video">
               <iframe
-                src="https://www.bloomberg.com/live/us"
+                src="https://www.bloomberg.com/api/embed?id=live/us"
                 className="w-full h-full border-0"
                 title="Bloomberg Live Stream"
-                allow="autoplay; fullscreen; picture-in-picture"
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                 allowFullScreen
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+                referrerPolicy="strict-origin-when-cross-origin"
+                loading="lazy"
               />
             </div>
             
-            {/* Fallback content if iframe fails */}
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 text-white opacity-0 hover:opacity-90 transition-opacity duration-300">
+            {/* Loading overlay */}
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 text-white" id="video-loading">
               <div className="text-center p-6">
-                <div className="text-4xl mb-4">📺</div>
-                <h3 className="text-xl font-semibold mb-2">Bloomberg Live Stream</h3>
-                <p className="text-gray-300 mb-4">Click to access live market coverage</p>
-                <a 
-                  href="https://www.bloomberg.com/live/us" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-block bg-trading-light-blue hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
-                >
-                  Watch on Bloomberg
-                </a>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-trading-light-blue mx-auto mb-4"></div>
+                <h3 className="text-xl font-semibold mb-2">Loading Bloomberg Live</h3>
+                <p className="text-gray-300">Connecting to live market stream...</p>
               </div>
             </div>
           </div>
+          
+
           
           <div className="flex justify-center mt-4 space-x-4 text-sm text-gray-400">
             <span>🔴 Live Coverage</span>
