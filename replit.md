@@ -13,7 +13,9 @@ The application features a modern, responsive interface with real-time market da
 - **Micro Crypto Futures**: 0.1 BTC and 0.1 ETH contracts based on real market prices
 - **Micro Options Trading**: Affordable options contracts ($0.25-$0.90) with 1 share per contract instead of 100
 - **Real-Time Options Charts**: Professional charting with 30-minute, 4-hour, and daily timeframes
-- **Options Duration Selection**: Weekly and monthly expiration choices with different risk/reward profiles
+- **Options Duration Selection**: Weekly and monthly expiration choices with different risk/reward profiles via modal interface
+- **Enhanced UI Readability**: Gradient backgrounds and improved contrast for all trading information
+- **Professional Trading Modals**: Configure & Execute modal system with automatic close behavior
 - **Greeks Integration**: Real-time Delta, Theta, Gamma, and Vega calculations for option pricing
 - **Real-Time Data**: Live stock prices from Alpha Vantage API with intelligent fallback to realistic market simulation
 - **Trade History Tracking**: Complete audit trail tied to individual user accounts
@@ -22,6 +24,16 @@ The application features a modern, responsive interface with real-time market da
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+## Recent Enhancements (August 2025)
+
+**Options Trading Interface Improvements:**
+- Enhanced readability with gradient backgrounds behind all information sections
+- Added colorful gradient overlays for better contrast on strike price, underlying price, and risk/reward metrics
+- Improved execute buttons with prominent gradient styling and better visibility
+- Created professional options trading modal with weekly/monthly duration selection
+- Implemented modal popup system that closes after trade execution or when X button is clicked
+- User feedback: "I like how it looks and feels when clicking the configure and execute trade, to a popout window it goes away after the trade has been executed or when the X is clicked"
 
 ## System Architecture
 
