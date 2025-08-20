@@ -61,101 +61,101 @@ export default function OptionsTradeModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-trading-card rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-trading-card rounded-xl w-full max-w-5xl max-h-[95vh] overflow-y-auto shadow-2xl border border-gray-600/50">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-8 border-b border-gray-700 bg-gradient-to-r from-gray-800/80 to-gray-900/90">
           <div>
-            <h2 className="text-2xl font-bold text-white">{opportunity.name}</h2>
-            <p className="text-gray-400">{opportunity.type}</p>
+            <h2 className="text-3xl font-bold text-white mb-2">{opportunity.name}</h2>
+            <p className="text-gray-300 text-lg">{opportunity.type}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-3 hover:bg-gray-700 rounded-lg transition-colors hover:scale-110"
           >
-            <X className="h-6 w-6 text-gray-400" />
+            <X className="h-8 w-8 text-gray-400" />
           </button>
         </div>
 
         {/* Option Details */}
-        <div className="p-6">
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-blue-800/60 to-indigo-800/80 p-4 rounded-lg border border-blue-600/30">
-              <div className="text-blue-200 text-sm font-medium">Strike Price</div>
-              <div className="text-white text-xl font-bold">{opportunity.strikePrice}</div>
+        <div className="p-8">
+          <div className="grid grid-cols-2 gap-6 mb-8">
+            <div className="bg-gradient-to-br from-blue-800/60 to-indigo-800/80 p-6 rounded-xl border border-blue-600/30">
+              <div className="text-blue-200 text-lg font-medium">Strike Price</div>
+              <div className="text-white text-3xl font-bold">{opportunity.strikePrice}</div>
             </div>
-            <div className="bg-gradient-to-br from-green-800/60 to-emerald-800/80 p-4 rounded-lg border border-green-600/30">
-              <div className="text-green-200 text-sm font-medium">Current Price</div>
-              <div className="text-white text-xl font-bold">{opportunity.underlyingPrice}</div>
+            <div className="bg-gradient-to-br from-green-800/60 to-emerald-800/80 p-6 rounded-xl border border-green-600/30">
+              <div className="text-green-200 text-lg font-medium">Current Price</div>
+              <div className="text-white text-3xl font-bold">{opportunity.underlyingPrice}</div>
             </div>
           </div>
 
           {/* Duration Selection */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-              <Calendar className="h-5 w-5 mr-2" />
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
+              <Calendar className="h-7 w-7 mr-3" />
               Select Duration
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <button
                 onClick={() => setSelectedDuration('weekly')}
-                className={`p-4 rounded-lg border-2 transition-all ${
+                className={`p-8 rounded-xl border-3 transition-all transform hover:scale-105 ${
                   selectedDuration === 'weekly'
-                    ? 'border-trading-blue bg-trading-blue bg-opacity-20 text-white'
-                    : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-gray-500'
+                    ? 'border-trading-blue bg-gradient-to-br from-blue-600/30 to-blue-800/50 text-white shadow-lg'
+                    : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-gray-500 hover:bg-gray-700'
                 }`}
               >
                 <div className="text-center">
-                  <div className="font-semibold text-lg">Weekly</div>
-                  <div className="text-sm text-gray-400">Expires: {formatDate(weeklyExpiration)}</div>
-                  <div className="text-sm mt-2">
-                    <span className="text-green-400">Higher Risk/Reward</span>
+                  <div className="font-bold text-2xl mb-2">Weekly</div>
+                  <div className="text-lg text-gray-300 mb-3">Expires: {formatDate(weeklyExpiration)}</div>
+                  <div className="text-lg mb-4">
+                    <span className="text-green-400 font-semibold">Higher Risk/Reward</span>
                   </div>
-                  <div className="text-lg font-bold mt-2">${weeklyPremium.toFixed(2)}</div>
+                  <div className="text-3xl font-bold text-green-300">${weeklyPremium.toFixed(2)}</div>
                 </div>
               </button>
               
               <button
                 onClick={() => setSelectedDuration('monthly')}
-                className={`p-4 rounded-lg border-2 transition-all ${
+                className={`p-8 rounded-xl border-3 transition-all transform hover:scale-105 ${
                   selectedDuration === 'monthly'
-                    ? 'border-trading-blue bg-trading-blue bg-opacity-20 text-white'
-                    : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-gray-500'
+                    ? 'border-trading-blue bg-gradient-to-br from-blue-600/30 to-blue-800/50 text-white shadow-lg'
+                    : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-gray-500 hover:bg-gray-700'
                 }`}
               >
                 <div className="text-center">
-                  <div className="font-semibold text-lg">Monthly</div>
-                  <div className="text-sm text-gray-400">Expires: {formatDate(monthlyExpiration)}</div>
-                  <div className="text-sm mt-2">
-                    <span className="text-blue-400">More Time to Profit</span>
+                  <div className="font-bold text-2xl mb-2">Monthly</div>
+                  <div className="text-lg text-gray-300 mb-3">Expires: {formatDate(monthlyExpiration)}</div>
+                  <div className="text-lg mb-4">
+                    <span className="text-blue-400 font-semibold">More Time to Profit</span>
                   </div>
-                  <div className="text-lg font-bold mt-2">${monthlyPremium.toFixed(2)}</div>
+                  <div className="text-3xl font-bold text-blue-300">${monthlyPremium.toFixed(2)}</div>
                 </div>
               </button>
             </div>
           </div>
 
           {/* Contract Quantity */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Number of Contracts</h3>
-            <div className="flex items-center space-x-4">
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-white mb-6">Number of Contracts</h3>
+            <div className="flex items-center justify-center space-x-6">
               <button
                 onClick={() => setContractCount(Math.max(1, contractCount - 1))}
-                className="w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-white"
+                className="w-16 h-16 bg-gradient-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl flex items-center justify-center text-white text-3xl font-bold transition-all transform hover:scale-110 shadow-lg"
               >
                 -
               </button>
-              <div className="bg-gray-800 px-4 py-2 rounded-lg min-w-[80px] text-center">
-                <span className="text-white text-lg font-semibold">{contractCount}</span>
+              <div className="bg-gradient-to-br from-gray-700 to-gray-800 px-8 py-4 rounded-xl min-w-[120px] text-center border border-gray-600">
+                <span className="text-white text-3xl font-bold">{contractCount}</span>
               </div>
               <button
                 onClick={() => setContractCount(contractCount + 1)}
-                className="w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-white"
+                className="w-16 h-16 bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl flex items-center justify-center text-white text-3xl font-bold transition-all transform hover:scale-110 shadow-lg"
               >
                 +
               </button>
             </div>
-            <div className="text-sm text-gray-400 mt-2">
+            <div className="text-lg text-gray-300 mt-4 text-center font-medium">
               Each micro contract represents 1 share of the underlying stock
             </div>
           </div>
@@ -227,17 +227,17 @@ export default function OptionsTradeModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex space-x-4">
+          <div className="flex space-x-6 mt-8">
             <button
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 border border-gray-500/30"
+              className="flex-1 px-8 py-4 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold text-xl rounded-xl transition-all duration-300 transform hover:scale-105 border border-gray-500/30 shadow-lg"
             >
               Cancel
             </button>
             <button
               onClick={handleExecuteTrade}
               disabled={isExecuting}
-              className={`flex-1 px-6 py-4 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg ${
+              className={`flex-1 px-8 py-5 rounded-xl font-bold text-xl transition-all duration-300 transform hover:scale-105 shadow-xl ${
                 opportunity.optionType === 'CALL'
                   ? 'bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white border border-green-500/30'
                   : 'bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white border border-red-500/30'
