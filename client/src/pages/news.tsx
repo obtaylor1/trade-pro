@@ -488,43 +488,6 @@ export default function NewsPage() {
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-wrap gap-1">
-                        <span className={`px-2 py-1 text-xs rounded-full ${getCategoryColor(article.category)}`}>
-                          {article.category}
-                        </span>
-                        {article.tickers.slice(0, 3).map((ticker) => (
-                          <span key={ticker} className="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded">
-                            {ticker}
-                          </span>
-                        ))}
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => toggleBookmark(article.id)}
-                          className={`p-1 rounded transition-colors ${bookmarkedArticles.includes(article.id) ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}
-                        >
-                          <Star className="h-4 w-4" fill={bookmarkedArticles.includes(article.id) ? 'currentColor' : 'none'} />
-                        </button>
-                        
-                        <button
-                          onClick={() => toggleReadLater(article.id)}
-                          className={`p-1 rounded transition-colors ${readLaterArticles.includes(article.id) ? 'text-trading-light-blue' : 'text-gray-400 hover:text-trading-light-blue'}`}
-                        >
-                          <Clock className="h-4 w-4" />
-                        </button>
-                        
-                        <button
-                          onClick={() => openArticleModal(article)}
-                          className="p-1 text-gray-400 hover:text-trading-light-blue transition-colors"
-                          title="Read article"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
                   </article>
                 ))}
               </div>
