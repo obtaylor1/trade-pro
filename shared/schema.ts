@@ -12,7 +12,7 @@ export const tradingOpportunitySchema = z.object({
   netProfit: z.string(),
   confidence: z.number().min(0).max(100),
   action: z.enum(["BUY", "SELL"]),
-  market: z.enum(["stocks", "commodities", "crypto", "options"]),
+  market: z.enum(["stocks", "commodities", "crypto", "options", "forex"]),
   rationale: z.string(),
   isMicro: z.boolean().default(false),
   contractSize: z.string().optional(),
@@ -34,7 +34,13 @@ export const tradingOpportunitySchema = z.object({
   leverage: z.string().optional(),
   strategy: z.string().optional(),
   stopLoss: z.string().optional(),
-  takeProfit: z.string().optional()
+  takeProfit: z.string().optional(),
+  
+  // Forex-specific fields
+  lotSize: z.string().optional(),
+  pipValue: z.string().optional(),
+  spread: z.string().optional(),
+  targetPips: z.string().optional()
 });
 
 export const tradeExecutionSchema = z.object({

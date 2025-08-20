@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type TradingOpportunity, type TradeResult } from "@shared/schema";
 import TradeCard from "./TradeCard";
 import FuturesTradeCard from "./FuturesTradeCard";
+import ForexTradeCard from "./ForexTradeCard";
 import SimpleLiveChart from "./SimpleLiveChart";
 import OptionsTradeWindow from "./OptionsTradeWindow";
 
@@ -132,6 +133,27 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
         </div>
       )}
 
+      {selectedMarket === "forex" && (
+        <div className="bg-gradient-to-r from-yellow-900/40 to-amber-900/50 border border-yellow-500/40 rounded-xl p-6 mb-6">
+          <div className="flex items-start space-x-4">
+            <i className="fas fa-dollar-sign text-yellow-400 text-2xl mt-1"></i>
+            <div>
+              <h3 className="text-white font-semibold text-lg mb-2">Professional Forex Trading</h3>
+              <p className="text-gray-200 text-sm leading-relaxed mb-3">
+                Trade major currency pairs with micro and nano lot sizes. Professional execution with tight spreads, 
+                50:1 leverage, and institutional-grade liquidity from global forex markets.
+              </p>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-yellow-200">
+                <span><i className="fas fa-globe mr-2 text-green-400"></i>Major currency pairs</span>
+                <span><i className="fas fa-chart-line mr-2 text-blue-400"></i>Micro/Nano lot sizes</span>
+                <span><i className="fas fa-bullseye mr-2 text-red-400"></i>Precise pip targeting</span>
+                <span><i className="fas fa-bolt mr-2 text-purple-400"></i>50:1 leverage available</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Live Chart for Commodities */}
       {selectedMarket === "commodities" && (
         <div className="mb-8">
@@ -150,6 +172,14 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
         {opportunities.map((opportunity, index) => (
           opportunity.market === 'commodities' && opportunity.strategy ? (
             <FuturesTradeCard
+              key={opportunity.id}
+              opportunity={opportunity}
+              onTradeExecuted={onTradeExecuted}
+              animationDelay={index * 100}
+              userProfile={userProfile}
+            />
+          ) : opportunity.market === 'forex' ? (
+            <ForexTradeCard
               key={opportunity.id}
               opportunity={opportunity}
               onTradeExecuted={onTradeExecuted}
