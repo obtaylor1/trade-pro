@@ -12,6 +12,7 @@ export interface NewsArticle {
   category: string;
   sentiment?: 'positive' | 'negative' | 'neutral';
   tickers: string[];
+  content?: string;
 }
 
 interface RSSItem {
@@ -302,4 +303,60 @@ export function filterArticles(
 // Get available sources
 export function getAvailableSources(): string[] {
   return RSS_SOURCES.map(source => source.name);
+}
+
+// Fetch article content
+export async function fetchArticleContent(url: string): Promise<string> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const html = await response.text();
+    
+    // Basic HTML content extraction - remove scripts, styles, and extract main content
+    let content = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+      .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '');
+    
+    // Try to extract main content areas
+    const contentPatterns = [
+      /<article[^>]*>([\s\S]*?)<\/article>/gi,
+      /<main[^>]*>([\s\S]*?)<\/main>/gi,
+      /<div[^>]*class[^>]*article[^>]*>([\s\S]*?)<\/div>/gi,
+      /<div[^>]*class[^>]*content[^>]*>([\s\S]*?)<\/div>/gi,
+      /<div[^>]*class[^>]*story[^>]*>([\s\S]*?)<\/div>/gi
+    ];
+    
+    for (const pattern of contentPatterns) {
+      const match = content.match(pattern);
+      if (match && match[1] && match[1].length > 500) {
+        content = match[1];
+        break;
+      }
+    }
+    
+    // Clean up the content
+    content = content
+      .replace(/<(?!\/?(p|br|h[1-6]|ul|ol|li|blockquote|strong|em|a|img)\b)[^>]*>/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    return content || 'Content could not be extracted from this article.';
+    
+  } catch (error) {
+    console.error('Error fetching article content:', error);
+    return 'Unable to load article content.';
+  }
 }

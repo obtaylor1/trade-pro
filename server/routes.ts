@@ -384,6 +384,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to fetch sources' });
     }
   });
+
+  app.get('/api/news/article/:articleId', async (req, res) => {
+    try {
+      const { fetchAllNews, fetchArticleContent } = await import('./newsService');
+      const { articleId } = req.params;
+      
+      const allArticles = await fetchAllNews();
+      const article = allArticles.find(a => a.id === articleId);
+      
+      if (!article) {
+        return res.status(404).json({ error: 'Article not found' });
+      }
+      
+      const content = await fetchArticleContent(article.url);
+      
+      res.json({
+        ...article,
+        content
+      });
+    } catch (error) {
+      console.error('Error fetching article content:', error);
+      res.status(500).json({ error: 'Failed to fetch article content' });
+    }
+  });
   
   return httpServer;
 }
