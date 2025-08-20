@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, RefreshCw, Bookmark, Clock, ExternalLink, Filter, X, Star } from 'lucide-react';
+import { Search, RefreshCw, Bookmark, Clock, ExternalLink, Filter, X, Star, ArrowLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { Link } from 'wouter';
 
 interface NewsArticle {
   id: string;
@@ -153,23 +154,31 @@ export default function NewsPage() {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'stocks': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'futures': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-      case 'forex': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'crypto': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
-      case 'education': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+      case 'stocks': return 'bg-blue-900/50 text-blue-300 border border-blue-500/30';
+      case 'futures': return 'bg-purple-900/50 text-purple-300 border border-purple-500/30';
+      case 'forex': return 'bg-green-900/50 text-green-300 border border-green-500/30';
+      case 'crypto': return 'bg-orange-900/50 text-orange-300 border border-orange-500/30';
+      case 'education': return 'bg-yellow-900/50 text-yellow-300 border border-yellow-500/30';
+      default: return 'bg-gray-700/50 text-gray-300 border border-gray-600/30';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-trading-dark text-white">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <header className="bg-trading-gray border-b border-gray-700 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Market News</h1>
+              <Link href="/" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
+                <ArrowLeft className="h-5 w-5" />
+                <span>Back to Trading</span>
+              </Link>
+              <div className="h-6 w-px bg-gray-600"></div>
+              <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                <span className="text-lg">📰</span>
+                Market News
+              </h1>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
@@ -177,7 +186,7 @@ export default function NewsPage() {
                   placeholder="Search news..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-64 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10 pr-4 py-2 w-64 bg-trading-card border border-gray-600 rounded-lg focus:ring-2 focus:ring-trading-light-blue focus:border-transparent text-white placeholder-gray-400"
                 />
               </div>
             </div>
@@ -186,7 +195,7 @@ export default function NewsPage() {
               <select
                 value={autoRefresh}
                 onChange={(e) => setAutoRefresh(e.target.value as AutoRefresh)}
-                className="text-sm bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1"
+                className="text-sm bg-trading-card border border-gray-600 rounded-md px-3 py-1 text-white"
               >
                 <option value="off">Auto-refresh: Off</option>
                 <option value="1m">Auto-refresh: 1min</option>
@@ -196,21 +205,21 @@ export default function NewsPage() {
               
               <button
                 onClick={() => refetch()}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className="p-2 text-gray-300 hover:text-white transition-colors"
               >
                 <RefreshCw className="h-5 w-5" />
               </button>
               
               <button
                 onClick={() => setShowFilters(true)}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className="p-2 text-gray-300 hover:text-white transition-colors"
               >
                 <Filter className="h-5 w-5" />
               </button>
               
               <button
                 onClick={() => setShowBookmarks(true)}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className="p-2 text-gray-300 hover:text-white transition-colors"
               >
                 <Bookmark className="h-5 w-5" />
               </button>
@@ -220,17 +229,17 @@ export default function NewsPage() {
       </header>
 
       {/* Category Tabs */}
-      <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <nav className="bg-trading-gray border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8 overflow-x-auto">
             {categories.map((category) => (
               <button
                 key={category.key}
                 onClick={() => setSelectedCategory(category.key)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   selectedCategory === category.key
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                    ? 'border-trading-light-blue text-trading-light-blue'
+                    : 'border-transparent text-gray-400 hover:text-gray-300'
                 }`}
               >
                 {category.label}
@@ -248,12 +257,12 @@ export default function NewsPage() {
             {isLoading ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {[...Array(9)].map((_, i) => (
-                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 animate-pulse">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-4"></div>
+                  <div key={i} className="bg-trading-card rounded-lg shadow-sm p-6 animate-pulse border border-gray-700">
+                    <div className="h-4 bg-gray-700 rounded w-3/4 mb-3"></div>
+                    <div className="h-3 bg-gray-700 rounded w-1/2 mb-4"></div>
                     <div className="space-y-2">
-                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                      <div className="h-3 bg-gray-700 rounded"></div>
+                      <div className="h-3 bg-gray-700 rounded w-5/6"></div>
                     </div>
                   </div>
                 ))}
@@ -263,7 +272,7 @@ export default function NewsPage() {
                 {newsData.articles.map((article) => (
                   <article
                     key={article.id}
-                    className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6"
+                    className="bg-trading-card rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 p-6 border border-gray-700 hover:border-gray-600"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -273,7 +282,7 @@ export default function NewsPage() {
                           className="w-4 h-4"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{article.source}</span>
+                        <span className="text-sm text-gray-400">{article.source}</span>
                         {article.sentiment && (
                           <div className={`w-2 h-2 rounded-full ${getSentimentColor(article.sentiment)}`}></div>
                         )}
@@ -283,11 +292,11 @@ export default function NewsPage() {
                       </span>
                     </div>
                     
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                    <h3 className="font-semibold text-white mb-2 line-clamp-2">
                       {article.title}
                     </h3>
                     
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+                    <p className="text-sm text-gray-300 mb-4 line-clamp-3">
                       {article.summary}
                     </p>
                     
@@ -297,7 +306,7 @@ export default function NewsPage() {
                           {article.category}
                         </span>
                         {article.tickers.slice(0, 3).map((ticker) => (
-                          <span key={ticker} className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
+                          <span key={ticker} className="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded">
                             {ticker}
                           </span>
                         ))}
@@ -306,14 +315,14 @@ export default function NewsPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => toggleBookmark(article.id)}
-                          className={`p-1 rounded ${bookmarkedArticles.includes(article.id) ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}
+                          className={`p-1 rounded transition-colors ${bookmarkedArticles.includes(article.id) ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}
                         >
                           <Star className="h-4 w-4" fill={bookmarkedArticles.includes(article.id) ? 'currentColor' : 'none'} />
                         </button>
                         
                         <button
                           onClick={() => toggleReadLater(article.id)}
-                          className={`p-1 rounded ${readLaterArticles.includes(article.id) ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`}
+                          className={`p-1 rounded transition-colors ${readLaterArticles.includes(article.id) ? 'text-trading-light-blue' : 'text-gray-400 hover:text-trading-light-blue'}`}
                         >
                           <Clock className="h-4 w-4" />
                         </button>
@@ -322,7 +331,7 @@ export default function NewsPage() {
                           href={article.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1 text-gray-400 hover:text-blue-500"
+                          className="p-1 text-gray-400 hover:text-trading-light-blue transition-colors"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </a>
@@ -333,7 +342,7 @@ export default function NewsPage() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400">No articles found. Try adjusting your filters or search terms.</p>
+                <p className="text-gray-400">No articles found. Try adjusting your filters or search terms.</p>
               </div>
             )}
           </div>
@@ -341,11 +350,11 @@ export default function NewsPage() {
           {/* Sidebar */}
           <aside className="w-full lg:w-80 space-y-6">
             {/* Trending Tickers */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Trending Tickers</h3>
+            <div className="bg-trading-card rounded-lg shadow-sm p-6 border border-gray-700">
+              <h3 className="font-semibold text-white mb-4">Trending Tickers</h3>
               <div className="flex flex-wrap gap-2">
                 {['SPY', 'QQQ', 'TSLA', 'AAPL', 'BTC', 'ETH', 'EUR/USD', 'GC', 'CL'].map((ticker) => (
-                  <span key={ticker} className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                  <span key={ticker} className="px-3 py-1 bg-trading-light-blue/20 text-trading-light-blue rounded-full text-sm border border-trading-light-blue/30">
                     {ticker}
                   </span>
                 ))}
@@ -353,23 +362,23 @@ export default function NewsPage() {
             </div>
 
             {/* Education Resources */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Education Resources</h3>
+            <div className="bg-trading-card rounded-lg shadow-sm p-6 border border-gray-700">
+              <h3 className="font-semibold text-white mb-4">Education Resources</h3>
               <div className="space-y-3">
                 <a href="https://www.cmegroup.com/education" target="_blank" rel="noopener noreferrer" 
-                   className="block text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                   className="block text-sm text-trading-light-blue hover:text-white transition-colors">
                   CME Group Education (Futures)
                 </a>
                 <a href="https://www.cboe.com/education" target="_blank" rel="noopener noreferrer"
-                   className="block text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                   className="block text-sm text-trading-light-blue hover:text-white transition-colors">
                   CBOE Options Institute
                 </a>
                 <a href="https://www.dailyfx.com/education" target="_blank" rel="noopener noreferrer"
-                   className="block text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                   className="block text-sm text-trading-light-blue hover:text-white transition-colors">
                   DailyFX Education (Forex)
                 </a>
                 <a href="https://www.investopedia.com/options-basics-tutorial-4583012" target="_blank" rel="noopener noreferrer"
-                   className="block text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                   className="block text-sm text-trading-light-blue hover:text-white transition-colors">
                   Investopedia Options Basics
                 </a>
               </div>
@@ -381,23 +390,23 @@ export default function NewsPage() {
       {/* Filters Modal */}
       {showFilters && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+          <div className="bg-trading-card rounded-lg p-6 w-full max-w-md border border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filters</h3>
+              <h3 className="text-lg font-semibold text-white">Filters</h3>
               <button onClick={() => setShowFilters(false)}>
-                <X className="h-5 w-5 text-gray-500" />
+                <X className="h-5 w-5 text-gray-400 hover:text-white transition-colors" />
               </button>
             </div>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Time Range
                 </label>
                 <select
                   value={timeRange}
                   onChange={(e) => setTimeRange(e.target.value as TimeRange)}
-                  className="w-full bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2"
+                  className="w-full bg-trading-dark border border-gray-600 rounded-md px-3 py-2 text-white"
                 >
                   <option value="1h">Last 1 hour</option>
                   <option value="24h">Last 24 hours</option>
@@ -406,7 +415,7 @@ export default function NewsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Sources
                 </label>
                 <div className="space-y-2">
@@ -422,9 +431,9 @@ export default function NewsPage() {
                             setSelectedSources(selectedSources.filter(s => s !== source));
                           }
                         }}
-                        className="mr-2"
+                        className="mr-2 accent-trading-light-blue"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{source}</span>
+                      <span className="text-sm text-gray-300">{source}</span>
                     </label>
                   ))}
                 </div>
@@ -434,7 +443,7 @@ export default function NewsPage() {
             <div className="flex justify-end gap-2 mt-6">
               <button
                 onClick={() => setShowFilters(false)}
-                className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                className="px-4 py-2 text-sm bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors"
               >
                 Close
               </button>
@@ -446,33 +455,33 @@ export default function NewsPage() {
       {/* Bookmarks Modal */}
       {showBookmarks && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+          <div className="bg-trading-card rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Bookmarks & Read Later</h3>
+              <h3 className="text-lg font-semibold text-white">Bookmarks & Read Later</h3>
               <button onClick={() => setShowBookmarks(false)}>
-                <X className="h-5 w-5 text-gray-500" />
+                <X className="h-5 w-5 text-gray-400 hover:text-white transition-colors" />
               </button>
             </div>
             
             <div className="space-y-4">
               {bookmarkedArticles.length === 0 && readLaterArticles.length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No saved articles yet.</p>
+                <p className="text-gray-400 text-center py-8">No saved articles yet.</p>
               ) : (
                 <div className="space-y-2">
                   {newsData?.articles
                     .filter(article => bookmarkedArticles.includes(article.id) || readLaterArticles.includes(article.id))
                     .map(article => (
-                      <div key={article.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <div key={article.id} className="p-3 border border-gray-700 rounded-lg bg-trading-dark">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-1">{article.title}</h4>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">{article.source} • {timeAgo(article.publishedAt)}</p>
+                            <h4 className="font-medium text-white text-sm mb-1">{article.title}</h4>
+                            <p className="text-xs text-gray-400">{article.source} • {timeAgo(article.publishedAt)}</p>
                           </div>
                           <a
                             href={article.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="ml-2 p-1 text-gray-400 hover:text-blue-500"
+                            className="ml-2 p-1 text-gray-400 hover:text-trading-light-blue transition-colors"
                           >
                             <ExternalLink className="h-4 w-4" />
                           </a>
@@ -487,7 +496,7 @@ export default function NewsPage() {
             <div className="flex justify-end mt-6">
               <button
                 onClick={() => setShowBookmarks(false)}
-                className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                className="px-4 py-2 text-sm bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors"
               >
                 Close
               </button>
