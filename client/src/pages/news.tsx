@@ -145,17 +145,7 @@ export default function NewsPage() {
     }
   }, [newsData?.articles]);
 
-  // Handle video loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const loadingOverlay = document.getElementById('video-loading');
-      if (loadingOverlay) {
-        loadingOverlay.style.display = 'none';
-      }
-    }, 3000); // Hide loading after 3 seconds
 
-    return () => clearTimeout(timer);
-  }, []);
 
   // Loading skeleton component
   const ArticleSkeleton = () => (
@@ -357,29 +347,41 @@ export default function NewsPage() {
       <section className="bg-gradient-to-r from-trading-dark via-gray-800 to-trading-dark py-8 mb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-white mb-2">Bloomberg Live</h2>
-            <p className="text-gray-300">24-hour market news, data, and analysis</p>
+            <h2 className="text-2xl font-bold text-white mb-2">Live Financial News</h2>
+            <p className="text-gray-300">24-hour market coverage, data, and analysis from Bloomberg Television</p>
           </div>
           
           <div className="relative bg-black rounded-lg overflow-hidden shadow-2xl">
             <div className="aspect-video">
               <iframe
-                src="https://www.bloomberg.com/api/embed?id=live/us"
+                src="https://www.youtube.com/embed/dp8PhLsUcFE?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1"
                 className="w-full h-full border-0"
-                title="Bloomberg Live Stream"
-                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                title="Bloomberg Television Live Stream"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
                 referrerPolicy="strict-origin-when-cross-origin"
-                loading="lazy"
               />
             </div>
             
-            {/* Loading overlay */}
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 text-white" id="video-loading">
-              <div className="text-center p-6">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-trading-light-blue mx-auto mb-4"></div>
-                <h3 className="text-xl font-semibold mb-2">Loading Bloomberg Live</h3>
-                <p className="text-gray-300">Connecting to live market stream...</p>
+            {/* Fallback options */}
+            <div className="absolute bottom-4 right-4">
+              <div className="flex gap-2">
+                <a 
+                  href="https://www.bloomberg.com/live/us" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1 rounded text-xs transition-colors"
+                >
+                  Bloomberg.com
+                </a>
+                <a 
+                  href="https://www.cnbc.com/live-tv/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1 rounded text-xs transition-colors"
+                >
+                  CNBC Live
+                </a>
               </div>
             </div>
           </div>
