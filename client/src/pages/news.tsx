@@ -352,36 +352,98 @@ export default function NewsPage() {
           </div>
           
           <div className="relative bg-black rounded-lg overflow-hidden shadow-2xl">
-            <div className="aspect-video">
+            {/* Try multiple video sources with fallbacks */}
+            <div className="aspect-video relative">
+              {/* Primary: YouTube Bloomberg TV */}
               <iframe
-                src="https://www.youtube.com/embed/dp8PhLsUcFE?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1"
-                className="w-full h-full border-0"
-                title="Bloomberg Television Live Stream"
+                src="https://www.youtube.com/embed/live_stream?channel=UCIALMKvObZNtJ6AmdCLP7Lg&autoplay=0&mute=0&controls=1&rel=0&modestbranding=1"
+                className="w-full h-full border-0 absolute inset-0"
+                title="Bloomberg Television Live"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
+                onError={() => {
+                  // Fallback to CNBC
+                  const fallback = document.getElementById('cnbc-fallback');
+                  if (fallback) fallback.style.display = 'block';
+                }}
               />
+              
+              {/* Secondary: CNBC Embed */}
+              <iframe
+                id="cnbc-fallback"
+                src="https://player.cnbc.com/p/gZWlPC/cnbc_global?playertype=synd&byGuid=7000031045&size=530_298"
+                className="w-full h-full border-0 absolute inset-0 hidden"
+                title="CNBC Live Stream"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onError={() => {
+                  // Final fallback to custom player
+                  const customPlayer = document.getElementById('custom-player');
+                  if (customPlayer) customPlayer.style.display = 'flex';
+                }}
+              />
+              
+              {/* Final Fallback: Custom Video Player */}
+              <div id="custom-player" className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 hidden items-center justify-center">
+                <div className="text-center p-8">
+                  <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-0 h-0 border-l-6 border-r-0 border-t-4 border-b-4 border-transparent border-l-white ml-1"></div>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-4">Live Financial News</h3>
+                  <p className="text-gray-300 mb-6">Stream temporarily unavailable. Choose a direct source:</p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
+                    <a 
+                      href="https://www.bloomberg.com/live/us" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors text-center font-medium"
+                    >
+                      📺 Bloomberg Live
+                    </a>
+                    <a 
+                      href="https://www.cnbc.com/live-tv/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg transition-colors text-center font-medium"
+                    >
+                      📺 CNBC Live
+                    </a>
+                    <a 
+                      href="https://www.youtube.com/c/BloombergTelevision/live" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg transition-colors text-center font-medium"
+                    >
+                      📺 YouTube Live
+                    </a>
+                    <a 
+                      href="https://www.marketwatch.com/live" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-colors text-center font-medium"
+                    >
+                      📺 MarketWatch
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            {/* Fallback options */}
-            <div className="absolute bottom-4 right-4">
+            {/* Video controls overlay */}
+            <div className="absolute top-4 right-4 opacity-75 hover:opacity-100 transition-opacity">
               <div className="flex gap-2">
-                <a 
-                  href="https://www.bloomberg.com/live/us" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1 rounded text-xs transition-colors"
+                <button 
+                  onClick={() => {
+                    const customPlayer = document.getElementById('custom-player');
+                    if (customPlayer) {
+                      customPlayer.style.display = customPlayer.style.display === 'none' ? 'flex' : 'none';
+                    }
+                  }}
+                  className="bg-gray-800/80 hover:bg-gray-700 text-white px-2 py-1 rounded text-xs transition-colors"
                 >
-                  Bloomberg.com
-                </a>
-                <a 
-                  href="https://www.cnbc.com/live-tv/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1 rounded text-xs transition-colors"
-                >
-                  CNBC Live
-                </a>
+                  Sources
+                </button>
               </div>
             </div>
           </div>
