@@ -152,6 +152,25 @@ export default function FuturesTradeCard({
         </div>
       </div>
 
+      {/* Trading Timeframe */}
+      {opportunity.tradingTimeframe && (
+        <div className="mb-4 p-3 bg-gradient-to-r from-blue-800/40 to-indigo-800/60 rounded-lg border border-blue-600/30">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              <BarChart3 className="h-4 w-4 text-blue-400 mr-2" />
+              <span className="text-blue-200 text-sm font-medium">{opportunity.tradingTimeframe}</span>
+            </div>
+            <span className="text-blue-100 text-xs">{opportunity.timeframeDuration}</span>
+          </div>
+          <div className="text-xs text-blue-200">
+            <span className="font-medium">{opportunity.chartTimeframe}</span>
+            {opportunity.timeframeDescription && (
+              <span className="text-blue-300 ml-2">• {opportunity.timeframeDescription}</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Risk/Reward Analysis */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         <div className="text-center p-2 bg-gradient-to-br from-red-800/50 to-red-900/70 rounded border border-red-600/40">

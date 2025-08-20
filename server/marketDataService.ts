@@ -538,7 +538,11 @@ export class MarketDataService {
           leverage: "24:1",
           strategy: "Trend Following + Breakout",
           stopLoss: "$2,020.00",
-          takeProfit: "$2,065.00"
+          takeProfit: "$2,065.00",
+          tradingTimeframe: "Swing Trading",
+          timeframeDuration: "3-7 days",
+          chartTimeframe: "4-hour charts",
+          timeframeDescription: "Capturing precious metals momentum over multiple days"
         });
 
         // Crude Oil Futures (CL) - NYMEX
@@ -563,7 +567,11 @@ export class MarketDataService {
           leverage: "19:1",
           strategy: "Supply-Demand + Momentum",
           stopLoss: "$76.50",
-          takeProfit: "$83.00"
+          takeProfit: "$83.00",
+          tradingTimeframe: "Position Trading",
+          timeframeDuration: "2-4 weeks",
+          chartTimeframe: "Daily charts",
+          timeframeDescription: "Long-term energy market fundamentals play"
         });
 
         // Corn Futures (C) - CBOT
@@ -588,7 +596,11 @@ export class MarketDataService {
           leverage: "17:1",
           strategy: "Weather Premium + Seasonal",
           stopLoss: "$4.43",
-          takeProfit: "$5.05"
+          takeProfit: "$5.05",
+          tradingTimeframe: "Position Trading",
+          timeframeDuration: "4-8 weeks",
+          chartTimeframe: "Weekly charts",
+          timeframeDescription: "Seasonal agriculture cycle and weather patterns"
         });
 
         // Coffee Futures (KC) - ICE
@@ -613,7 +625,11 @@ export class MarketDataService {
           leverage: "20:1",
           strategy: "Weather Risk + Supply Shock",
           stopLoss: "$162.00",
-          takeProfit: "$178.00"
+          takeProfit: "$178.00",
+          tradingTimeframe: "Swing Trading",
+          timeframeDuration: "1-2 weeks",
+          chartTimeframe: "Daily charts",
+          timeframeDescription: "Weather events and supply disruption momentum"
         });
 
         // Natural Gas Futures (NG) - NYMEX  
@@ -638,7 +654,11 @@ export class MarketDataService {
           leverage: "24:1",
           strategy: "Storage Deficit + Seasonal",
           stopLoss: "$2.64",
-          takeProfit: "$3.25"
+          takeProfit: "$3.25",
+          tradingTimeframe: "Day Trading",
+          timeframeDuration: "1-4 hours",
+          chartTimeframe: "15-minute charts",
+          timeframeDescription: "Intraday volatility on weather and storage reports"
         });
 
         // S&P 500 Index Futures (ES) - CME
@@ -663,7 +683,11 @@ export class MarketDataService {
           leverage: "19:1",
           strategy: "Index Momentum + Fed Policy",
           stopLoss: "4,356.00",
-          takeProfit: "4,556.00"
+          takeProfit: "4,556.00",
+          tradingTimeframe: "Algorithmic Trading",
+          timeframeDuration: "Automated execution",
+          chartTimeframe: "1-minute to 1-hour charts",
+          timeframeDescription: "Algorithm-driven index momentum strategies"
         });
       }
 

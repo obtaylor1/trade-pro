@@ -44,7 +44,13 @@ export const tradingOpportunitySchema = z.object({
   botStrategy: z.string().optional(),
   botRiskLevel: z.string().optional(),
   botAutomation: z.string().optional(),
-  botSession: z.string().optional()
+  botSession: z.string().optional(),
+  
+  // Trading timeframe fields
+  tradingTimeframe: z.string().optional(),
+  timeframeDuration: z.string().optional(),
+  chartTimeframe: z.string().optional(),
+  timeframeDescription: z.string().optional()
 });
 
 export const tradeExecutionSchema = z.object({
