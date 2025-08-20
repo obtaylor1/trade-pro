@@ -1,0 +1,92 @@
+Build a news page for a trading app that aggregates Stocks, Futures, Forex, and Crypto headlines, analysis, and educational posts. Create a tiny full-stack project with a Node/Express backend (server-side fetch, caching, normalization) and a vanilla HTML/CSS/JS frontend (no frameworks). Must be mobile-first, accessible, and fast.
+Goals
+* Aggregate free sources (RSS + optional free API feeds) into one clean UI.
+* Categorize by Stocks, Futures, Forex, Crypto (+ “All”).
+* Provide filters, search, bookmarks, read-later, and auto-refresh.
+* Handle CORS safely by fetching on the server and exposing a normalized JSON API to the client.
+* Cache responses to respect rate limits.
+Data Sources
+Implement these, in this order of priority (use what’s available—fail gracefully):
+1. RSS feeds (no key needed)
+    * Reuters Business: https://feeds.reuters.com/reuters/businessNews
+    * CNBC Markets: https://www.cnbc.com/id/100003114/device/rss/rss.html
+    * Bloomberg sitemap (news RSS-ish XML): https://www.bloomberg.com/feeds/bbiz/sitemap_news.xml
+    * CME Group Topics (Futures/Options research): scrape RSS if available or use their research pages (server-side HTML parse; title+link+snippet).
+    * DailyFX (Forex): https://www.dailyfx.com/feeds/forex-market-news
+2. Optional free APIs (use only if API key env vars exist)
+    * Finnhub (headlines/economic): FINNHUB_API_KEY
+    * Alpha Vantage (news/forex/crypto): ALPHAVANTAGE_API_KEY
+    * NewsAPI (general business): NEWSAPI_KEY Back end should merge + de-duplicate by URL or title hash.
+Features (Frontend)
+* Header: App logo “Market News”, global search input, auto-refresh toggle (Off/1m/5m/15m).
+* Category Tabs: All · Stocks · Futures · Forex · Crypto · Education
+* Filters: Source (multi-select), Time range (Last 1h / 24h / 7d), Sentiment (if available), Keyword include/exclude.
+* Article Cards (list + masonry responsive):
+    * Source name + favicon, published time (relative + tooltip absolute), title, short summary, tags (category), “Open” link (new tab), Bookmark ☆, Read Later clock icon.
+* Right Rail (or footer on mobile):
+    * Trending tickers (just a list of most-mentioned symbols parsed from titles, simplistic regex)
+    * Economic calendar (if Finnhub key present) minimal list today/tomorrow (event, actual/forecast, importance).
+    * Education picks: static curated links (tastytrade blog, CME education, CBOE education).
+* Modals/Drawers:
+    * Bookmarks/Read Later (stored in localStorage, export/import as JSON).
+    * Source manager: toggle which feeds/APIs are active client-side (stored in localStorage and appended to backend query params).
+* Keyboard & Accessibility:
+    * Tab order, focus outlines, ARIA landmarks (header, nav, main, aside), aria-live="polite" for refresh notices.
+* Empty/Error States: Friendly messages and retry buttons.
+Backend (Node + Express)
+* Endpoints:
+    * GET /api/news?category=all|stocks|futures|forex|crypto|education&sources=reuters,cnbc,...&since=ISO8601&limit=50
+    * GET /api/calendar?range=today|tomorrow|week (only if Finnhub key present; otherwise return {items: []}).
+    * GET /api/sources (list available feeds/APIs).
+* Logic:
+    * Fetch RSS/XML and JSON API feeds server-side with node-fetch or axios.
+    * Parse RSS with a lightweight XML parser.
+    * Normalize to a common schema:
+    * Categorization: rule-based by keywords in title/summary/domain (e.g., contains “futures”, “CME”, “WTI”, “Brent” → futures; “forex”, “FX”, “EUR/USD” → forex; symbols like BTC, ETH → crypto; default stocks).
+    * Caching: in-memory cache per endpoint+query for 60–300s; add simple ETag/Last-Modified headers when possible.
+    * De-dupe by normalized URL or title hash.
+    * Rate limit: simple IP-based (e.g., 60 req/min).
+    * Respect env vars:
+        * PORT
+        * FINNHUB_API_KEY
+        * ALPHAVANTAGE_API_KEY
+        * NEWSAPI_KEY
+* Errors: return JSON {error: "..."}; never crash on a single feed failure—log and continue.
+* Frontend (Vanilla)
+* Files: index.html, styles.css, app.js.
+* UI:
+    * Top nav with search and auto-refresh selector.
+    * Tabs as buttons that update query params and re-fetch /api/news.
+    * Filters drawer (sources, time range, sentiment).
+    * Article list with skeleton loaders while fetching.
+    * Bookmark/Read Later saved to localStorage.
+    * Toast notifications for “Refreshed”, “Saved to Bookmarks”, errors.
+* Utilities:
+    * fetchNews({category, sources, since, limit})
+    * timeAgo(date) for relative times.
+    * extractTickers(title) simple regex for all-caps or formats like EUR/USD, BTC, CL, ES, NQ, etc.
+    * Persist last selected tab, filters, and auto-refresh in localStorage.
+* Design:
+    * Mobile-first cards (1-col), tablet (2-col), desktop (3–4 col).
+    * CSS variables for theme; system font stack; 16px+ body; 4.5:1 contrast.
+    * Source color chips; category badges.
+* Education Section
+* Static expandable accordions linking to free education:
+    * CME Group Education (futures)
+    * CBOE Options Institute
+    * tastytrade blog
+    * DailyFX (forex primers)
+    * Investopedia options basics Include one-line summaries and tags (Beginner/Intermediate).
+* Bonus (Nice-to-have)
+* Sentiment estimate (very simple): bag-of-words on title; show as colored dot.
+* Offline fallback: If API calls fail, show last cached results from localStorage.
+* Export Bookmarks: download JSON file.
+Acceptance Criteria
+* Runs on Replit with npm start, serving /public and /api/*.
+* /api/news returns normalized JSON combining at least 3 RSS sources without keys.
+* Frontend shows tabs, filters, search, and article cards with bookmarking.
+* Auto-refresh works (and can be turned off).
+* Accessible (semantic landmarks, focus states, alt text, keyboardable).
+* Works on mobile and desktop.
+Add a brief README.md explaining how to set API keys (optional), how caching works, and which feeds are enabled by default.
+Deliver a polished news page that feels fast, clear, and useful for traders—without paid data.

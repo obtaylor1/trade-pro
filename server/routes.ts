@@ -332,6 +332,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Start price simulation every 2 seconds
   setInterval(priceSimulation, 2000);
+
+  // News API routes
+  app.get('/api/news', async (req, res) => {
+    try {
+      const { fetchAllNews, filterArticles } = await import('./newsService');
+      
+      const {
+        category = 'all',
+        sources = '',
+        since = '24h',
+        limit = '50',
+        search = ''
+      } = req.query as Record<string, string>;
+
+      const allArticles = await fetchAllNews();
+      const sourcesArray = sources ? sources.split(',').filter(Boolean) : [];
+      
+      const filteredArticles = filterArticles(
+        allArticles,
+        category,
+        sourcesArray,
+        since,
+        search
+      );
+
+      const limitNum = parseInt(limit, 10);
+      const limitedArticles = filteredArticles.slice(0, limitNum);
+
+      const availableSources = [...new Set(allArticles.map(a => a.source))];
+
+      res.json({
+        articles: limitedArticles,
+        sources: availableSources,
+        lastUpdated: new Date().toISOString(),
+        total: filteredArticles.length
+      });
+    } catch (error) {
+      console.error('Error fetching news:', error);
+      res.status(500).json({ error: 'Failed to fetch news' });
+    }
+  });
+
+  app.get('/api/news/sources', async (req, res) => {
+    try {
+      const { getAvailableSources } = await import('./newsService');
+      const sources = getAvailableSources();
+      res.json({ sources });
+    } catch (error) {
+      console.error('Error fetching sources:', error);
+      res.status(500).json({ error: 'Failed to fetch sources' });
+    }
+  });
   
   return httpServer;
 }

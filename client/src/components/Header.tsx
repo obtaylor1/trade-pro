@@ -18,6 +18,13 @@ export default function Header() {
               <span className="text-lg">🎓</span>
               <span className="font-semibold">Learn to Trade</span>
             </button>
+            <button 
+              onClick={() => window.location.href = '/news'}
+              className="px-4 py-2 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white rounded-lg transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              <span className="text-lg">📰</span>
+              <span className="font-semibold">Market News</span>
+            </button>
             <div className="text-sm text-gray-300">
               <span>Portfolio: $10,000</span>
             </div>
