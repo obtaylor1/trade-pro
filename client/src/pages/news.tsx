@@ -15,6 +15,7 @@ interface NewsArticle {
   category: string;
   sentiment?: 'positive' | 'negative' | 'neutral';
   tickers: string[];
+  image?: string;
 }
 
 interface NewsResponse {
@@ -40,6 +41,7 @@ export default function NewsPage() {
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   const [articleContent, setArticleContent] = useState<string>('');
   const [loadingContent, setLoadingContent] = useState(false);
+  const [articlesWithImages, setArticlesWithImages] = useState<Record<string, string>>({});
   
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -208,6 +210,8 @@ export default function NewsPage() {
       const response = await apiRequest('GET', `/api/news/article/${article.id}`);
       const articleWithContent = await response.json();
       setArticleContent(articleWithContent.content || 'Content could not be loaded.');
+      // Update the selected article with the fetched image
+      setSelectedArticle(prev => prev ? { ...prev, image: articleWithContent.image } : null);
     } catch (error) {
       console.error('Error loading article content:', error);
       setArticleContent('Failed to load article content.');
@@ -325,36 +329,115 @@ export default function NewsPage() {
                 {newsData.articles.map((article) => (
                   <article
                     key={article.id}
-                    className="bg-trading-card rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 p-6 border border-gray-700 hover:border-gray-600"
+                    className="bg-trading-card rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-700 hover:border-gray-600 overflow-hidden"
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
+                    {/* Article Image */}
+                    {(article.image || articlesWithImages[article.url]) && (
+                      <div className="relative h-48 overflow-hidden">
                         <img 
-                          src={article.sourceFavicon} 
-                          alt={article.source}
-                          className="w-4 h-4"
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          src={article.image || articlesWithImages[article.url]} 
+                          alt={article.title}
+                          className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-200"
+                          onClick={() => openArticleModal(article)}
+                          onError={(e) => { 
+                            e.currentTarget.parentElement!.style.display = 'none'; 
+                          }}
                         />
-                        <span className="text-sm text-gray-400">{article.source}</span>
-                        {article.sentiment && (
-                          <div className={`w-2 h-2 rounded-full ${getSentimentColor(article.sentiment)}`}></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <img 
+                              src={article.sourceFavicon} 
+                              alt={article.source}
+                              className="w-4 h-4"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                            <span className="text-sm text-white font-medium">{article.source}</span>
+                            {article.sentiment && (
+                              <div className={`w-2 h-2 rounded-full ${getSentimentColor(article.sentiment)}`}></div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="p-6">
+                      {/* Header for articles without images */}
+                      {!(article.image || articlesWithImages[article.url]) && (
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <img 
+                              src={article.sourceFavicon} 
+                              alt={article.source}
+                              className="w-4 h-4"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                            <span className="text-sm text-gray-400">{article.source}</span>
+                            {article.sentiment && (
+                              <div className={`w-2 h-2 rounded-full ${getSentimentColor(article.sentiment)}`}></div>
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-500" title={new Date(article.publishedAt).toLocaleString()}>
+                            {timeAgo(article.publishedAt)}
+                          </span>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 
+                          className="font-semibold text-white mb-2 line-clamp-2 cursor-pointer hover:text-trading-light-blue transition-colors flex-1"
+                          onClick={() => openArticleModal(article)}
+                        >
+                          {article.title}
+                        </h3>
+                        {(article.image || articlesWithImages[article.url]) && (
+                          <span className="text-xs text-gray-500 ml-3" title={new Date(article.publishedAt).toLocaleString()}>
+                            {timeAgo(article.publishedAt)}
+                          </span>
                         )}
                       </div>
-                      <span className="text-xs text-gray-500" title={new Date(article.publishedAt).toLocaleString()}>
-                        {timeAgo(article.publishedAt)}
-                      </span>
+                      
+                      <p className="text-sm text-gray-300 mb-4 line-clamp-3">
+                        {article.summary}
+                      </p>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap gap-1">
+                          <span className={`px-2 py-1 text-xs rounded-full ${getCategoryColor(article.category)}`}>
+                            {article.category}
+                          </span>
+                          {article.tickers.slice(0, 3).map((ticker) => (
+                            <span key={ticker} className="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded">
+                              {ticker}
+                            </span>
+                          ))}
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleBookmark(article.id)}
+                            className={`p-1 rounded transition-colors ${bookmarkedArticles.includes(article.id) ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}
+                          >
+                            <Star className="h-4 w-4" fill={bookmarkedArticles.includes(article.id) ? 'currentColor' : 'none'} />
+                          </button>
+                          
+                          <button
+                            onClick={() => toggleReadLater(article.id)}
+                            className={`p-1 rounded transition-colors ${readLaterArticles.includes(article.id) ? 'text-trading-light-blue' : 'text-gray-400 hover:text-trading-light-blue'}`}
+                          >
+                            <Clock className="h-4 w-4" />
+                          </button>
+                          
+                          <button
+                            onClick={() => openArticleModal(article)}
+                            className="p-1 text-gray-400 hover:text-trading-light-blue transition-colors"
+                            title="Read article"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    
-                    <h3 
-                      className="font-semibold text-white mb-2 line-clamp-2 cursor-pointer hover:text-trading-light-blue transition-colors"
-                      onClick={() => openArticleModal(article)}
-                    >
-                      {article.title}
-                    </h3>
-                    
-                    <p className="text-sm text-gray-300 mb-4 line-clamp-3">
-                      {article.summary}
-                    </p>
                     
                     <div className="flex items-center justify-between">
                       <div className="flex flex-wrap gap-1">

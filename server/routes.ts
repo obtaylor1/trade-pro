@@ -397,15 +397,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Article not found' });
       }
       
-      const content = await fetchArticleContent(article.url);
+      const result = await fetchArticleContent(article.url);
       
       res.json({
         ...article,
-        content
+        content: result.content,
+        image: result.image
       });
     } catch (error) {
       console.error('Error fetching article content:', error);
       res.status(500).json({ error: 'Failed to fetch article content' });
+    }
+  });
+
+  // Batch fetch images for articles
+  app.post('/api/news/images', async (req, res) => {
+    try {
+      const { extractMainImage } = await import('./newsService');
+      const { urls } = req.body;
+      
+      if (!Array.isArray(urls)) {
+        return res.status(400).json({ error: 'URLs must be an array' });
+      }
+
+      const imageResults = await Promise.allSettled(
+        urls.map(async (url: string) => {
+          try {
+            const response = await fetch(url, {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+              },
+              timeout: 5000 // 5 second timeout
+            });
+            
+            if (!response.ok) {
+              return { url, image: null };
+            }
+            
+            const html = await response.text();
+            const image = extractMainImage(html);
+            return { url, image };
+          } catch (error) {
+            return { url, image: null };
+          }
+        })
+      );
+
+      const images: Record<string, string | null> = {};
+      imageResults.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          images[result.value.url] = result.value.image;
+        } else {
+          images[urls[index]] = null;
+        }
+      });
+
+      res.json({ images });
+    } catch (error) {
+      console.error('Error fetching images:', error);
+      res.status(500).json({ error: 'Failed to fetch images' });
     }
   });
   

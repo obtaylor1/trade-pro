@@ -13,6 +13,7 @@ export interface NewsArticle {
   sentiment?: 'positive' | 'negative' | 'neutral';
   tickers: string[];
   content?: string;
+  image?: string;
 }
 
 interface RSSItem {
@@ -305,8 +306,64 @@ export function getAvailableSources(): string[] {
   return RSS_SOURCES.map(source => source.name);
 }
 
-// Fetch article content
-export async function fetchArticleContent(url: string): Promise<string> {
+// Extract main image from article HTML
+export function extractMainImage(html: string): string | null {
+  try {
+    // Common patterns for article images
+    const imagePatterns = [
+      // Open Graph image
+      /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i,
+      // Twitter card image
+      /<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i,
+      // Article images with specific classes
+      /<img[^>]*class=["'][^"']*(?:article|hero|featured|main)[^"']*["'][^>]*src=["']([^"']+)["']/i,
+      // First img tag in article content
+      /<article[^>]*>[\s\S]*?<img[^>]*src=["']([^"']+)["']/i,
+      // Any img with reasonable size attributes
+      /<img[^>]*(?:width=["'][4-9]\d{2,}["']|height=["'][3-9]\d{2,}["'])[^>]*src=["']([^"']+)["']/i,
+      // Fallback to first reasonable img tag
+      /<img[^>]*src=["']([^"']+\.(?:jpg|jpeg|png|webp)[^"']*)["']/i
+    ];
+
+    for (const pattern of imagePatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        let imageUrl = match[1];
+        
+        // Skip tiny images, icons, and ads
+        if (imageUrl.includes('icon') || 
+            imageUrl.includes('logo') || 
+            imageUrl.includes('avatar') ||
+            imageUrl.includes('advertisement') ||
+            imageUrl.includes('tracking') ||
+            imageUrl.match(/\d+x\d+/) && parseInt(imageUrl.match(/(\d+)x\d+/)?.[1] || '0') < 200) {
+          continue;
+        }
+        
+        // Convert relative URLs to absolute
+        if (imageUrl.startsWith('//')) {
+          imageUrl = 'https:' + imageUrl;
+        } else if (imageUrl.startsWith('/')) {
+          const urlMatch = html.match(/<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i);
+          if (urlMatch) {
+            const baseUrl = new URL(urlMatch[1]).origin;
+            imageUrl = baseUrl + imageUrl;
+          }
+        }
+        
+        return imageUrl;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error extracting image:', error);
+    return null;
+  }
+}
+
+// Fetch article content and image
+export async function fetchArticleContent(url: string): Promise<{ content: string; image?: string }> {
   try {
     const response = await fetch(url, {
       headers: {
@@ -319,6 +376,9 @@ export async function fetchArticleContent(url: string): Promise<string> {
     }
     
     const html = await response.text();
+    
+    // Extract main image first
+    const image = extractMainImage(html);
     
     // Basic HTML content extraction - remove scripts, styles, and extract main content
     let content = html
@@ -353,10 +413,15 @@ export async function fetchArticleContent(url: string): Promise<string> {
       .replace(/\s+/g, ' ')
       .trim();
     
-    return content || 'Content could not be extracted from this article.';
+    return {
+      content: content || 'Content could not be extracted from this article.',
+      image: image || undefined
+    };
     
   } catch (error) {
     console.error('Error fetching article content:', error);
-    return 'Unable to load article content.';
+    return {
+      content: 'Unable to load article content.'
+    };
   }
 }
