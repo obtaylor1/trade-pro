@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "wouter";
 import Header from "@/components/Header";
 import MarketSelector from "@/components/MarketSelector";
 import TradingOpportunities from "@/components/TradingOpportunities";
@@ -11,11 +10,10 @@ import SimulatorSetupModal from "@/components/SimulatorSetup";
 import TradeHistory from "@/components/TradeHistory";
 import PortfolioSummaryPage from "@/components/PortfolioSummaryPage";
 import UserAuthModal from "@/components/UserAuthModal";
-import { Button } from "@/components/ui/button";
 import { type TradeResult, type UserProfile, type PortfolioPosition, type SimulatorSetup } from "@shared/schema";
 
 export default function Home() {
-  const [selectedMarket, setSelectedMarket] = useState<"stocks" | "commodities" | "crypto" | "options" | "forex">("commodities");
+  const [selectedMarket, setSelectedMarket] = useState<"stocks" | "commodities" | "crypto" | "options">("commodities");
   const [tradeResult, setTradeResult] = useState<TradeResult | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
@@ -219,7 +217,6 @@ export default function Home() {
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-6">Market Analysis Dashboard</h1>
-          
           <MarketSelector 
             selectedMarket={selectedMarket} 
             onSelectMarket={setSelectedMarket} 

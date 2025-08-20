@@ -28,18 +28,6 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Enhancements (August 2025)
 
-**Professional Forex Trading Platform (Complete Implementation):**
-- Built comprehensive forex trading simulator with real-time quotes and paper trading
-- Implemented professional order management: Market, Limit, Stop, Stop-Limit orders
-- Added accurate P/L calculations including spreads, commissions, swaps/financing
-- Created multi-currency accounting with proper pip value calculations
-- Integrated WebSocket real-time price feeds for major currency pairs
-- Built execution engine with realistic slippage models and fill logic
-- Added risk management: position sizing, daily loss limits, margin calls
-- Implemented portfolio tracking with equity curves and performance metrics
-- Created audit trails with immutable trade logging and CSV export
-- Built modular adapter system for future live broker integration
-
 **Professional Futures Trading Implementation:**
 - Completely redesigned commodities market to focus on professional futures contracts
 - Added full contract specifications: margin requirements, tick values, leverage ratios, expiration dates

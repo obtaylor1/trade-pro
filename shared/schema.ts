@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { pgTable, text, timestamp, numeric, integer, boolean, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, numeric, integer, boolean } from "drizzle-orm/pg-core";
 
 // Trading opportunity schema
 export const tradingOpportunitySchema = z.object({
@@ -12,7 +12,7 @@ export const tradingOpportunitySchema = z.object({
   netProfit: z.string(),
   confidence: z.number().min(0).max(100),
   action: z.enum(["BUY", "SELL"]),
-  market: z.enum(["stocks", "commodities", "crypto", "options", "forex"]),
+  market: z.enum(["stocks", "commodities", "crypto", "options"]),
   rationale: z.string(),
   isMicro: z.boolean().default(false),
   contractSize: z.string().optional(),
@@ -34,13 +34,7 @@ export const tradingOpportunitySchema = z.object({
   leverage: z.string().optional(),
   strategy: z.string().optional(),
   stopLoss: z.string().optional(),
-  takeProfit: z.string().optional(),
-  
-  // Forex-specific fields
-  lotSize: z.string().optional(),
-  pipValue: z.string().optional(),
-  spread: z.string().optional(),
-  targetPips: z.string().optional()
+  takeProfit: z.string().optional()
 });
 
 export const tradeExecutionSchema = z.object({
@@ -215,151 +209,6 @@ export type TradeSummary = z.infer<typeof tradeSummarySchema>;
 export type UserRegistration = z.infer<typeof userRegistrationSchema>;
 export type UserLogin = z.infer<typeof userLoginSchema>;
 
-// Forex Database Tables
-export const forexUsers = pgTable("forex_users", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  baseCurrency: text("base_currency").default("USD"),
-  startBalance: decimal("start_balance", { precision: 20, scale: 2 }).notNull(),
-  balance: decimal("balance", { precision: 20, scale: 2 }).notNull(),
-  equity: decimal("equity", { precision: 20, scale: 2 }).notNull(),
-  margin: decimal("margin", { precision: 20, scale: 2 }).default("0"),
-  freeMargin: decimal("free_margin", { precision: 20, scale: 2 }).notNull(),
-  marginLevel: decimal("margin_level", { precision: 10, scale: 2 }).default("0"),
-  riskPerTrade: decimal("risk_per_trade", { precision: 5, scale: 4 }).default("0.01"),
-  dailyLossMax: decimal("daily_loss_max", { precision: 5, scale: 4 }).default("0.05"),
-  leverageMax: decimal("leverage_max", { precision: 10, scale: 2 }).default("30"),
-  dailyPnL: decimal("daily_pnl", { precision: 20, scale: 2 }).default("0"),
-  totalPnL: decimal("total_pnl", { precision: 20, scale: 2 }).default("0"),
-  isLocked: boolean("is_locked").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-export const forexOrders = pgTable("forex_orders", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
-  symbol: text("symbol").notNull(),
-  side: text("side").notNull(), // BUY, SELL
-  type: text("type").notNull(), // MARKET, LIMIT, STOP, STOP_LIMIT
-  lots: decimal("lots", { precision: 10, scale: 4 }).notNull(),
-  price: decimal("price", { precision: 15, scale: 6 }),
-  stopLoss: decimal("stop_loss", { precision: 15, scale: 6 }),
-  takeProfit: decimal("take_profit", { precision: 15, scale: 6 }),
-  trailingPips: integer("trailing_pips"),
-  status: text("status").notNull().default("NEW"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-  filledAt: timestamp("filled_at"),
-});
-
-export const forexPositions = pgTable("forex_positions", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
-  symbol: text("symbol").notNull(),
-  side: text("side").notNull(), // LONG, SHORT
-  lots: decimal("lots", { precision: 10, scale: 4 }).notNull(),
-  avgPrice: decimal("avg_price", { precision: 15, scale: 6 }).notNull(),
-  currentPrice: decimal("current_price", { precision: 15, scale: 6 }).notNull(),
-  commission: decimal("commission", { precision: 15, scale: 2 }).default("0"),
-  swap: decimal("swap", { precision: 15, scale: 2 }).default("0"),
-  unrealizedPnL: decimal("unrealized_pnl", { precision: 20, scale: 2 }).default("0"),
-  realizedPnL: decimal("realized_pnl", { precision: 20, scale: 2 }).default("0"),
-  stopLoss: decimal("stop_loss", { precision: 15, scale: 6 }),
-  takeProfit: decimal("take_profit", { precision: 15, scale: 6 }),
-  openedAt: timestamp("opened_at").defaultNow(),
-  closedAt: timestamp("closed_at"),
-});
-
-export const forexFills = pgTable("forex_fills", {
-  id: text("id").primaryKey(),
-  orderId: text("order_id").notNull(),
-  positionId: text("position_id"),
-  userId: text("user_id").notNull(),
-  symbol: text("symbol").notNull(),
-  side: text("side").notNull(),
-  lots: decimal("lots", { precision: 10, scale: 4 }).notNull(),
-  price: decimal("price", { precision: 15, scale: 6 }).notNull(),
-  commission: decimal("commission", { precision: 15, scale: 2 }).default("0"),
-  spreadCost: decimal("spread_cost", { precision: 15, scale: 2 }).default("0"),
-  slippage: decimal("slippage", { precision: 15, scale: 6 }).default("0"),
-  timestamp: timestamp("timestamp").defaultNow(),
-});
-
-export const accountSnapshots = pgTable("account_snapshots", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
-  timestamp: timestamp("timestamp").defaultNow(),
-  balance: decimal("balance", { precision: 20, scale: 2 }).notNull(),
-  equity: decimal("equity", { precision: 20, scale: 2 }).notNull(),
-  margin: decimal("margin", { precision: 20, scale: 2 }).notNull(),
-  freeMargin: decimal("free_margin", { precision: 20, scale: 2 }).notNull(),
-  marginLevel: decimal("margin_level", { precision: 10, scale: 2 }).notNull(),
-  dailyPnL: decimal("daily_pnl", { precision: 20, scale: 2 }).notNull(),
-  totalPnL: decimal("total_pnl", { precision: 20, scale: 2 }).notNull(),
-  openPositions: integer("open_positions").notNull(),
-  openOrders: integer("open_orders").notNull(),
-});
-
-// Forex schemas for validation
-export const forexUserSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  baseCurrency: z.string().default("USD"),
-  startBalance: z.number().min(100),
-  balance: z.number(),
-  equity: z.number(),
-  margin: z.number().default(0),
-  freeMargin: z.number(),
-  marginLevel: z.number().default(0),
-  riskPerTrade: z.number().min(0.001).max(0.1).default(0.01),
-  dailyLossMax: z.number().min(0.01).max(0.2).default(0.05),
-  leverageMax: z.number().min(1).max(500).default(30),
-  dailyPnL: z.number().default(0),
-  totalPnL: z.number().default(0),
-  isLocked: z.boolean().default(false),
-  createdAt: z.string(),
-  updatedAt: z.string()
-});
-
-export const forexOrderSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  symbol: z.string(),
-  side: z.enum(["BUY", "SELL"]),
-  type: z.enum(["MARKET", "LIMIT", "STOP", "STOP_LIMIT"]),
-  lots: z.number().positive(),
-  price: z.number().optional(),
-  stopLoss: z.number().optional(),
-  takeProfit: z.number().optional(),
-  trailingPips: z.number().optional(),
-  status: z.enum(["NEW", "FILLED", "CANCELED", "REJECTED", "PARTIAL"]),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  filledAt: z.string().optional()
-});
-
-export const forexPositionSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  symbol: z.string(),
-  side: z.enum(["LONG", "SHORT"]),
-  lots: z.number().positive(),
-  avgPrice: z.number().positive(),
-  currentPrice: z.number().positive(),
-  commission: z.number().default(0),
-  swap: z.number().default(0),
-  unrealizedPnL: z.number().default(0),
-  realizedPnL: z.number().default(0),
-  openedAt: z.string(),
-  closedAt: z.string().optional(),
-  stopLoss: z.number().optional(),
-  takeProfit: z.number().optional()
-});
-
 // Database user type
 export type DatabaseUser = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
-export type ForexUser = z.infer<typeof forexUserSchema>;
-export type ForexOrder = z.infer<typeof forexOrderSchema>;
-export type ForexPosition = z.infer<typeof forexPositionSchema>;

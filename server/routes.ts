@@ -17,7 +17,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { market } = req.params;
       
-      if (!["stocks", "commodities", "crypto", "options", "forex"].includes(market)) {
+      if (!["stocks", "commodities", "crypto", "options"].includes(market)) {
         return res.status(400).json({ message: "Invalid market type" });
       }
 
@@ -235,77 +235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/charts/stock/:symbol/:timeframe", chartDataService.getStockChart);
   app.get("/api/charts/option/:optionId/:timeframe", chartDataService.getOptionChart);
 
-  // Forex trading API endpoints
-  const { forexEngine } = await import('./forexEngineSimple');
-  
-  // Get forex quotes
-  app.get("/api/forex/quotes", async (req, res) => {
-    try {
-      const quotes = forexEngine.getLiveQuotes();
-      res.json(quotes);
-    } catch (error) {
-      console.error('Error fetching forex quotes:', error);
-      res.status(500).json({ message: "Failed to fetch forex quotes" });
-    }
-  });
-
-  // Get forex account
-  app.get("/api/forex/account/:userId", async (req, res) => {
-    try {
-      const { userId } = req.params;
-      const account = await forexEngine.getForexUser(userId);
-      res.json(account);
-    } catch (error) {
-      console.error('Error fetching forex account:', error);
-      res.status(500).json({ message: "Failed to fetch forex account" });
-    }
-  });
-
-  // Get forex positions
-  app.get("/api/forex/positions/:userId", async (req, res) => {
-    try {
-      const { userId } = req.params;
-      const positions = await forexEngine.getUserPositions(userId);
-      res.json(positions);
-    } catch (error) {
-      console.error('Error fetching forex positions:', error);
-      res.status(500).json({ message: "Failed to fetch forex positions" });
-    }
-  });
-
-  // Place forex order
-  app.post("/api/forex/orders", async (req, res) => {
-    try {
-      const order = await forexEngine.placeOrder(req.body);
-      res.json(order);
-    } catch (error) {
-      console.error('Error placing forex order:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to place forex order" 
-      });
-    }
-  });
-
-  // Close forex position
-  app.post("/api/forex/positions/:positionId/close", async (req, res) => {
-    try {
-      const { positionId } = req.params;
-      const { lots } = req.body;
-      await forexEngine.closePosition(positionId, lots);
-      res.json({ message: "Position closed successfully" });
-    } catch (error) {
-      console.error('Error closing forex position:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to close forex position" 
-      });
-    }
-  });
-
   const httpServer = createServer(app);
-
-  // Initialize Forex WebSocket service
-  const { forexWebSocket } = await import('./forexWebSocketFixed');
-  forexWebSocket.initialize(httpServer);
   
   // Setup WebSocket server for real-time price feeds
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
