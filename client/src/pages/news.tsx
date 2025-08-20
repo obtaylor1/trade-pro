@@ -124,7 +124,7 @@ export default function NewsPage() {
     if (newsData?.articles && newsData.articles.length > 0) {
       const articlesNeedingImages = newsData.articles
         .filter(article => !article.image && !articlesWithImages[article.url])
-        .slice(0, 6); // Only fetch images for first 6 articles to avoid rate limiting
+        .slice(0, 12); // Fetch images for first 12 articles
 
       if (articlesNeedingImages.length > 0) {
         const urls = articlesNeedingImages.map(article => article.url);

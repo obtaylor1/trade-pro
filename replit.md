@@ -39,6 +39,7 @@ Preferred communication style: Simple, everyday language.
 - Implemented dark theme styling consistent with trading application design language
 - Added comprehensive filtering system with time range (1h/24h/7d) and source selection
 - Built responsive modal interface with click-outside-to-close, bookmark/read-later integration
+- **Article Image Extraction (August 2025)**: Implemented authentic image extraction from news articles using multiple strategies (Open Graph, Twitter cards, article content analysis). System automatically fetches and displays hero images from actual news sources with intelligent filtering to avoid logos, ads, and tracking pixels. Batch processing prevents rate limiting while providing visually engaging news cards.
 
 **Learn to Trade Educational Module:**
 - Created comprehensive single-page trading education platform at /learn-options
