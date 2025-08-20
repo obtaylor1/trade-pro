@@ -54,13 +54,18 @@ const RSS_SOURCES = [
   },
   {
     name: 'MarketWatch',
-    url: 'https://feeds.marketwatch.com/marketwatch/realtimeheadlines/',
+    url: 'https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines',
     favicon: 'https://www.marketwatch.com/favicon.ico'
   },
   {
     name: 'Yahoo Finance',
     url: 'https://feeds.finance.yahoo.com/rss/2.0/headline',
     favicon: 'https://finance.yahoo.com/favicon.ico'
+  },
+  {
+    name: 'Commodity News',
+    url: 'https://www.cnbc.com/id/19832390/device/rss/rss.html',
+    favicon: 'https://www.cnbc.com/favicon.ico'
   }
 ];
 
@@ -86,8 +91,8 @@ function extractTickers(text: string): string[] {
   const cryptoPattern = /\b(BTC|ETH|XRP|ADA|DOT|SOL|AVAX|MATIC|LINK|UNI)\b/g;
   const cryptoMatches = text.match(cryptoPattern) || [];
   
-  // Futures symbols
-  const futuresPattern = /\b(ES|NQ|YM|RTY|GC|SI|CL|NG|ZB|ZN)\b/g;
+  // Futures symbols - expanded list
+  const futuresPattern = /\b(ES|NQ|YM|RTY|GC|SI|CL|NG|ZB|ZN|ZC|ZS|ZW|ZL|ZM|KC|CC|CT|SB|LBS|HE|LE|PA|PL|HG|ZA|QG|QM)\b/g;
   const futuresMatches = text.match(futuresPattern) || [];
   
   [...stockMatches, ...forexMatches, ...cryptoMatches, ...futuresMatches].forEach(ticker => {
@@ -104,8 +109,8 @@ function extractTickers(text: string): string[] {
 function categorizeArticle(title: string, description: string): string {
   const text = `${title} ${description}`.toLowerCase();
   
-  // Futures keywords
-  if (/\b(futures?|commodities?|oil|gold|silver|copper|corn|wheat|soybeans?|natural gas|crude|wti|brent|cme|nymex|cbot|ice)\b/.test(text)) {
+  // Futures keywords - expanded list
+  if (/\b(futures?|commodities?|commodity|oil|gold|silver|copper|corn|wheat|soybeans?|natural gas|crude|wti|brent|cme|nymex|cbot|ice|energy|metals?|agriculture|agricultural|grains?|livestock|cattle|hogs?|coffee|sugar|cocoa|cotton|lumber|gasoline|heating oil|propane|ethanol|platinum|palladium|zinc|lead|nickel|aluminum|steel|iron ore)\b/.test(text)) {
     return 'futures';
   }
   
@@ -179,6 +184,11 @@ async function parseRSSFeed(source: { name: string; url: string; favicon: string
       const category = categorizeArticle(title, description);
       const tickers = extractTickers(`${title} ${description}`);
       const sentiment = analyzeSentiment(title, description);
+      
+      // Debug logging for futures categorization
+      if (category === 'futures') {
+        console.log(`Futures article found: "${title}" - Category: ${category}`);
+      }
       
       return {
         id,
