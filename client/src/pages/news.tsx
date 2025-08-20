@@ -85,7 +85,16 @@ export default function NewsPage() {
       });
       
       const response = await apiRequest('GET', `/api/news?${params}`);
-      return response.json() as Promise<NewsResponse>;
+      const data = await response.json() as NewsResponse;
+      
+      // Debug: Log first few articles to see if they have images
+      console.log('Fetched articles sample:', data.articles.slice(0, 3).map(a => ({ 
+        title: a.title.substring(0, 50), 
+        image: a.image,
+        url: a.url
+      })));
+      
+      return data;
     },
     staleTime: 60000, // 1 minute
   });
@@ -109,6 +118,33 @@ export default function NewsPage() {
       }
     };
   }, [autoRefresh, refetch]);
+
+  // Batch fetch images for visible articles
+  useEffect(() => {
+    if (newsData?.articles && newsData.articles.length > 0) {
+      const articlesNeedingImages = newsData.articles
+        .filter(article => !article.image && !articlesWithImages[article.url])
+        .slice(0, 6); // Only fetch images for first 6 articles to avoid rate limiting
+
+      if (articlesNeedingImages.length > 0) {
+        const urls = articlesNeedingImages.map(article => article.url);
+        
+        apiRequest('POST', '/api/news/images', { 
+          body: JSON.stringify({ urls }),
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.images) {
+            setArticlesWithImages(prev => ({ ...prev, ...data.images }));
+          }
+        })
+        .catch(error => {
+          console.log('Failed to fetch images:', error);
+        });
+      }
+    }
+  }, [newsData?.articles]);
 
   // Loading skeleton component
   const ArticleSkeleton = () => (
@@ -340,7 +376,11 @@ export default function NewsPage() {
                           className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-200"
                           onClick={() => openArticleModal(article)}
                           onError={(e) => { 
+                            console.log('Image failed to load:', e.currentTarget.src);
                             e.currentTarget.parentElement!.style.display = 'none'; 
+                          }}
+                          onLoad={(e) => {
+                            console.log('Image loaded successfully:', e.currentTarget.src);
                           }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
