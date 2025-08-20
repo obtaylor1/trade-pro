@@ -82,14 +82,14 @@ export default function OptionsTradeWindow({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-85 z-50 flex items-start justify-start pt-12 pl-4">
+    <div className="fixed inset-0 bg-black bg-opacity-85 z-50 flex items-start justify-start pt-4 pl-4">
       <div 
         className="bg-trading-card rounded-xl shadow-2xl border border-gray-600/50 overflow-y-auto"
         style={{
           width: windowPosition.width > 0 ? `${windowPosition.width}px` : '700px',
           minWidth: '550px',
           maxWidth: '85vw',
-          maxHeight: '80vh',
+          maxHeight: '95vh',
           height: 'auto'
         }}
       >
@@ -108,7 +108,7 @@ export default function OptionsTradeWindow({
         </div>
 
         {/* Content */}
-        <div className="p-4 max-h-[calc(75vh-100px)] overflow-y-auto">
+        <div className="p-4 max-h-[calc(90vh-100px)] overflow-y-auto">
           {/* Option Details */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="bg-gradient-to-br from-blue-800/60 to-indigo-800/80 p-3 rounded-lg border border-blue-600/30">
