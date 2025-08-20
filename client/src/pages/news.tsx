@@ -341,6 +341,52 @@ export default function NewsPage() {
         </div>
       </nav>
 
+      {/* Hero Video Section */}
+      <section className="bg-gradient-to-r from-trading-dark via-gray-800 to-trading-dark py-8 mb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">Bloomberg Live</h2>
+            <p className="text-gray-300">24-hour market news, data, and analysis</p>
+          </div>
+          
+          <div className="relative bg-black rounded-lg overflow-hidden shadow-2xl">
+            <div className="aspect-video">
+              <iframe
+                src="https://www.bloomberg.com/live/us"
+                className="w-full h-full border-0"
+                title="Bloomberg Live Stream"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+              />
+            </div>
+            
+            {/* Fallback content if iframe fails */}
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 text-white opacity-0 hover:opacity-90 transition-opacity duration-300">
+              <div className="text-center p-6">
+                <div className="text-4xl mb-4">📺</div>
+                <h3 className="text-xl font-semibold mb-2">Bloomberg Live Stream</h3>
+                <p className="text-gray-300 mb-4">Click to access live market coverage</p>
+                <a 
+                  href="https://www.bloomberg.com/live/us" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-block bg-trading-light-blue hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+                >
+                  Watch on Bloomberg
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-center mt-4 space-x-4 text-sm text-gray-400">
+            <span>🔴 Live Coverage</span>
+            <span>📈 Real-time Data</span>
+            <span>🌍 Global Markets</span>
+          </div>
+        </div>
+      </section>
+
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
