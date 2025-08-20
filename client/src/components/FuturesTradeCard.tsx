@@ -21,7 +21,20 @@ export default function FuturesTradeCard({
   
   const executeTradeMutation = useMutation({
     mutationFn: async (tradeData: any) => {
-      return apiRequest("/api/trades/execute", "POST", tradeData);
+      const response = await fetch("/api/trades/execute", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(tradeData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
     },
     onSuccess: (result) => {
       onTradeExecuted(result);
@@ -33,12 +46,19 @@ export default function FuturesTradeCard({
   });
 
   const handleExecuteTrade = async () => {
+    if (!userProfile?.id) {
+      console.error("User profile not available");
+      return;
+    }
+    
     try {
+      const marginAmount = parseFloat(opportunity.marginRequired?.replace(/[$,]/g, '') || '1000');
       await executeTradeMutation.mutateAsync({
         opportunityId: opportunity.id,
-        amount: parseFloat(opportunity.marginRequired?.replace(/[$,]/g, '') || '1000'),
-        isLiveTrading: userProfile?.isLiveTrading || false,
-        selectedBroker: userProfile?.selectedBroker,
+        amount: marginAmount,
+        isLiveTrading: userProfile.isLiveTrading || false,
+        selectedBroker: userProfile.selectedBroker || 'NinjaTrader',
+        userId: userProfile.id
       });
     } catch (error) {
       console.error("Failed to execute trade:", error);

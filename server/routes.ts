@@ -32,7 +32,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Fetching fresh data for ${market}`);
       
-      const opportunities = await marketDataService.generateTradingOpportunities(market);
+      const opportunities = await storage.getTradingOpportunities(market);
       
       // Cache stock data
       if (market === 'stocks') {
