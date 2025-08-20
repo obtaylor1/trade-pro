@@ -71,19 +71,19 @@ export default function UserProfileCard({ userProfile, onToggleTradingMode, onRe
     <Card className="bg-gray-900 border-gray-700">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
               <span className="text-white font-semibold text-lg">
                 {userProfile.name.charAt(0).toUpperCase()}
               </span>
             </div>
             <div>
-              <CardTitle className="text-lg text-white">{userProfile.name}</CardTitle>
+              <CardTitle className="text-base text-white">{userProfile.name}</CardTitle>
               <Badge 
                 variant="outline" 
                 className={`text-xs ${getAccountTypeBadge(userProfile.accountType)}`}
               >
-                {userProfile.accountType.charAt(0).toUpperCase() + userProfile.accountType.slice(1)} Account
+                {userProfile.accountType.charAt(0).toUpperCase() + userProfile.accountType.slice(1)}
               </Badge>
             </div>
           </div>

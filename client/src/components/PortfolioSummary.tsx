@@ -40,22 +40,22 @@ export default function PortfolioSummary({ positions, isLiveTrading, onViewHisto
 
   return (
     <Card className="bg-gray-900 border-gray-700">
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-white flex items-center gap-2">
+          <CardTitle className="text-white flex items-center gap-2 text-base">
             <i className="fas fa-chart-pie text-blue-400"></i>
             Portfolio Summary
-            <Badge variant="outline" className={isLiveTrading ? 'border-red-500/30 text-red-400' : 'border-green-500/30 text-green-400'}>
+            <Badge variant="outline" className={`text-xs ${isLiveTrading ? 'border-red-500/30 text-red-400' : 'border-green-500/30 text-green-400'}`}>
               {isLiveTrading ? 'Live' : 'Simulated'}
             </Badge>
           </CardTitle>
           {!isLiveTrading && (onViewHistory || onViewPortfolio) && (
-            <div className="flex gap-2">
+            <div className="flex gap-1">
               {onViewPortfolio && (
                 <Button 
                   size="sm"
                   onClick={onViewPortfolio}
-                  className="bg-gray-800 hover:bg-gray-700 text-white border-gray-600 text-xs px-3 py-1"
+                  className="bg-gray-800 hover:bg-gray-700 text-white border-gray-600 text-xs px-2 py-1"
                 >
                   <i className="fas fa-chart-pie mr-1"></i>
                   Portfolio
@@ -65,7 +65,7 @@ export default function PortfolioSummary({ positions, isLiveTrading, onViewHisto
                 <Button 
                   size="sm"
                   onClick={onViewHistory}
-                  className="bg-gray-800 hover:bg-gray-700 text-white border-gray-600 text-xs px-3 py-1"
+                  className="bg-gray-800 hover:bg-gray-700 text-white border-gray-600 text-xs px-2 py-1"
                 >
                   <i className="fas fa-history mr-1"></i>
                   History
