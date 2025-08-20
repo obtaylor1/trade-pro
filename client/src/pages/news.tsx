@@ -130,8 +130,7 @@ export default function NewsPage() {
         const urls = articlesNeedingImages.map(article => article.url);
         
         apiRequest('POST', '/api/news/images', { 
-          body: JSON.stringify({ urls }),
-          headers: { 'Content-Type': 'application/json' }
+          urls
         })
         .then(response => response.json())
         .then(data => {
@@ -423,19 +422,30 @@ export default function NewsPage() {
                         </div>
                       )}
                       
-                      <div className="flex items-start justify-between mb-3">
+                      {/* Article Title - only for articles WITH images */}
+                      {(article.image || articlesWithImages[article.url]) && (
+                        <div className="mb-3">
+                          <h3 
+                            className="font-semibold text-white mb-2 line-clamp-2 cursor-pointer hover:text-trading-light-blue transition-colors"
+                            onClick={() => openArticleModal(article)}
+                          >
+                            {article.title}
+                          </h3>
+                          <span className="text-xs text-gray-500" title={new Date(article.publishedAt).toLocaleString()}>
+                            {timeAgo(article.publishedAt)}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Article Title - only for articles WITHOUT images */}
+                      {!(article.image || articlesWithImages[article.url]) && (
                         <h3 
-                          className="font-semibold text-white mb-2 line-clamp-2 cursor-pointer hover:text-trading-light-blue transition-colors flex-1"
+                          className="font-semibold text-white mb-3 line-clamp-2 cursor-pointer hover:text-trading-light-blue transition-colors"
                           onClick={() => openArticleModal(article)}
                         >
                           {article.title}
                         </h3>
-                        {(article.image || articlesWithImages[article.url]) && (
-                          <span className="text-xs text-gray-500 ml-3" title={new Date(article.publishedAt).toLocaleString()}>
-                            {timeAgo(article.publishedAt)}
-                          </span>
-                        )}
-                      </div>
+                      )}
                       
                       <p className="text-sm text-gray-300 mb-4 line-clamp-3">
                         {article.summary}
