@@ -180,7 +180,7 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
                 userProfile={userProfile}
               />
             );
-          } else if (opportunity.market === 'forex' && opportunity.strategy?.includes('Bot')) {
+          } else if (opportunity.market === 'forex') {
             return (
               <ForexBotCard
                 key={opportunity.id}

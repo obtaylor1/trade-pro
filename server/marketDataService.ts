@@ -376,7 +376,11 @@ export class MarketDataService {
           if (quote && quote["05. price"]) {
             const btcPrice = parseFloat(quote["05. price"]);
             const changePercent = quote["10. change percent"] || "0%";
-            const metrics = this.calculateMetrics(75); // Use 75% confidence for crypto
+            // Generate crypto metrics  
+            const metrics = {
+              confidence: 75,
+              action: Math.random() > 0.5 ? "BUY" : "SELL"
+            };
 
             opportunities.push({
               id: "crypto-btc",
@@ -885,11 +889,7 @@ export class MarketDataService {
         strategy: forex.strategy,
         lotSize: "1,000 units (micro lot)",
         marginRequired: "$50.00",
-        // Enhanced bot-specific fields - will be used in frontend
-        botStrategy: forex.strategy,
-        botRiskLevel: forex.riskLevel,
-        botAutomation: forex.automationLevel,
-        botSession: forex.sessionOptimal
+
       });
     });
 

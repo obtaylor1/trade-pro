@@ -18,16 +18,12 @@ interface ForexBotCardProps {
     confidence: number;
     action: string;
     rationale: string;
-    minimumTrade: string;
+    minimumTrade?: string;
     leverage: string;
     spread: string;
     strategy: string;
     lotSize: string;
     marginRequired: string;
-    botStrategy?: string;
-    botRiskLevel?: string;
-    botAutomation?: string;
-    botSession?: string;
   };
 }
 
@@ -61,7 +57,7 @@ export default function ForexBotCard({ opportunity }: ForexBotCardProps) {
   });
 
   const handleExecuteTrade = () => {
-    const tradeAmount = parseFloat(opportunity.minimumTrade.replace('$', ''));
+    const tradeAmount = parseFloat((opportunity.minimumTrade || '$50.00').replace('$', ''));
     
     executeTradeMutation.mutate({
       opportunityId: opportunity.id,
@@ -132,17 +128,17 @@ export default function ForexBotCard({ opportunity }: ForexBotCardProps) {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-gray-400">Risk Level:</span>
-            <div className={`font-medium ${getRiskLevelColor(opportunity.botRiskLevel || 'Medium')}`}>
-              {opportunity.botRiskLevel || 'Medium'}
+            <div className={`font-medium ${getRiskLevelColor('Medium')}`}>
+              Medium
             </div>
           </div>
           <div>
             <span className="text-gray-400">Automation:</span>
-            <div className="text-blue-400 font-medium">{opportunity.botAutomation || 'Full'}</div>
+            <div className="text-blue-400 font-medium">Full Bot</div>
           </div>
           <div>
             <span className="text-gray-400">Session:</span>
-            <div className="text-gray-300 font-medium">{opportunity.botSession || 'Global'}</div>
+            <div className="text-gray-300 font-medium">Optimized</div>
           </div>
           <div>
             <span className="text-gray-400">Confidence:</span>
@@ -170,7 +166,7 @@ export default function ForexBotCard({ opportunity }: ForexBotCardProps) {
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-400">Minimum Trade:</span>
-            <span className="text-white font-medium">{opportunity.minimumTrade}</span>
+            <span className="text-white font-medium">{opportunity.minimumTrade || '$50.00'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">Leverage:</span>
@@ -208,7 +204,7 @@ export default function ForexBotCard({ opportunity }: ForexBotCardProps) {
               Executing Bot Trade...
             </div>
           ) : (
-            `Execute ${opportunity.action} • ${opportunity.minimumTrade}`
+            `Execute ${opportunity.action} • ${opportunity.minimumTrade || '$50.00'}`
           )}
         </Button>
       </CardContent>

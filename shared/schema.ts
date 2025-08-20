@@ -39,7 +39,12 @@ export const tradingOpportunitySchema = z.object({
   spread: z.string().optional(),
   swapLong: z.string().optional(),
   swapShort: z.string().optional(),
-  lotSize: z.string().optional()
+  lotSize: z.string().optional(),
+  // Forex bot-specific fields
+  botStrategy: z.string().optional(),
+  botRiskLevel: z.string().optional(),
+  botAutomation: z.string().optional(),
+  botSession: z.string().optional()
 });
 
 export const tradeExecutionSchema = z.object({
