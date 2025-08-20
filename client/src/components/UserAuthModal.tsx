@@ -129,7 +129,9 @@ export default function UserAuthModal({ isVisible, onUserAuthenticated, onClose 
     { value: 'tastytrade', label: 'tastytrade ($1.25/trade)', fee: '$1.25' },
     { value: 'td-ameritrade', label: 'TD Ameritrade ($2.25/trade)', fee: '$2.25' },
     { value: 'oanda-sim', label: 'OANDA (Forex Spreads)', fee: 'Spreads' },
-    { value: 'ig-group-sim', label: 'IG Group (Forex Spreads)', fee: 'Spreads' },
+    { value: 'forex-com-sim', label: 'FOREX.com (Spreads)', fee: 'Spreads' },
+    { value: 'ig-group-sim', label: 'IG (Best Overall)', fee: 'Spreads' },
+    { value: 'pepperstone-sim', label: 'Pepperstone (Low Spreads)', fee: 'Spreads' },
   ];
 
   return (

@@ -37,6 +37,20 @@ Preferred communication style: Simple, everyday language.
 - Integrated real exchange symbols (GC, CL, NG, KC, C, ES) from CME, NYMEX, CBOT, ICE
 - Enhanced schema to support futures-specific fields: marginRequired, tickValue, leverage, strategy, stopLoss, takeProfit
 
+**Forex Trading Implementation:**
+- Added forex as fifth market option with $50 minimum requirement
+- Implemented professional forex strategies: Trend Following, Breakout Trading, Carry Trade, Range Trading, Swing Trading
+- Integrated authentic regulated broker data: OANDA, FOREX.com (StoneX), Interactive Brokers, IG, Pepperstone, IC Markets, FxPro, XTB
+- Added major currency pairs: EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD with real-time pricing
+- Enhanced broker selection system with forex-specific features and regulatory information
+- Updated market selector, broker dashboard, and user authentication to support forex trading
+
+**Portfolio Integration & Reset Functionality:**
+- All configure & execute buttons now properly update user portfolio balance with real-time invalidation
+- Added comprehensive reset portfolio functionality with both frontend button and backend API endpoint
+- Enhanced balance tracking system across all trading components (stocks, options, commodities, crypto, forex)
+- Implemented proper query invalidation for real-time balance updates after trade execution
+
 **Options Trading Interface Improvements:**
 - Enhanced positioned options trade window spanning first two trading cards area
 - Fixed positioning and scrolling issues for better user experience

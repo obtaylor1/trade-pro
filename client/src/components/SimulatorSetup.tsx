@@ -91,7 +91,7 @@ const SIMULATOR_BROKERS: Broker[] = [
     id: 'oanda-sim',
     name: 'OANDA',
     assetClass: 'forex',
-    features: ['Forex specialist', 'Tight spreads', 'Professional platform'],
+    features: ['Robust regulation', 'Excellent execution', 'Advanced trading tools'],
     rating: 4.6,
     fees: {
       stockCommission: 0,
@@ -103,17 +103,47 @@ const SIMULATOR_BROKERS: Broker[] = [
     }
   },
   {
-    id: 'ig-group-sim',
-    name: 'IG Group',
+    id: 'forex-com-sim',
+    name: 'FOREX.com (StoneX)',
     assetClass: 'forex',
-    features: ['Global forex leader', 'Low spreads', '17,000+ markets'],
+    features: ['NFA/CFTC regulated', 'MT4/MT5 platforms', 'Algorithmic compatibility'],
     rating: 4.5,
     fees: {
       stockCommission: 0,
       optionCommission: 0,
       futuresCommission: 0,
       cryptoFee: 0,
+      marginRate: 3.8,
+      inactivityFee: 0,
+    }
+  },
+  {
+    id: 'ig-group-sim',
+    name: 'IG',
+    assetClass: 'forex',
+    features: ['Best overall broker', 'Global licenses', 'Extensive products'],
+    rating: 4.8,
+    fees: {
+      stockCommission: 0,
+      optionCommission: 0,
+      futuresCommission: 0,
+      cryptoFee: 0,
       marginRate: 3.4,
+      inactivityFee: 0,
+    }
+  },
+  {
+    id: 'pepperstone-sim',
+    name: 'Pepperstone',
+    assetClass: 'forex',
+    features: ['ASIC/FCA regulated', 'Low spreads', 'Scalping friendly'],
+    rating: 4.5,
+    fees: {
+      stockCommission: 0,
+      optionCommission: 0,
+      futuresCommission: 0,
+      cryptoFee: 0,
+      marginRate: 2.9,
       inactivityFee: 0,
     }
   }

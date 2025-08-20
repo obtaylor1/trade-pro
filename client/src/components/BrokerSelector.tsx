@@ -190,7 +190,7 @@ const MOCK_BROKERS: Record<string, Broker[]> = {
       id: 'oanda',
       name: 'OANDA',
       assetClass: 'forex',
-      features: ['Tight spreads', 'No minimum deposit', 'Advanced platform'],
+      features: ['Robust regulation', 'Excellent execution', 'Advanced trading tools'],
       rating: 4.6,
       fees: {
         stockCommission: 0,
@@ -202,26 +202,11 @@ const MOCK_BROKERS: Record<string, Broker[]> = {
       }
     },
     {
-      id: 'ig-group',
-      name: 'IG Group',
-      assetClass: 'forex',
-      features: ['Global leader', 'Low spreads', '17,000+ markets'],
-      rating: 4.5,
-      fees: {
-        stockCommission: 0,
-        optionCommission: 0,
-        futuresCommission: 0,
-        cryptoFee: 0,
-        marginRate: 3.4,
-        inactivityFee: 12,
-      }
-    },
-    {
       id: 'forex-com',
-      name: 'Forex.com',
+      name: 'FOREX.com (StoneX)',
       assetClass: 'forex',
-      features: ['Institutional grade', 'MetaTrader platform', 'DMA access'],
-      rating: 4.4,
+      features: ['NFA/CFTC regulated', 'MT4/MT5 platforms', 'Algorithmic compatibility'],
+      rating: 4.5,
       fees: {
         stockCommission: 0,
         optionCommission: 0,
@@ -232,10 +217,70 @@ const MOCK_BROKERS: Record<string, Broker[]> = {
       }
     },
     {
+      id: 'interactive-brokers',
+      name: 'Interactive Brokers',
+      assetClass: 'forex',
+      features: ['Ultra-low fees', 'Global markets', 'Professional tools'],
+      rating: 4.7,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0,
+        cryptoFee: 0,
+        marginRate: 2.8,
+        inactivityFee: 10,
+      }
+    },
+    {
+      id: 'pepperstone',
+      name: 'Pepperstone',
+      assetClass: 'forex',
+      features: ['ASIC/FCA regulated', 'Low spreads', 'Scalping friendly'],
+      rating: 4.5,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0,
+        cryptoFee: 0,
+        marginRate: 2.9,
+        inactivityFee: 0,
+      }
+    },
+    {
+      id: 'ig-group',
+      name: 'IG',
+      assetClass: 'forex',
+      features: ['Best overall broker', 'Global licenses', 'Extensive products'],
+      rating: 4.8,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0,
+        cryptoFee: 0,
+        marginRate: 3.4,
+        inactivityFee: 15,
+      }
+    },
+    {
+      id: 'ic-markets',
+      name: 'IC Markets',
+      assetClass: 'forex',
+      features: ['Tight spreads', 'ASIC/CySEC regulated', 'Active trader focused'],
+      rating: 4.4,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0,
+        cryptoFee: 0,
+        marginRate: 3.2,
+        inactivityFee: 0,
+      }
+    },
+    {
       id: 'fxpro',
       name: 'FxPro',
       assetClass: 'forex',
-      features: ['ECN execution', 'Multiple platforms', 'Regulatory protection'],
+      features: ['UK/Cyprus regulated', 'MT4/MT5/cTrader', 'Global access'],
       rating: 4.3,
       fees: {
         stockCommission: 0,
@@ -247,18 +292,18 @@ const MOCK_BROKERS: Record<string, Broker[]> = {
       }
     },
     {
-      id: 'pepperstone',
-      name: 'Pepperstone',
+      id: 'xtb',
+      name: 'XTB',
       assetClass: 'forex',
-      features: ['Raw spreads', 'cTrader platform', 'Razor execution'],
-      rating: 4.5,
+      features: ['FCA/CySEC regulated', 'Multi-jurisdiction', 'Trusted reliability'],
+      rating: 4.2,
       fees: {
         stockCommission: 0,
         optionCommission: 0,
         futuresCommission: 0,
         cryptoFee: 0,
-        marginRate: 2.9,
-        inactivityFee: 0,
+        marginRate: 3.9,
+        inactivityFee: 10,
       }
     }
   ]
