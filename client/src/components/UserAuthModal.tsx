@@ -128,6 +128,8 @@ export default function UserAuthModal({ isVisible, onUserAuthenticated, onClose 
     { value: 'interactive-brokers', label: 'Interactive Brokers ($0.85/trade)', fee: '$0.85' },
     { value: 'tastytrade', label: 'tastytrade ($1.25/trade)', fee: '$1.25' },
     { value: 'td-ameritrade', label: 'TD Ameritrade ($2.25/trade)', fee: '$2.25' },
+    { value: 'oanda-sim', label: 'OANDA (Forex Spreads)', fee: 'Spreads' },
+    { value: 'ig-group-sim', label: 'IG Group (Forex Spreads)', fee: 'Spreads' },
   ];
 
   return (

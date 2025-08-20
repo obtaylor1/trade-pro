@@ -14,7 +14,8 @@ export default function BrokerDashboard({ isLiveTrading }: BrokerDashboardProps)
     { id: 'stocks', name: 'Stocks', icon: 'fas fa-chart-line', description: 'Equities & ETFs' },
     { id: 'commodities', name: 'Commodities', icon: 'fas fa-coins', description: 'Gold, Oil, Silver' },
     { id: 'crypto', name: 'Crypto', icon: 'fab fa-bitcoin', description: 'Digital Assets' },
-    { id: 'options', name: 'Options', icon: 'fas fa-chart-bar', description: 'Derivatives' }
+    { id: 'options', name: 'Options', icon: 'fas fa-chart-bar', description: 'Derivatives' },
+    { id: 'forex', name: 'Forex', icon: 'fas fa-exchange-alt', description: 'Currency Trading' }
   ];
 
   const handleBrokerSelect = (assetClass: string, broker: Broker) => {
@@ -54,7 +55,7 @@ export default function BrokerDashboard({ isLiveTrading }: BrokerDashboardProps)
               </div>
 
               <BrokerSelector
-                assetClass={assetClass.id as 'stocks' | 'commodities' | 'crypto' | 'options'}
+                assetClass={assetClass.id as 'stocks' | 'commodities' | 'crypto' | 'options' | 'forex'}
                 selectedBroker={selectedBrokers[assetClass.id]}
                 onBrokerSelect={(broker) => handleBrokerSelect(assetClass.id, broker)}
                 isLiveTrading={isLiveTrading}

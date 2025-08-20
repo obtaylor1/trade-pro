@@ -86,6 +86,36 @@ const SIMULATOR_BROKERS: Broker[] = [
       marginRate: 0,
       inactivityFee: 0,
     }
+  },
+  {
+    id: 'oanda-sim',
+    name: 'OANDA',
+    assetClass: 'forex',
+    features: ['Forex specialist', 'Tight spreads', 'Professional platform'],
+    rating: 4.6,
+    fees: {
+      stockCommission: 0,
+      optionCommission: 0,
+      futuresCommission: 0,
+      cryptoFee: 0,
+      marginRate: 3.5,
+      inactivityFee: 0,
+    }
+  },
+  {
+    id: 'ig-group-sim',
+    name: 'IG Group',
+    assetClass: 'forex',
+    features: ['Global forex leader', 'Low spreads', '17,000+ markets'],
+    rating: 4.5,
+    fees: {
+      stockCommission: 0,
+      optionCommission: 0,
+      futuresCommission: 0,
+      cryptoFee: 0,
+      marginRate: 3.4,
+      inactivityFee: 0,
+    }
   }
 ];
 

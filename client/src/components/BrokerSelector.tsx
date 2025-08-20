@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { type Broker } from '@shared/schema';
 
 interface BrokerSelectorProps {
-  assetClass: 'stocks' | 'commodities' | 'crypto' | 'options';
+  assetClass: 'stocks' | 'commodities' | 'crypto' | 'options' | 'forex';
   selectedBroker?: Broker;
   onBrokerSelect: (broker: Broker) => void;
   isLiveTrading: boolean;
@@ -181,6 +181,83 @@ const MOCK_BROKERS: Record<string, Broker[]> = {
         futuresCommission: 1.50,
         cryptoFee: 0,
         marginRate: 9.25,
+        inactivityFee: 0,
+      }
+    }
+  ],
+  forex: [
+    {
+      id: 'oanda',
+      name: 'OANDA',
+      assetClass: 'forex',
+      features: ['Tight spreads', 'No minimum deposit', 'Advanced platform'],
+      rating: 4.6,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0,
+        cryptoFee: 0,
+        marginRate: 3.5,
+        inactivityFee: 0,
+      }
+    },
+    {
+      id: 'ig-group',
+      name: 'IG Group',
+      assetClass: 'forex',
+      features: ['Global leader', 'Low spreads', '17,000+ markets'],
+      rating: 4.5,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0,
+        cryptoFee: 0,
+        marginRate: 3.4,
+        inactivityFee: 12,
+      }
+    },
+    {
+      id: 'forex-com',
+      name: 'Forex.com',
+      assetClass: 'forex',
+      features: ['Institutional grade', 'MetaTrader platform', 'DMA access'],
+      rating: 4.4,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0,
+        cryptoFee: 0,
+        marginRate: 3.8,
+        inactivityFee: 0,
+      }
+    },
+    {
+      id: 'fxpro',
+      name: 'FxPro',
+      assetClass: 'forex',
+      features: ['ECN execution', 'Multiple platforms', 'Regulatory protection'],
+      rating: 4.3,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0,
+        cryptoFee: 0,
+        marginRate: 4.2,
+        inactivityFee: 0,
+      }
+    },
+    {
+      id: 'pepperstone',
+      name: 'Pepperstone',
+      assetClass: 'forex',
+      features: ['Raw spreads', 'cTrader platform', 'Razor execution'],
+      rating: 4.5,
+      fees: {
+        stockCommission: 0,
+        optionCommission: 0,
+        futuresCommission: 0,
+        cryptoFee: 0,
+        marginRate: 2.9,
         inactivityFee: 0,
       }
     }
