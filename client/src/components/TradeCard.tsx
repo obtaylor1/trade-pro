@@ -124,47 +124,47 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
           </div>
         </div>
 
-        <div className="space-y-3 mb-6">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-300">Entry Price:</span>
-            <span className="text-white font-semibold">{opportunity.entryPrice}</span>
+        <div className="space-y-3 mb-6 bg-gradient-to-br from-gray-800/70 to-gray-900/90 p-4 rounded-lg backdrop-blur-sm border border-gray-600/50">
+          <div className="flex justify-between items-center p-2 bg-gradient-to-r from-blue-900/30 to-indigo-900/30 rounded">
+            <span className="text-blue-200 font-medium">Entry Price:</span>
+            <span className="text-white font-bold">{opportunity.entryPrice}</span>
           </div>
           {opportunity.isMicro && opportunity.minimumTrade && (
-            <div className="flex justify-between items-center">
-              <span className="text-purple-300 text-sm">Min. Trade:</span>
-              <span className="text-purple-300 font-semibold text-sm">{opportunity.minimumTrade}</span>
+            <div className="flex justify-between items-center p-2 bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded">
+              <span className="text-purple-200 font-medium">Min. Trade:</span>
+              <span className="text-purple-100 font-bold">{opportunity.minimumTrade}</span>
             </div>
           )}
           {opportunity.market === "options" && opportunity.premium && (
-            <div className="flex justify-between items-center">
-              <span className="text-gray-300">Premium:</span>
-              <span className="text-white font-semibold">{opportunity.premium}</span>
+            <div className="flex justify-between items-center p-2 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 rounded">
+              <span className="text-cyan-200 font-medium">Premium:</span>
+              <span className="text-cyan-100 font-bold">{opportunity.premium}</span>
             </div>
           )}
           {opportunity.market === "options" && opportunity.underlyingPrice && (
-            <div className="flex justify-between items-center">
-              <span className="text-gray-300">Underlying:</span>
-              <span className="text-white font-semibold">{opportunity.underlyingPrice}</span>
+            <div className="flex justify-between items-center p-2 bg-gradient-to-r from-indigo-900/30 to-purple-900/30 rounded">
+              <span className="text-indigo-200 font-medium">Underlying:</span>
+              <span className="text-indigo-100 font-bold">{opportunity.underlyingPrice}</span>
             </div>
           )}
           {opportunity.market === "options" && opportunity.impliedVolatility && (
-            <div className="flex justify-between items-center">
-              <span className="text-gray-300">IV:</span>
-              <span className="text-white font-semibold">{opportunity.impliedVolatility}</span>
+            <div className="flex justify-between items-center p-2 bg-gradient-to-r from-violet-900/30 to-purple-900/30 rounded">
+              <span className="text-violet-200 font-medium">IV:</span>
+              <span className="text-violet-100 font-bold">{opportunity.impliedVolatility}</span>
             </div>
           )}
-          <div className="flex justify-between items-center">
-            <span className="text-gray-300">Risk:</span>
-            <span className="text-trading-error font-semibold">{opportunity.risk}</span>
+          <div className="flex justify-between items-center p-2 bg-gradient-to-r from-red-900/40 to-red-800/40 rounded">
+            <span className="text-red-200 font-medium">Risk:</span>
+            <span className="text-red-100 font-bold">{opportunity.risk}</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-300">Potential Gain:</span>
-            <span className="text-trading-success font-semibold">{opportunity.potentialGain}</span>
+          <div className="flex justify-between items-center p-2 bg-gradient-to-r from-green-900/40 to-emerald-800/40 rounded">
+            <span className="text-green-200 font-medium">Potential Gain:</span>
+            <span className="text-green-100 font-bold">{opportunity.potentialGain}</span>
           </div>
-          <div className="border-t border-gray-600 pt-3">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-300 font-medium">Net Profit:</span>
-              <span className="text-trading-success font-bold text-lg">{opportunity.netProfit}</span>
+          <div className="border-t border-gray-500/50 pt-3 mt-3">
+            <div className="flex justify-between items-center p-3 bg-gradient-to-r from-emerald-800/60 to-teal-800/60 rounded-lg border border-emerald-600/30">
+              <span className="text-emerald-100 font-bold">Net Profit:</span>
+              <span className="text-emerald-50 font-bold text-xl shadow-lg">{opportunity.netProfit}</span>
             </div>
           </div>
         </div>
@@ -182,23 +182,23 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
           </div>
         </div>
 
-        <div className="mb-6 p-3 bg-gray-800 rounded-lg border-l-4 border-trading-light-blue">
-          <div className="flex items-start space-x-2">
-            <i className="fas fa-lightbulb text-trading-light-blue text-sm mt-1"></i>
+        <div className="mb-6 p-4 bg-gradient-to-br from-blue-900/40 to-indigo-900/60 rounded-lg border border-blue-600/30 backdrop-blur-sm">
+          <div className="flex items-start space-x-3">
+            <i className="fas fa-lightbulb text-yellow-400 text-lg mt-1"></i>
             <div>
-              <h4 className="text-sm font-semibold text-white mb-1">Why Trade Now</h4>
-              <p className="text-xs text-gray-300 leading-relaxed">{opportunity.rationale}</p>
+              <h4 className="text-lg font-bold text-blue-100 mb-2">Why Trade Now</h4>
+              <p className="text-sm text-blue-200 leading-relaxed font-medium">{opportunity.rationale}</p>
             </div>
           </div>
         </div>
 
         <div className="space-y-3">
-          {opportunity.market === 'options' && (
+          {opportunity.market === 'options' && false && (
             <button 
               onClick={() => setShowChart(true)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center"
+              className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center shadow-lg border border-purple-500/30"
             >
-              <BarChart3 className="h-4 w-4 mr-2" />
+              <BarChart3 className="h-5 w-5 mr-2" />
               View Real-Time Chart
             </button>
           )}
@@ -206,7 +206,7 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
           <button 
             onClick={opportunity.market === 'options' ? () => setShowTradeModal(true) : handleExecuteTrade}
             disabled={executeTradeMutation.isPending}
-            className="w-full bg-trading-light-blue hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg border border-blue-500/30"
           >
             {executeTradeMutation.isPending ? (
               <>
@@ -216,7 +216,7 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
             ) : (
               <>
                 <i className="fas fa-play mr-2"></i>
-                {opportunity.market === 'options' ? 'Configure & Execute' : 'Execute Trade'}
+                {opportunity.market === 'options' ? 'Configure & Execute Trade' : 'Execute Trade'}
               </>
             )}
           </button>

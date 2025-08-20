@@ -80,12 +80,12 @@ export default function OptionsTradeModal({
         {/* Option Details */}
         <div className="p-6">
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-800 p-4 rounded-lg">
-              <div className="text-gray-400 text-sm">Strike Price</div>
+            <div className="bg-gradient-to-br from-blue-800/60 to-indigo-800/80 p-4 rounded-lg border border-blue-600/30">
+              <div className="text-blue-200 text-sm font-medium">Strike Price</div>
               <div className="text-white text-xl font-bold">{opportunity.strikePrice}</div>
             </div>
-            <div className="bg-gray-800 p-4 rounded-lg">
-              <div className="text-gray-400 text-sm">Current Price</div>
+            <div className="bg-gradient-to-br from-green-800/60 to-emerald-800/80 p-4 rounded-lg border border-green-600/30">
+              <div className="text-green-200 text-sm font-medium">Current Price</div>
               <div className="text-white text-xl font-bold">{opportunity.underlyingPrice}</div>
             </div>
           </div>
@@ -161,54 +161,64 @@ export default function OptionsTradeModal({
           </div>
 
           {/* Trade Summary */}
-          <div className="bg-gray-800 rounded-lg p-4 mb-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-              <DollarSign className="h-5 w-5 mr-2" />
+          <div className="bg-gradient-to-br from-slate-800/70 to-gray-900/90 rounded-lg p-5 mb-6 border border-slate-600/40 backdrop-blur-sm">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+              <DollarSign className="h-6 w-6 mr-2 text-yellow-400" />
               Trade Summary
             </h3>
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Premium per contract:</span>
-                <span className="text-white font-semibold">${selectedPremium.toFixed(2)}</span>
+              <div className="flex justify-between items-center p-2 bg-gradient-to-r from-blue-900/30 to-indigo-900/30 rounded">
+                <span className="text-blue-200 font-medium">Premium per contract:</span>
+                <span className="text-white font-bold">${selectedPremium.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Total cost ({contractCount} contracts):</span>
-                <span className="text-white font-semibold">${totalCost.toFixed(2)}</span>
+              <div className="flex justify-between items-center p-2 bg-gradient-to-r from-purple-900/30 to-violet-900/30 rounded">
+                <span className="text-purple-200 font-medium">Total cost ({contractCount} contracts):</span>
+                <span className="text-white font-bold">${totalCost.toFixed(2)}</span>
               </div>
-              <div className="border-t border-gray-600 pt-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Maximum risk:</span>
-                  <span className="text-red-400 font-semibold">-${maxRisk.toFixed(2)}</span>
+              <div className="border-t border-gray-500/50 pt-3 mt-3">
+                <div className="flex justify-between items-center p-2 bg-gradient-to-r from-red-900/40 to-red-800/40 rounded mb-2">
+                  <span className="text-red-200 font-medium">Maximum risk:</span>
+                  <span className="text-red-100 font-bold">-${maxRisk.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Potential gain:</span>
-                  <span className="text-green-400 font-semibold">+${potentialGain.toFixed(2)}</span>
+                <div className="flex justify-between items-center p-2 bg-gradient-to-r from-green-900/40 to-emerald-800/40 rounded mb-2">
+                  <span className="text-green-200 font-medium">Potential gain:</span>
+                  <span className="text-green-100 font-bold">+${potentialGain.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center font-bold">
-                  <span className="text-white">Net profit potential:</span>
-                  <span className="text-trading-blue text-lg">+${netProfit.toFixed(2)}</span>
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-teal-800/60 to-cyan-800/60 rounded-lg border border-teal-600/30">
+                  <span className="text-teal-100 font-bold">Net profit potential:</span>
+                  <span className="text-teal-50 font-bold text-xl">+${netProfit.toFixed(2)}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Strategy Info */}
-          <div className="bg-blue-900 bg-opacity-30 rounded-lg p-4 mb-6">
-            <h4 className="text-white font-semibold mb-2 flex items-center">
+          <div className={`rounded-lg p-5 mb-6 border backdrop-blur-sm ${
+            opportunity.optionType === 'CALL' 
+              ? 'bg-gradient-to-br from-green-800/50 to-emerald-900/70 border-green-600/40'
+              : 'bg-gradient-to-br from-red-800/50 to-rose-900/70 border-red-600/40'
+          }`}>
+            <h4 className="text-white font-bold text-lg mb-3 flex items-center">
               {opportunity.optionType === 'CALL' ? (
-                <TrendingUp className="h-4 w-4 mr-2 text-green-400" />
+                <TrendingUp className="h-5 w-5 mr-2 text-green-300" />
               ) : (
-                <TrendingDown className="h-4 w-4 mr-2 text-red-400" />
+                <TrendingDown className="h-5 w-5 mr-2 text-red-300" />
               )}
               {opportunity.optionType === 'CALL' ? 'Bullish Strategy' : 'Bearish Strategy'}
             </h4>
-            <p className="text-gray-300 text-sm">
+            <p className={`text-sm font-medium leading-relaxed ${
+              opportunity.optionType === 'CALL' ? 'text-green-200' : 'text-red-200'
+            }`}>
               {opportunity.optionType === 'CALL' 
                 ? `This call option profits if ${opportunity.id.split('-')[1]?.toUpperCase()} moves above $${opportunity.strikePrice} before expiration.`
                 : `This put option profits if ${opportunity.id.split('-')[1]?.toUpperCase()} moves below $${opportunity.strikePrice} before expiration.`
               }
             </p>
-            <div className="mt-2 text-xs text-gray-400">
+            <div className={`mt-3 text-sm p-2 rounded ${
+              selectedDuration === 'weekly' 
+                ? 'bg-yellow-900/40 text-yellow-200'
+                : 'bg-blue-900/40 text-blue-200'
+            }`}>
               {selectedDuration === 'weekly' 
                 ? 'Weekly options offer higher potential returns but require faster price movement.'
                 : 'Monthly options provide more time for the trade to work but cost more premium.'
@@ -220,20 +230,27 @@ export default function OptionsTradeModal({
           <div className="flex space-x-4">
             <button
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 border border-gray-500/30"
             >
               Cancel
             </button>
             <button
               onClick={handleExecuteTrade}
               disabled={isExecuting}
-              className={`flex-1 px-6 py-3 rounded-lg transition-colors ${
+              className={`flex-1 px-6 py-4 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg ${
                 opportunity.optionType === 'CALL'
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'bg-red-600 hover:bg-red-700 text-white'
-              } ${isExecuting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white border border-green-500/30'
+                  : 'bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white border border-red-500/30'
+              } ${isExecuting ? 'opacity-50 cursor-not-allowed transform-none' : ''}`}
             >
-              {isExecuting ? 'Executing...' : `${opportunity.action} ${contractCount} Contract${contractCount > 1 ? 's' : ''}`}
+              {isExecuting ? (
+                <>
+                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                  Executing...
+                </>
+              ) : (
+                `${opportunity.action} ${contractCount} Contract${contractCount > 1 ? 's' : ''}`
+              )}
             </button>
           </div>
         </div>
