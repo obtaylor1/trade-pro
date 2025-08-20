@@ -322,27 +322,6 @@ export default function NewsPage() {
         </div>
       </header>
 
-      {/* Category Tabs */}
-      <nav className="bg-trading-gray border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8 overflow-x-auto">
-            {categories.map((category) => (
-              <button
-                key={category.key}
-                onClick={() => setSelectedCategory(category.key)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  selectedCategory === category.key
-                    ? 'border-trading-light-blue text-trading-light-blue'
-                    : 'border-transparent text-gray-400 hover:text-gray-300'
-                }`}
-              >
-                {category.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
-
       {/* Hero Video Section */}
       <section className="bg-gradient-to-r from-trading-dark via-gray-800 to-trading-dark py-8 mb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -457,6 +436,27 @@ export default function NewsPage() {
           </div>
         </div>
       </section>
+
+      {/* Category Tabs */}
+      <nav className="bg-trading-gray border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8 overflow-x-auto">
+            {categories.map((category) => (
+              <button
+                key={category.key}
+                onClick={() => setSelectedCategory(category.key)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                  selectedCategory === category.key
+                    ? 'border-trading-light-blue text-trading-light-blue'
+                    : 'border-transparent text-gray-400 hover:text-gray-300'
+                }`}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
