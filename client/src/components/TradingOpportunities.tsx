@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type TradingOpportunity, type TradeResult } from "@shared/schema";
 import TradeCard from "./TradeCard";
+import FuturesTradeCard from "./FuturesTradeCard";
 import SimpleLiveChart from "./SimpleLiveChart";
 import OptionsTradeWindow from "./OptionsTradeWindow";
 
@@ -90,20 +91,21 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
         </div>
       </div>
 
-      {selectedMarket === "commodities" && hasMicroTrades && (
-        <div className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-500/30 rounded-xl p-4 mb-6">
-          <div className="flex items-start space-x-3">
-            <i className="fas fa-atom text-purple-400 text-xl mt-1"></i>
+      {selectedMarket === "commodities" && (
+        <div className="bg-gradient-to-r from-amber-900/40 to-orange-900/50 border border-amber-500/40 rounded-xl p-6 mb-6">
+          <div className="flex items-start space-x-4">
+            <i className="fas fa-chart-line text-amber-400 text-2xl mt-1"></i>
             <div>
-              <h3 className="text-white font-semibold mb-2">Micro & Nano Trading Available</h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                Trade commodities with fractional contracts starting as low as $0.30. Micro contracts represent 1/10th to 1/250th of standard size, 
-                enabling precise risk management and accessible entry points for all investors.
+              <h3 className="text-white font-semibold text-lg mb-2">Professional Futures Trading</h3>
+              <p className="text-gray-200 text-sm leading-relaxed mb-3">
+                Trade standardized futures contracts on major exchanges (CME, NYMEX, CBOT, ICE) with full contract specifications. 
+                Advanced strategies including trend following, supply-demand analysis, and seasonal patterns.
               </p>
-              <div className="flex items-center space-x-4 mt-2 text-xs text-purple-300">
-                <span><i className="fas fa-check-circle mr-1"></i>Lower capital requirements</span>
-                <span><i className="fas fa-check-circle mr-1"></i>Precise position sizing</span>
-                <span><i className="fas fa-check-circle mr-1"></i>Reduced risk exposure</span>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-amber-200">
+                <span><i className="fas fa-shield-alt mr-2 text-green-400"></i>Professional risk management</span>
+                <span><i className="fas fa-chart-bar mr-2 text-blue-400"></i>Real-time margin calculations</span>
+                <span><i className="fas fa-bullseye mr-2 text-red-400"></i>Stop-loss & take-profit levels</span>
+                <span><i className="fas fa-sync mr-2 text-purple-400"></i>Live market data integration</span>
               </div>
             </div>
           </div>
@@ -146,14 +148,24 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="trading-cards-container">
         {opportunities.map((opportunity, index) => (
-          <TradeCard
-            key={opportunity.id}
-            opportunity={opportunity}
-            onTradeExecuted={onTradeExecuted}
-            animationDelay={index * 100}
-            userProfile={userProfile}
-            onOpenOptionsWindow={(opp) => setOptionsTradeWindow({ isOpen: true, opportunity: opp })}
-          />
+          opportunity.market === 'commodities' && opportunity.strategy ? (
+            <FuturesTradeCard
+              key={opportunity.id}
+              opportunity={opportunity}
+              onTradeExecuted={onTradeExecuted}
+              animationDelay={index * 100}
+              userProfile={userProfile}
+            />
+          ) : (
+            <TradeCard
+              key={opportunity.id}
+              opportunity={opportunity}
+              onTradeExecuted={onTradeExecuted}
+              animationDelay={index * 100}
+              userProfile={userProfile}
+              onOpenOptionsWindow={(opp) => setOptionsTradeWindow({ isOpen: true, opportunity: opp })}
+            />
+          )
         ))}
       </div>
 

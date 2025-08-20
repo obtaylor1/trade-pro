@@ -510,108 +510,156 @@ export class MarketDataService {
       }
 
       if (market === "commodities") {
-        // Micro trading opportunities for commodities - smaller contract sizes for precise risk management
+        // Professional futures trading opportunities with full contract specifications
+        
+        // Gold Futures (GC) - CME Group
         opportunities.push({
-          id: "micro-commodity-gold",
-          name: "Micro Gold (MGC)",
-          type: "Micro Precious Metal",
-          entryPrice: "$20.36",
-          risk: "-$3.00",
-          potentialGain: "+$7.50", 
-          netProfit: "+$4.50",
-          confidence: 85,
+          id: "futures-gold-gc",
+          name: "Gold Futures (GC)",
+          type: "GCZ25 • Dec 2025",
+          entryPrice: "$2,036.50",
+          risk: "-$1,000.00",
+          potentialGain: "+$2,500.00",
+          netProfit: "+$1,500.00",
+          confidence: 82,
           action: "BUY",
           market: "commodities",
-          rationale: "Federal Reserve signaling pause in rate hikes with inflation cooling. Geopolitical tensions creating safe-haven demand. Dollar weakening supports gold rally.",
-          isMicro: true,
-          contractSize: "0.1 oz (1/10th standard)",
-          minimumTrade: "$20"
+          rationale: "Breaking above $2,030 resistance with strong volume. Dollar index weakness supports precious metals. Fed dovish pivot expectations increasing safe-haven demand. MACD bullish crossover confirmed.",
+          isMicro: false,
+          contractSize: "100 troy oz",
+          underlyingPrice: "$2,036.50/oz",
+          marginRequired: "$8,500.00",
+          tickValue: "$100.00 per $1.00 move",
+          expirationDate: "2025-12-29",
+          leverage: "24:1",
+          strategy: "Trend Following + Breakout",
+          stopLoss: "$2,020.00",
+          takeProfit: "$2,065.00"
         });
 
+        // Crude Oil Futures (CL) - NYMEX
         opportunities.push({
-          id: "micro-commodity-oil",
-          name: "Micro Crude Oil (MCL)",
-          type: "Micro Energy",
-          entryPrice: "$7.83",
-          risk: "-$1.50",
-          potentialGain: "+$4.20",
-          netProfit: "+$2.70", 
-          confidence: 79,
+          id: "futures-crude-oil-cl",
+          name: "Crude Oil Futures (CL)",
+          type: "CLZ25 • Dec 2025",
+          entryPrice: "$78.30",
+          risk: "-$2,000.00",
+          potentialGain: "+$5,000.00",
+          netProfit: "+$3,000.00",
+          confidence: 76,
           action: "BUY",
           market: "commodities",
-          rationale: "OPEC+ production cuts taking effect. U.S. strategic petroleum reserve at lowest levels since 1983. Summer driving season approaching.",
-          isMicro: true,
-          contractSize: "100 barrels (1/10th standard)",
-          minimumTrade: "$8"
+          rationale: "OPEC+ supply cuts effective through Q1 2026. US strategic petroleum reserve at 40-year lows. Geopolitical tensions supporting risk premium. Technical breakout above $77 resistance.",
+          isMicro: false,
+          contractSize: "1,000 barrels",
+          underlyingPrice: "$78.30/barrel",
+          marginRequired: "$4,200.00",
+          tickValue: "$10.00 per $0.01 move",
+          expirationDate: "2025-12-19",
+          leverage: "19:1",
+          strategy: "Supply-Demand + Momentum",
+          stopLoss: "$76.50",
+          takeProfit: "$83.00"
         });
 
+        // Corn Futures (C) - CBOT
         opportunities.push({
-          id: "micro-commodity-silver",
-          name: "Micro Silver (MSI)",
-          type: "Micro Precious Metal",
-          entryPrice: "$2.35",
-          risk: "-$0.18",
-          potentialGain: "+$0.38",
-          netProfit: "+$0.20",
-          confidence: 71,
+          id: "futures-corn-c",
+          name: "Corn Futures (C)",
+          type: "CZ25 • Dec 2025",
+          entryPrice: "$4.68",
+          risk: "-$1,250.00",
+          potentialGain: "+$1,875.00",
+          netProfit: "+$625.00",
+          confidence: 74,
           action: "BUY",
           market: "commodities",
-          rationale: "Industrial demand from solar panel production up 18% YoY. Silver-to-gold ratio suggesting silver undervalued. Green energy transition driving demand.",
-          isMicro: true,
-          contractSize: "100 oz (1/50th standard)",
-          minimumTrade: "$2"
+          rationale: "La Niña weather pattern threatening Midwest yields. Ethanol demand increasing with gasoline blending requirements. Export demand from Asia remains strong despite trade tensions.",
+          isMicro: false,
+          contractSize: "5,000 bushels",
+          underlyingPrice: "$4.68/bushel",
+          marginRequired: "$1,400.00",
+          tickValue: "$12.50 per $0.0025 move",
+          expirationDate: "2025-12-15",
+          leverage: "17:1",
+          strategy: "Weather Premium + Seasonal",
+          stopLoss: "$4.43",
+          takeProfit: "$5.05"
         });
 
-        // Add nano-trading options for ultra-precise positions
+        // Coffee Futures (KC) - ICE
         opportunities.push({
-          id: "nano-commodity-copper",
-          name: "Nano Copper (NCP)",
-          type: "Nano Industrial Metal",
-          entryPrice: "$0.38",
-          risk: "-$0.05",
-          potentialGain: "+$0.12",
-          netProfit: "+$0.07",
-          confidence: 77,
-          action: "BUY",
-          market: "commodities",
-          rationale: "Electric vehicle production driving copper demand. Infrastructure spending in emerging markets supporting price. Supply constraints from major mines creating opportunities.",
-          isMicro: true,
-          contractSize: "10 lbs (1/250th standard)",
-          minimumTrade: "$0.50"
-        });
-
-        opportunities.push({
-          id: "nano-commodity-natural-gas",
-          name: "Nano Natural Gas (NNG)",
-          type: "Nano Energy",
-          entryPrice: "$0.28",
-          risk: "-$0.03",
-          potentialGain: "+$0.08",
-          netProfit: "+$0.05",
-          confidence: 73,
-          action: "BUY",
-          market: "commodities",
-          rationale: "Winter heating demand approaching with low storage levels. LNG exports to Europe maintaining strong pricing. Weather forecasts predicting colder than normal temperatures.",
-          isMicro: true,
-          contractSize: "100 MMBtu (1/100th standard)",
-          minimumTrade: "$0.30"
-        });
-
-        opportunities.push({
-          id: "nano-commodity-wheat",
-          name: "Nano Wheat (NWT)",
-          type: "Nano Agricultural",
-          entryPrice: "$0.66",
-          risk: "-$0.08",
-          potentialGain: "+$0.18",
-          netProfit: "+$0.10",
+          id: "futures-coffee-kc",
+          name: "Coffee Futures (KC)",
+          type: "KCZ25 • Dec 2025",
+          entryPrice: "$168.50",
+          risk: "-$1,500.00",
+          potentialGain: "+$3,750.00",
+          netProfit: "+$2,250.00",
           confidence: 69,
           action: "BUY",
           market: "commodities",
-          rationale: "Drought conditions in key growing regions reducing crop estimates. Global food security concerns supporting grain prices. Export restrictions creating supply tightness.",
-          isMicro: true,
-          contractSize: "50 bushels (1/100th standard)",
-          minimumTrade: "$0.70"
+          rationale: "Brazil drought concerns affecting arabica production. Global coffee consumption growth post-pandemic. Supply chain disruptions creating inventory shortages. Speculative funds building long positions.",
+          isMicro: false,
+          contractSize: "37,500 lbs",
+          underlyingPrice: "$1.685/lb",
+          marginRequired: "$3,200.00",
+          tickValue: "$18.75 per $0.0005 move",
+          expirationDate: "2025-12-19",
+          leverage: "20:1",
+          strategy: "Weather Risk + Supply Shock",
+          stopLoss: "$162.00",
+          takeProfit: "$178.00"
+        });
+
+        // Natural Gas Futures (NG) - NYMEX  
+        opportunities.push({
+          id: "futures-natural-gas-ng",
+          name: "Natural Gas Futures (NG)",
+          type: "NGZ25 • Dec 2025",
+          entryPrice: "$2.84",
+          risk: "-$1,000.00",
+          potentialGain: "+$2,100.00",
+          netProfit: "+$1,100.00",
+          confidence: 71,
+          action: "BUY",
+          market: "commodities",
+          rationale: "Winter heating demand with below-normal storage inventories. LNG export capacity additions increasing structural demand. Weather models suggesting colder than normal winter.",
+          isMicro: false,
+          contractSize: "10,000 MMBtu",
+          underlyingPrice: "$2.84/MMBtu",
+          marginRequired: "$1,200.00",
+          tickValue: "$10.00 per $0.001 move",
+          expirationDate: "2025-12-29",
+          leverage: "24:1",
+          strategy: "Storage Deficit + Seasonal",
+          stopLoss: "$2.64",
+          takeProfit: "$3.25"
+        });
+
+        // S&P 500 Index Futures (ES) - CME
+        opportunities.push({
+          id: "futures-sp500-es",
+          name: "S&P 500 Futures (ES)",
+          type: "ESZ25 • Dec 2025",
+          entryPrice: "$4,456.00",
+          risk: "-$2,500.00",
+          potentialGain: "+$5,000.00",
+          netProfit: "+$2,500.00",
+          confidence: 78,
+          action: "BUY",
+          market: "commodities",
+          rationale: "Fed pause supporting equity valuations. Corporate earnings growth accelerating. Technical breakout above 4,400 resistance with strong institutional buying. Options skew suggests upside momentum.",
+          isMicro: false,
+          contractSize: "$50 x S&P 500 Index",
+          underlyingPrice: "4,456.00 points",
+          marginRequired: "$12,000.00",
+          tickValue: "$12.50 per 0.25 point move",
+          expirationDate: "2025-12-19",
+          leverage: "19:1",
+          strategy: "Index Momentum + Fed Policy",
+          stopLoss: "4,356.00",
+          takeProfit: "4,556.00"
         });
       }
 

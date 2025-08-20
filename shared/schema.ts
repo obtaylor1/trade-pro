@@ -27,7 +27,14 @@ export const tradingOpportunitySchema = z.object({
   expirationDate: z.string().optional(),
   premium: z.string().optional(),
   underlyingPrice: z.string().optional(),
-  impliedVolatility: z.string().optional()
+  impliedVolatility: z.string().optional(),
+  // Futures-specific fields
+  marginRequired: z.string().optional(),
+  tickValue: z.string().optional(),
+  leverage: z.string().optional(),
+  strategy: z.string().optional(),
+  stopLoss: z.string().optional(),
+  takeProfit: z.string().optional()
 });
 
 export const tradeExecutionSchema = z.object({
