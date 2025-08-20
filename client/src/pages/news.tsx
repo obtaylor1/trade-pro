@@ -356,7 +356,7 @@ export default function NewsPage() {
             <div className="aspect-video relative">
               {/* Primary: YouTube Bloomberg TV */}
               <iframe
-                src="https://www.youtube.com/embed/live_stream?channel=UCIALMKvObZNtJ6AmdCLP7Lg&autoplay=0&mute=0&controls=1&rel=0&modestbranding=1"
+                src="https://www.youtube.com/embed/live_stream?channel=UCIALMKvObZNtJ6AmdCLP7Lg&autoplay=1&mute=1&controls=1&rel=0&modestbranding=1"
                 className="w-full h-full border-0 absolute inset-0"
                 title="Bloomberg Television Live"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -371,7 +371,7 @@ export default function NewsPage() {
               {/* Secondary: CNBC Embed */}
               <iframe
                 id="cnbc-fallback"
-                src="https://player.cnbc.com/p/gZWlPC/cnbc_global?playertype=synd&byGuid=7000031045&size=530_298"
+                src="https://player.cnbc.com/p/gZWlPC/cnbc_global?playertype=synd&byGuid=7000031045&size=530_298&autoplay=true"
                 className="w-full h-full border-0 absolute inset-0 hidden"
                 title="CNBC Live Stream"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
