@@ -13,10 +13,10 @@ export default function Header() {
           <div className="flex items-center space-x-4">
             <button 
               onClick={() => window.location.href = '/learn-options'}
-              className="text-sm text-blue-400 hover:text-blue-300 transition-colors flex items-center space-x-1"
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              <span>📚</span>
-              <span>Learn Options</span>
+              <span className="text-lg">🎓</span>
+              <span className="font-semibold">Learn to Trade</span>
             </button>
             <div className="text-sm text-gray-300">
               <span>Portfolio: $10,000</span>

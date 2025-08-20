@@ -543,7 +543,7 @@ export default function LearnOptions() {
                 <span>Back to Trading</span>
               </button>
               <div className="h-6 w-px bg-gray-600"></div>
-              <h1 className="text-xl font-bold">Learn Options</h1>
+              <h1 className="text-xl font-bold">Learn to Trade</h1>
             </div>
             
             <nav className="hidden md:flex items-center space-x-6">
@@ -584,10 +584,10 @@ export default function LearnOptions() {
         {/* Overview Section */}
         <section ref={sectionRefs.overview} className="space-y-8">
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold">Options Basics in 15 Minutes</h1>
+            <h1 className="text-4xl font-bold">Master Trading in 15 Minutes</h1>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Options give you rights, not obligations. Learn to buy time and leverage market movements 
-              with defined risk strategies that work across stocks, futures, forex, and crypto.
+              Learn professional trading strategies that work across all markets. Master options, futures, stocks, forex, and crypto 
+              with defined risk approaches used by institutional traders.
             </p>
           </div>
           
