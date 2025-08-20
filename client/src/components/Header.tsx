@@ -11,6 +11,13 @@ export default function Header() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
+            <a 
+              href="/learn-options" 
+              className="text-sm text-blue-400 hover:text-blue-300 transition-colors flex items-center space-x-1"
+            >
+              <span>📚</span>
+              <span>Learn Options</span>
+            </a>
             <div className="text-sm text-gray-300">
               <span>Portfolio: $10,000</span>
             </div>

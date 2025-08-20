@@ -1,0 +1,78 @@
+Build a single-page, that teaches five core options strategies with interactive visuals. The page must be beginner-friendly and tie each strategy to how it applies across futures, stocks, options on equities/ETFs, forex (options/derivatives), and crypto (options/perps). Match the design style as the rest of the app
+Goals
+Explain options basics to users with very little trading knowledge.
+Teach 5 core strategies with consistent, scannable sections and hands-on "what-if" sliders + payoff charts.
+Map each strategy to market contexts: Futures, Stocks, Options, Forex, Crypto.
+Include a tiny glossary, practice mini-calculator, and a 5-question quiz.
+Strategies to Cover
+Long Call (bullish)
+Long Put (bearish)
+Covered Call (income on owned shares/spot)
+Cash-Secured Put (get paid to buy lower)
+Vertical Spread (Bull Put Credit example for defined risk)
+Page Structure
+Sticky Header
+Logo text: "Learn Options"
+Pill anchors: Overview ¬∑ Long Calls ¬∑ Long Puts ¬∑ Covered Calls ¬∑ Cash-Secured Puts ¬∑ Vertical Spreads ¬∑ Practice ¬∑ Quiz
+Right button: "Download Notes (PDF)" (simple print-to-PDF acceptable)
+Section: Overview (Hero)
+H1: "Options Basics in 15 Minutes"
+Subtext: Plain-English explanation of rights, not obligations.
+Mini spectrum: Risk/Reward (Long Options ‚Üí Covered/Cash-Secured ‚Üí Spreads).
+Micro-Glossary (expanders): Premium, Strike, Expiration, Breakeven, POP, IV, Assignment.
+Reusable Strategy Section Template (use for each of the 5)
+Snapshot row:
+When to use (1-2 lines)
+Risk / Max Loss (number line)
+Reward / Max Gain (number line)
+Skill level (Beginner/Intermediate)
+Typical duration (e.g., 15-45 DTE)
+Market view (Bullish/Bearish/Neutral)
+Beginner explainer (60-90 sec read): what it is, how you profit/lose, 1-line breakeven formula.
+Payoff chart (Canvas or SVG) with labeled axes (x=underlying at expiration, y=P/L). Mark strikes & breakeven.
+What-If slider (underlying price at expiration) ‚Üí updates P/L readout and highlights the point on the curve.
+Examples across markets (mini tabs): Futures ¬∑ Stocks ¬∑ Forex ¬∑ Crypto
+For each tab, show a tiny example with realistic numbers and the same payoff logic (note: for forex/crypto where "options" vary by venue, keep examples conceptual and clearly labeled).
+Safety & common mistakes: 2-3 bullets, plus "When to exit" rule of thumb (e.g., take profits 30-50%, time stop ~21 DTE).
+Default Example Inputs
+Long Call: Stock $50; Buy 52.5C @ $1.50 ‚Üí Breakeven 54.00
+Long Put: Stock $50; Buy 47.5P @ $1.20 ‚Üí Breakeven 46.30
+Covered Call: Long 100 @ $50; Sell 52.5C @ $1.00 ‚Üí Max gain capped at strike + premium
+Cash-Secured Put: Stock $50; Sell 47.5P @ $1.20 (cash reserved) ‚Üí Breakeven 46.30
+Bull Put Credit: Sell 47.5P / Buy 45P for net credit $0.60 ‚Üí Max gain $60, Max loss (width ‚àí credit) √ó 100
+Practice Zone (Mini-Calculator)
+Strategy dropdown (the five above).
+Dynamic inputs based on strategy (underlying, strike(s), premium(s), width/credit, cost basis).
+Outputs: Breakeven(s), Max Gain/Loss, simple POP heuristic, and a small payoff chart.
+Button: "Copy Trade Plan" ‚Üí copies text: Thesis, Entry, Exits (profit target 30-50%, time stop 21 DTE), Risks, Notes.
+Quiz (5 Questions)
+One multiple-choice question per strategy.
+Instant feedback with a one-line explanation.
+Score banner and a simple shareable "Basics Completed" badge (styled div is fine).
+Footer
+Plain-English disclaimer (education only, not advice).
+Links (page anchors): Position Sizing 101 ¬∑ Greeks in 3 Minutes ¬∑ Managing Winners vs Losers.
+Simple email capture (front-end only validation).
+Visual & UX Requirements
+Mobile-first; 16px+ body text; 4.5:1 color contrast; visible focus states.
+Clean cards, soft shadows, rounded corners; CSS variables for theme.
+Smooth-scroll and active anchor highlighting.
+Charts render clearly on small screens; tap to expand.
+Technical Notes
+Single project with index.html, styles.css, app.js. No external libs.
+In app.js, create payoff math helpers returning P/L per share (per contract = √ó100):
+longCall(S, K, premium)
+longPut(S, K, premium)
+coveredCall(S, cost, Kshort, credit)
+cashSecuredPut(S, Kshort, credit)
+bullPutCredit(S, Kshort, Klong, netCredit, width)
+Sample underlying range for charts (e.g., 0.5√ó to 1.5√ó current).
+Input validation with friendly inline errors.
+Acceptance Criteria
+Beginner-friendly copy; jargon explained inline.
+Each strategy has snapshot, explainer, chart, slider, multi-market example tabs, and safety notes.
+Practice Zone recalculates outputs + chart live; Copy Trade Plan works.
+Quiz scores and shows explanations.
+Works on mobile and desktop; accessible basics met.
+Deliver a polished single-page site that a total beginner can use to see, feel, and test how the five options strategies work across futures, stocks, forex, and crypto.
+ 
