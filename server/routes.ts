@@ -357,8 +357,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         search
       );
 
+      console.log(`API Route - Filtered articles count: ${filteredArticles.length} for category: ${category}`);
+      
       const limitNum = parseInt(limit, 10);
       const limitedArticles = filteredArticles.slice(0, limitNum);
+
+      console.log(`API Route - Limited articles count: ${limitedArticles.length}`);
 
       const availableSources = [...new Set(allArticles.map(a => a.source))];
 

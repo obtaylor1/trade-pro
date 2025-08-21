@@ -276,6 +276,15 @@ export function filterArticles(
     filtered = filtered.filter(article => article.category === category);
     
     console.log(`Total articles after filter: ${filtered.length}`);
+    
+    // Debug: Show actual filtered articles
+    if (category === 'futures' && filtered.length > 0) {
+      console.log('Found futures articles:');
+      filtered.forEach(article => {
+        console.log(`- "${article.title.substring(0, 60)}..." (${article.source})`);
+      });
+    }
+    
     if (filtered.length === 0 && category === 'futures') {
       console.log('No futures articles found. Sample categories from first 10 articles:');
       articles.slice(0, 10).forEach(article => {
