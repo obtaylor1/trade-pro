@@ -282,6 +282,8 @@ export function filterArticles(
       console.log('Found futures articles:');
       filtered.forEach(article => {
         console.log(`- "${article.title.substring(0, 60)}..." (${article.source})`);
+        console.log(`  ID: ${article.id}, URL: ${article.url}`);
+        console.log(`  Has required properties: ${!!article.title && !!article.summary && !!article.publishedAt}`);
       });
     }
     
@@ -329,6 +331,7 @@ export function filterArticles(
     });
   }
   
+  console.log(`Filter function returning ${filtered.length} articles for category ${category}`);
   return filtered;
 }
 
