@@ -269,7 +269,19 @@ export function filterArticles(
   
   // Filter by category
   if (category && category !== 'all') {
+    console.log(`Filtering by category: ${category}`);
+    console.log(`Total articles before filter: ${filtered.length}`);
+    console.log(`Articles with '${category}' category: ${filtered.filter(article => article.category === category).length}`);
+    
     filtered = filtered.filter(article => article.category === category);
+    
+    console.log(`Total articles after filter: ${filtered.length}`);
+    if (filtered.length === 0 && category === 'futures') {
+      console.log('No futures articles found. Sample categories from first 10 articles:');
+      articles.slice(0, 10).forEach(article => {
+        console.log(`"${article.title.substring(0, 50)}..." - Category: ${article.category}`);
+      });
+    }
   }
   
   // Filter by sources
