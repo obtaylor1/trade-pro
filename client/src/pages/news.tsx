@@ -32,7 +32,7 @@ export default function NewsPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [timeRange, setTimeRange] = useState<TimeRange>('24h');
+  const [timeRange, setTimeRange] = useState<TimeRange>('7d');
   const [autoRefresh, setAutoRefresh] = useState<AutoRefresh>('off');
   const [showFilters, setShowFilters] = useState(false);
   const [showBookmarks, setShowBookmarks] = useState(false);

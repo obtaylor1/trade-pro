@@ -347,11 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.query as Record<string, string>;
 
       const allArticles = await fetchAllNews();
-      console.log(`API: Total articles fetched: ${allArticles.length}`);
-      
       const sourcesArray = sources ? sources.split(',').filter(Boolean) : [];
-      
-      console.log(`API: About to filter with category: ${category}, sources: ${sourcesArray.length}, since: ${since}, search: "${search}"`);
       
       const filteredArticles = filterArticles(
         allArticles,
@@ -360,23 +356,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         since,
         search
       );
-      
-      console.log(`API: Filter function returned: ${filteredArticles.length} articles`);
 
-      console.log(`API Route - Filtered articles count: ${filteredArticles.length} for category: ${category}`);
-      
-      // Additional debug for futures
-      if (category === 'futures') {
-        console.log('API Route futures articles:');
-        filteredArticles.forEach(article => {
-          console.log(`- API: "${article.title.substring(0, 60)}..." (${article.source})`);
-        });
-      }
-      
       const limitNum = parseInt(limit, 10);
       const limitedArticles = filteredArticles.slice(0, limitNum);
-
-      console.log(`API Route - Limited articles count: ${limitedArticles.length}`);
 
       const availableSources = [...new Set(allArticles.map(a => a.source))];
 

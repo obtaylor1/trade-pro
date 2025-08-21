@@ -269,30 +269,7 @@ export function filterArticles(
   
   // Filter by category
   if (category && category !== 'all') {
-    console.log(`Filtering by category: ${category}`);
-    console.log(`Total articles before filter: ${filtered.length}`);
-    console.log(`Articles with '${category}' category: ${filtered.filter(article => article.category === category).length}`);
-    
     filtered = filtered.filter(article => article.category === category);
-    
-    console.log(`Total articles after filter: ${filtered.length}`);
-    
-    // Debug: Show actual filtered articles
-    if (category === 'futures' && filtered.length > 0) {
-      console.log('Found futures articles:');
-      filtered.forEach(article => {
-        console.log(`- "${article.title.substring(0, 60)}..." (${article.source})`);
-        console.log(`  ID: ${article.id}, URL: ${article.url}`);
-        console.log(`  Has required properties: ${!!article.title && !!article.summary && !!article.publishedAt}`);
-      });
-    }
-    
-    if (filtered.length === 0 && category === 'futures') {
-      console.log('No futures articles found. Sample categories from first 10 articles:');
-      articles.slice(0, 10).forEach(article => {
-        console.log(`"${article.title.substring(0, 50)}..." - Category: ${article.category}`);
-      });
-    }
   }
   
   // Filter by sources
@@ -331,7 +308,6 @@ export function filterArticles(
     });
   }
   
-  console.log(`Filter function returning ${filtered.length} articles for category ${category}`);
   return filtered;
 }
 
