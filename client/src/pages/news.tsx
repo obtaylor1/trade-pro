@@ -56,7 +56,13 @@ export default function NewsPage() {
 
     if (savedCategory) setSelectedCategory(savedCategory);
     if (savedSources.length) setSelectedSources(savedSources);
-    if (savedTimeRange) setTimeRange(savedTimeRange);
+    // Default to 7d if no saved preference or if saved as 24h (for better futures/crypto coverage)
+    if (savedTimeRange && savedTimeRange !== '24h') {
+      setTimeRange(savedTimeRange);
+    } else {
+      setTimeRange('7d');
+      localStorage.setItem('news-timerange', '7d');
+    }
     if (savedAutoRefresh) setAutoRefresh(savedAutoRefresh);
     setBookmarkedArticles(savedBookmarks);
     setReadLaterArticles(savedReadLater);
@@ -84,13 +90,20 @@ export default function NewsPage() {
         search: searchQuery
       });
       
+      console.log('Frontend API request params:', {
+        category: selectedCategory,
+        sources: selectedSources,
+        timeRange,
+        searchQuery,
+        fullUrl: `/api/news?${params}`
+      });
+      
       const response = await apiRequest('GET', `/api/news?${params}`);
       const data = await response.json() as NewsResponse;
       
       // Debug: Log first few articles to see if they have images
       console.log('Fetched articles sample:', data.articles.slice(0, 3).map(a => ({ 
         title: a.title.substring(0, 50), 
-        image: a.image,
         url: a.url
       })));
       
