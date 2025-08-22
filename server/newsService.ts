@@ -68,9 +68,14 @@ const RSS_SOURCES = [
     favicon: 'https://www.cnbc.com/favicon.ico'
   },
   {
-    name: 'CNBC Crypto',
-    url: 'https://www.cnbc.com/id/31229794/device/rss/rss.html',
+    name: 'CNBC Tech',
+    url: 'https://www.cnbc.com/id/19854910/device/rss/rss.html',
     favicon: 'https://www.cnbc.com/favicon.ico'
+  },
+  {
+    name: 'Crypto News',
+    url: 'https://cointelegraph.com/rss',
+    favicon: 'https://cointelegraph.com/favicon.ico'
   }
 ];
 
@@ -196,6 +201,12 @@ async function parseRSSFeed(source: { name: string; url: string; favicon: string
       }
       if (category === 'crypto') {
         console.log(`Crypto article found: "${title}" - Category: ${category}`);
+      }
+      
+      // Debug: Check if articles contain crypto terms but aren't categorized as crypto
+      const hasCryptoTerms = /\b(crypto|bitcoin|ethereum|blockchain)\b/i.test(`${title} ${description}`);
+      if (hasCryptoTerms && category !== 'crypto') {
+        console.log(`Article with crypto terms but not categorized as crypto: "${title}" - Category: ${category}`);
       }
       
       return {
