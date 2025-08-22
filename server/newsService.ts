@@ -66,6 +66,11 @@ const RSS_SOURCES = [
     name: 'Commodity News',
     url: 'https://www.cnbc.com/id/19832390/device/rss/rss.html',
     favicon: 'https://www.cnbc.com/favicon.ico'
+  },
+  {
+    name: 'CNBC Crypto',
+    url: 'https://www.cnbc.com/id/31229794/device/rss/rss.html',
+    favicon: 'https://www.cnbc.com/favicon.ico'
   }
 ];
 
@@ -87,8 +92,8 @@ function extractTickers(text: string): string[] {
   const forexPattern = /\b[A-Z]{3}\/[A-Z]{3}\b/g;
   const forexMatches = text.match(forexPattern) || [];
   
-  // Crypto symbols
-  const cryptoPattern = /\b(BTC|ETH|XRP|ADA|DOT|SOL|AVAX|MATIC|LINK|UNI)\b/g;
+  // Crypto symbols - expanded list
+  const cryptoPattern = /\b(BTC|ETH|XRP|ADA|DOT|SOL|AVAX|MATIC|LINK|UNI|DOGE|LTC|BCH|BNB|USDT|USDC|SHIB|ALGO|ATOM|ICP|VET|THETA|FTT|MANA|SAND|CRO|APE|LUNA)\b/g;
   const cryptoMatches = text.match(cryptoPattern) || [];
   
   // Futures symbols - expanded list
@@ -119,8 +124,8 @@ function categorizeArticle(title: string, description: string): string {
     return 'forex';
   }
   
-  // Crypto keywords
-  if (/\b(crypto|cryptocurrency|bitcoin|ethereum|btc|eth|blockchain|defi|nft|altcoin|coinbase|binance|mining)\b/.test(text)) {
+  // Crypto keywords - expanded list
+  if (/\b(crypto|cryptocurrency|cryptocurrencies|bitcoin|ethereum|btc|eth|blockchain|defi|nft|nfts|digital asset|digital currency|altcoin|altcoins|binance|coinbase|dogecoin|doge|ripple|xrp|cardano|ada|solana|sol|avalanche|avax|polygon|matic|chainlink|link|uniswap|uni|web3|metaverse|mining|crypto mining|stablecoin|usdt|usdc|tether|shiba|shib|litecoin|ltc)\b/.test(text)) {
     return 'crypto';
   }
   
@@ -185,9 +190,12 @@ async function parseRSSFeed(source: { name: string; url: string; favicon: string
       const tickers = extractTickers(`${title} ${description}`);
       const sentiment = analyzeSentiment(title, description);
       
-      // Debug logging for futures categorization
+      // Debug logging for categorization
       if (category === 'futures') {
         console.log(`Futures article found: "${title}" - Category: ${category}`);
+      }
+      if (category === 'crypto') {
+        console.log(`Crypto article found: "${title}" - Category: ${category}`);
       }
       
       return {
