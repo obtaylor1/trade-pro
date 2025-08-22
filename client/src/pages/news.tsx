@@ -340,17 +340,17 @@ export default function NewsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-white mb-2">Live Financial News</h2>
-            <p className="text-gray-300">24-hour market coverage, data, and analysis from Bloomberg Television</p>
+            <p className="text-gray-300">Live market coverage, financial news, and trading analysis</p>
           </div>
           
           <div className="relative bg-black rounded-lg overflow-hidden shadow-2xl">
             {/* Try multiple video sources with fallbacks */}
             <div className="aspect-video relative">
-              {/* Primary: YouTube Bloomberg TV */}
+              {/* Primary: Custom YouTube Live Stream */}
               <iframe
-                src="https://www.youtube.com/embed/live_stream?channel=UCIALMKvObZNtJ6AmdCLP7Lg&autoplay=1&mute=1&controls=1&rel=0&modestbranding=1"
+                src="https://www.youtube.com/embed/KQp-e_XQnDE?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1"
                 className="w-full h-full border-0 absolute inset-0"
-                title="Bloomberg Television Live"
+                title="Live Financial News Stream"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
                 onError={() => {
