@@ -66,6 +66,95 @@ export default function Profile() {
           <h1 className="text-2xl font-bold text-white">Account Profile</h1>
         </div>
 
+        {/* Portfolio Summary Card */}
+        <div className="bg-gray-800 rounded-2xl border border-gray-700 p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm">📊</span>
+              </div>
+              <h2 className="text-lg font-semibold text-white">Portfolio Summary</h2>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full border border-green-500/30">
+                Simulated
+              </span>
+              <span className="text-xs text-gray-400">Portfolio</span>
+              <span className="text-xs text-gray-400">History</span>
+            </div>
+          </div>
+
+          {/* Portfolio Metrics */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-xs text-gray-400 mb-1">Total Value</div>
+              <div className="text-lg font-bold text-white">$13,796.80</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-400 mb-1">Unrealized P&L</div>
+              <div className="text-lg font-bold text-green-400">$196.05</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-400 mb-1">Return</div>
+              <div className="text-lg font-bold text-green-400">+1.44%</div>
+            </div>
+          </div>
+
+          {/* Current Positions */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-white">Current Positions</h3>
+            
+            {/* Position 1 - MGC */}
+            <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="text-lg font-bold text-white">MGC</div>
+                  <div className="text-xs space-y-1">
+                    <div className="text-gray-400">Micro</div>
+                    <div className="text-amber-400 bg-amber-400/20 px-2 py-0.5 rounded text-xs">commodities</div>
+                    <div className="text-gray-400">Futures</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-white">5 x</span>
+                    <span className="text-white font-semibold">$20.36</span>
+                    <div className="text-green-400 font-bold">$101.80</div>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Entry: $20.15 <span className="text-green-400">(+1.04%)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Position 2 - MBT */}
+            <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="text-lg font-bold text-white">MBT</div>
+                  <div className="text-xs space-y-1">
+                    <div className="text-gray-400">Micro</div>
+                    <div className="text-purple-400 bg-purple-400/20 px-2 py-0.5 rounded text-xs">crypto</div>
+                    <div className="text-gray-400">Bitcoin</div>
+                    <div className="text-gray-400">Futures</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-white">2 x</span>
+                    <span className="text-white font-semibold">$6,847.50</span>
+                    <div className="text-green-400 font-bold">$13,695.00</div>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Entry: $6,800.00 <span className="text-green-400">$95.00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Main Profile Card */}
         <div className="bg-gray-800 rounded-2xl border border-gray-700 p-6 space-y-6">
           
@@ -98,7 +187,7 @@ export default function Profile() {
           {/* Available Funds */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-gray-400">Available Funds</h3>
-            <div className="text-3xl font-bold text-white">
+            <div className="text-2xl font-bold text-white">
               {formatCurrency(demoUser.availableFunds)}
             </div>
             <p className="text-sm text-gray-500">
