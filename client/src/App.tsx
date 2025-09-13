@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import BottomNavigation from "@/components/BottomNavigation";
 import Home from "@/pages/home";
 import AISuggestion from "@/pages/ai-suggestion";
+import Markets from "@/pages/markets";
 import LearnOptions from "@/pages/learn-options";
 import NewsPage from "@/pages/news";
 import NotFound from "@/pages/not-found";
@@ -15,6 +16,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/ai-suggestion" component={AISuggestion} />
+      <Route path="/markets" component={Markets} />
       <Route path="/learn-options" component={LearnOptions} />
       <Route path="/news" component={NewsPage} />
       <Route component={NotFound} />
