@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Target, ArrowRight } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface TradeExecutionModalProps {
   isOpen: boolean;
@@ -8,6 +11,7 @@ interface TradeExecutionModalProps {
   companyName: string;
   currentPrice: number;
   targetPrice: number;
+  opportunityId?: string; // Add opportunity ID for real trade execution
 }
 
 export default function TradeExecutionModal({
@@ -16,11 +20,47 @@ export default function TradeExecutionModal({
   symbol,
   companyName,
   currentPrice,
-  targetPrice
+  targetPrice,
+  opportunityId = "default-opportunity"
 }: TradeExecutionModalProps) {
   const [investmentAmount, setInvestmentAmount] = useState<string>("");
   const [isConfirming, setIsConfirming] = useState(false);
   const [swipeProgress, setSwipeProgress] = useState(0);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Trade execution mutation
+  const executeTradeMutation = useMutation({
+    mutationFn: async (tradeData: {
+      opportunityId: string;
+      amount: number;
+      isLiveTrading: boolean;
+      selectedBroker?: string;
+    }) => {
+      const response = await apiRequest('POST', '/api/trades/execute', tradeData);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Trade Executed Successfully!",
+        description: `Bought ${shares} shares of ${symbol} for $${investmentAmount}`,
+      });
+      
+      // Invalidate relevant queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
+      
+      onClose();
+      setInvestmentAmount("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Trade Failed",
+        description: error.message || "Failed to execute trade. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
 
   if (!isOpen) return null;
 
@@ -36,9 +76,22 @@ export default function TradeExecutionModal({
   };
 
   const handleSwipeComplete = () => {
-    // Execute trade logic here
-    alert(`Trade executed! Bought ${shares} shares of ${symbol} for $${investmentAmount}`);
-    onClose();
+    if (!investmentAmount || parseFloat(investmentAmount) <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid investment amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Execute real trade via API
+    executeTradeMutation.mutate({
+      opportunityId,
+      amount: parseFloat(investmentAmount),
+      isLiveTrading: false, // Paper trading for demo
+      selectedBroker: "Demo Broker"
+    });
   };
 
   return (

@@ -1,60 +1,88 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, ArrowRight, Building2, Star } from "lucide-react";
 import PortfolioChart from "@/components/PortfolioChart";
 import RadialProgress from "@/components/RadialProgress";
+import type { TradingOpportunity } from "@shared/schema";
 
-// Mock data - in real app this would come from API
-const watchlistData = [
-  { 
-    symbol: "AAPL", 
-    name: "Apple Inc.", 
-    price: 175.43, 
-    change: 2.87, 
-    changePercent: 1.66,
-    logo: "🍎"
-  },
-  { 
-    symbol: "GOOGL", 
-    name: "Alphabet Inc.", 
-    price: 139.69, 
-    change: -1.22, 
-    changePercent: -0.87,
-    logo: "🔍"
-  },
-  { 
-    symbol: "MSFT", 
-    name: "Microsoft Corp.", 
-    price: 378.85, 
-    change: 4.12, 
-    changePercent: 1.10,
-    logo: "Ⓜ️"
-  },
-  { 
-    symbol: "TSLA", 
-    name: "Tesla Inc.", 
-    price: 248.50, 
-    change: -3.45, 
-    changePercent: -1.37,
-    logo: "⚡"
-  }
-];
-
-const topAISignal = {
-  symbol: "AAPL",
-  companyName: "Apple Inc.",
-  reason: "Strong positive momentum detected ahead of earnings with bullish technical indicators",
-  confidence: 85,
-  logo: "🍎"
+// Company logos for display
+const companyLogos: Record<string, string> = {
+  "AAPL": "🍎",
+  "GOOGL": "🔍", 
+  "ALPHABET": "🔍",
+  "MSFT": "Ⓜ️",
+  "TSLA": "⚡",
+  "NVDA": "💾",
+  "META": "📘",
+  "AMZN": "📦",
+  "NFLX": "🎬",
+  "JNJ": "🏥",
+  "PG": "🧴",
+  "KO": "🥤",
+  "VYM": "💰",
+  "USMV": "📊"
 };
 
 export default function Home() {
   const [, setLocation] = useLocation();
 
-  // Mock portfolio data - in real app this would come from API/auth
+  // Fetch real trading opportunities for AI signal and watchlist
+  const { data: stockOpportunities, isLoading: stocksLoading } = useQuery<TradingOpportunity[]>({
+    queryKey: ["/api/opportunities", "stocks"],
+    staleTime: 10 * 60 * 1000, // 10 minutes cache
+    retry: 1
+  });
+
+  // Mock portfolio data - TODO: replace with real user portfolio API
   const portfolioValue = 10247.50;
   const todayChange = 127.50;
   const todayChangePercent = 1.26;
+
+  // Get top AI signal from stock opportunities  
+  const topAISignal = stockOpportunities && stockOpportunities.length > 0 
+    ? {
+        symbol: stockOpportunities[0].name.split(' ')[0] || stockOpportunities[0].id,
+        companyName: stockOpportunities[0].name,
+        reason: stockOpportunities[0].rationale,
+        confidence: stockOpportunities[0].confidence,
+        logo: companyLogos[stockOpportunities[0].name.split(' ')[0]] || "📈"
+      }
+    : stocksLoading 
+    ? {
+        symbol: "AAPL",
+        companyName: "Apple Inc.", 
+        reason: "Loading AI analysis...",
+        confidence: 85,
+        logo: "🍎"
+      }
+    : {
+        symbol: "AAPL",
+        companyName: "Apple Inc.", 
+        reason: "Strong positive momentum detected ahead of earnings with bullish technical indicators",
+        confidence: 85,
+        logo: "🍎"
+      };
+
+  // Create watchlist from top 4 stock opportunities
+  const watchlistData = stockOpportunities?.slice(0, 4).map((opportunity, index) => {
+    const symbol = opportunity.name.split(' ')[0] || opportunity.id;
+    const price = parseFloat(opportunity.entryPrice.replace(/[^0-9.-]/g, ''));
+    
+    // Generate realistic price changes (mock until we have real price data)
+    const changePercents = [1.66, -0.87, 1.10, -1.37];
+    const changePercent = changePercents[index] || (Math.random() - 0.5) * 4;
+    const change = (price * changePercent) / 100;
+    
+    return {
+      symbol,
+      name: opportunity.name,
+      price: price || 100,
+      change: change,
+      changePercent: changePercent,
+      logo: companyLogos[symbol] || "📈"
+    };
+  }) || [];
 
   const handleAISignalClick = () => {
     setLocation('/ai-suggestion');

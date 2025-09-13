@@ -1,35 +1,80 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, TrendingUp, Target } from "lucide-react";
 import RadialProgress from "@/components/RadialProgress";
 import Gauge from "@/components/Gauge";
 import TradeExecutionModal from "@/components/TradeExecutionModal";
+import type { TradingOpportunity } from "@shared/schema";
 
-// Mock data - in real app this would come from API based on the selected signal
-const aiSuggestionData = {
-  symbol: "AAPL",
-  companyName: "Apple Inc.",
-  logo: "🍎",
-  currentPrice: 175.43,
-  targetPrice: 185.00,
-  potentialGain: 5.45, // percentage
-  aiConfidence: 85,
-  riskLevel: "Low" as const,
-  momentum: "Strong" as const,
-  plainEnglishAnalysis: "Our AI system has detected strong, consistent buying momentum ahead of Apple's earnings report next week. Technical indicators show a bullish pattern with increased institutional buying and positive market sentiment around iPhone sales data.",
-  keyMetrics: {
-    rsi: 64,
-    macd: "Bullish",
-    volume: "Above Average",
-    support: 172.50,
-    resistance: 180.00
-  },
-  chartData: [170, 172, 174, 173, 175, 176, 175] // Mock 7-day price data
+// Company logos for display
+const companyLogos: Record<string, string> = {
+  "AAPL": "🍎", "Apple": "🍎",
+  "GOOGL": "🔍", "Alphabet": "🔍", "Google": "🔍",
+  "MSFT": "Ⓜ️", "Microsoft": "Ⓜ️",
+  "TSLA": "⚡", "Tesla": "⚡",
+  "NVDA": "💾", "NVIDIA": "💾",
+  "META": "📘", "Meta": "📘",
+  "AMZN": "📦", "Amazon": "📦",
+  "JNJ": "🏥", "Johnson": "🏥",
+  "PG": "🧴", "Procter": "🧴",
+  "KO": "🥤", "Coca-Cola": "🥤"
 };
 
 export default function AISuggestion() {
   const [, setLocation] = useLocation();
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
+
+  // Fetch real trading opportunities
+  const { data: stockOpportunities, isLoading } = useQuery<TradingOpportunity[]>({
+    queryKey: ["/api/opportunities", "stocks"],
+    staleTime: 10 * 60 * 1000, // 10 minutes cache
+    retry: 1
+  });
+
+  // Get the top AI suggestion from real data
+  const topOpportunity = stockOpportunities?.[0];
+  
+  const aiSuggestionData = topOpportunity ? {
+    symbol: topOpportunity.name.split(' ')[0] || topOpportunity.id.toUpperCase(),
+    companyName: topOpportunity.name,
+    logo: companyLogos[topOpportunity.name.split(' ')[0]] || companyLogos[topOpportunity.name] || "📈",
+    currentPrice: parseFloat(topOpportunity.entryPrice.replace(/[^0-9.-]/g, '')) || 175.43,
+    targetPrice: parseFloat(topOpportunity.entryPrice.replace(/[^0-9.-]/g, '')) * 1.1 || 185.00, // 10% target
+    potentialGain: parseFloat(topOpportunity.potentialGain.replace(/[^0-9.-]/g, '')) || 5.45,
+    aiConfidence: topOpportunity.confidence,
+    riskLevel: (topOpportunity.riskLevel || topOpportunity.risk) as "Low" | "Moderate" | "High" || "Low",
+    momentum: "Strong" as const, // TODO: derive from real data
+    plainEnglishAnalysis: topOpportunity.rationale,
+    keyMetrics: {
+      rsi: 64, // TODO: fetch real technical indicators
+      macd: "Bullish",
+      volume: topOpportunity.volume || "Above Average", 
+      support: (parseFloat(topOpportunity.entryPrice.replace(/[^0-9.-]/g, '')) * 0.95) || 172.50,
+      resistance: (parseFloat(topOpportunity.entryPrice.replace(/[^0-9.-]/g, '')) * 1.05) || 180.00
+    },
+    chartData: [170, 172, 174, 173, 175, 176, 175] // TODO: replace with real chart data
+  } : {
+    // Fallback while loading
+    symbol: "AAPL",
+    companyName: "Apple Inc.",
+    logo: "🍎",
+    currentPrice: 175.43,
+    targetPrice: 185.00,
+    potentialGain: 5.45,
+    aiConfidence: 85,
+    riskLevel: "Low" as const,
+    momentum: "Strong" as const,
+    plainEnglishAnalysis: "Loading AI analysis...",
+    keyMetrics: {
+      rsi: 64,
+      macd: "Bullish", 
+      volume: "Above Average",
+      support: 172.50,
+      resistance: 180.00
+    },
+    chartData: [170, 172, 174, 173, 175, 176, 175]
+  };
 
   const handleReviewTrade = () => {
     setIsTradeModalOpen(true);
@@ -269,6 +314,7 @@ export default function AISuggestion() {
         companyName={aiSuggestionData.companyName}
         currentPrice={aiSuggestionData.currentPrice}
         targetPrice={aiSuggestionData.targetPrice}
+        opportunityId={topOpportunity?.id || "demo-opportunity"}
       />
     </div>
   );
