@@ -60,7 +60,7 @@ export default function AISuggestion() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 pb-24">
+    <div className="min-h-screen bg-gray-900 pb-32">
       {/* Header */}
       <div className="bg-gray-800 px-4 py-4 border-b border-gray-700">
         <div className="flex items-center justify-between">

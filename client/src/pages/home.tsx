@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import { TrendingUp, ArrowRight, Building2, Star } from "lucide-react";
 import PortfolioChart from "@/components/PortfolioChart";
 import RadialProgress from "@/components/RadialProgress";
-import BottomNavigation from "@/components/BottomNavigation";
 
 // Mock data - in real app this would come from API
 const watchlistData = [
@@ -182,9 +181,6 @@ export default function Home() {
           </button>
         </div>
       </div>
-
-      {/* Bottom Navigation */}
-      <BottomNavigation />
     </div>
   );
 }

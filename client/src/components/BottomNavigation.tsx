@@ -1,4 +1,4 @@
-import { Home, PieChart, TrendingUp, User } from "lucide-react";
+import { Home, Zap, Newspaper, GraduationCap } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface NavigationItem {
@@ -18,9 +18,9 @@ export default function BottomNavigation({ onNavigate, className = "" }: BottomN
 
   const navigationItems: NavigationItem[] = [
     { id: "home", label: "Home", icon: Home, path: "/" },
-    { id: "portfolio", label: "Portfolio", icon: PieChart, path: "/portfolio" },
-    { id: "trade", label: "Trade", icon: TrendingUp, path: "/trade" },
-    { id: "profile", label: "Profile", icon: User, path: "/profile" }
+    { id: "ai-signal", label: "AI Signal", icon: Zap, path: "/ai-suggestion" },
+    { id: "news", label: "News", icon: Newspaper, path: "/news" },
+    { id: "learn", label: "Learn", icon: GraduationCap, path: "/learn-options" }
   ];
 
   const handleNavigate = (path: string) => {
