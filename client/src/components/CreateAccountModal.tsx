@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { X, User, Mail, Lock } from "lucide-react";
+import { X, User, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
 
 interface CreateAccountModalProps {
   isOpen: boolean;
@@ -11,11 +12,11 @@ export default function CreateAccountModal({ isOpen, onClose }: CreateAccountMod
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: "",
     startingCapital: 10000
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { updateUserFromRegistration } = useUser();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -30,20 +31,48 @@ export default function CreateAccountModal({ isOpen, onClose }: CreateAccountMod
     setIsSubmitting(true);
 
     try {
-      // TODO: Implement actual API call for account creation
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          startingCapital: formData.startingCapital,
+          selectedBroker: "ninjatrader-sim"
+        }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Failed to create account');
+      }
+
+      // Update user context with the new account data
+      updateUserFromRegistration({
+        id: responseData.id,
+        name: responseData.name,
+        email: responseData.email,
+        startingCapital: responseData.startingCapital,
+        currentBalance: responseData.currentBalance,
+        selectedBroker: responseData.selectedBroker,
+        isLiveTrading: responseData.isLiveTrading,
+      });
       
       toast({
         title: "Account Created Successfully!",
-        description: `Welcome ${formData.name}! Your account has been created with $${formData.startingCapital.toLocaleString()} starting capital.`,
+        description: `Welcome ${formData.name}! You're now logged in with $${formData.startingCapital.toLocaleString()} starting capital.`,
       });
       
       onClose();
-      setFormData({ name: "", email: "", password: "", startingCapital: 10000 });
+      setFormData({ name: "", email: "", startingCapital: 10000 });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "There was an error creating your account. Please try again.";
       toast({
         title: "Error Creating Account",
-        description: "There was an error creating your account. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -118,23 +147,6 @@ export default function CreateAccountModal({ isOpen, onClose }: CreateAccountMod
             </div>
           </div>
 
-          {/* Password Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="Create a secure password"
-                className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-                data-testid="password-input"
-              />
-            </div>
-          </div>
 
           {/* Starting Capital */}
           <div className="space-y-2">
@@ -178,7 +190,7 @@ export default function CreateAccountModal({ isOpen, onClose }: CreateAccountMod
           {/* Terms */}
           <p className="text-xs text-gray-500 text-center">
             By creating an account, you agree to our Terms of Service and Privacy Policy. 
-            This is a simulated trading environment using virtual funds.
+            This is a simulated trading environment using virtual funds. No password required - login with just your email.
           </p>
         </form>
       </div>

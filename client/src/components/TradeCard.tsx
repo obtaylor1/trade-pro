@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { type TradingOpportunity, type TradeResult } from "@shared/schema";
 import { BarChart3 } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
 import OptionsDetailsModal from './OptionsDetailsModal';
 import OptionsTradeModal from './OptionsTradeModal';
 
@@ -10,12 +11,12 @@ interface TradeCardProps {
   opportunity: TradingOpportunity;
   onTradeExecuted: (result: TradeResult) => void;
   animationDelay: number;
-  userProfile?: { id: string; selectedBroker?: string; isLiveTrading: boolean };
   onOpenOptionsWindow?: (opportunity: TradingOpportunity) => void;
 }
 
-export default function TradeCard({ opportunity, onTradeExecuted, animationDelay, userProfile, onOpenOptionsWindow }: TradeCardProps) {
+export default function TradeCard({ opportunity, onTradeExecuted, animationDelay, onOpenOptionsWindow }: TradeCardProps) {
   const queryClient = useQueryClient();
+  const { user } = useUser();
   const [showChart, setShowChart] = useState(false);
   const [showTradeModal, setShowTradeModal] = useState(false);
   
@@ -23,9 +24,9 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/trades/execute", {
         opportunityId: opportunity.id,
-        userId: userProfile?.id || 'user-1',
-        selectedBroker: userProfile?.selectedBroker || 'ninjatrader-sim',
-        isLiveTrading: userProfile?.isLiveTrading || false,
+        userId: user?.id || 'demo-user',
+        selectedBroker: user?.selectedBroker || 'ninjatrader-sim',
+        isLiveTrading: user?.isLiveTrading || false,
       });
       return response.json();
     },
@@ -33,8 +34,8 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
       onTradeExecuted(result);
       queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
       // Invalidate user balance to refresh portfolio
-      if (userProfile?.id) {
-        queryClient.invalidateQueries({ queryKey: [`/api/auth/balance/${userProfile.id}`] });
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/auth/balance/${user.id}`] });
       }
     },
   });
@@ -59,9 +60,9 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
         mutationFn: async () => {
           const response = await apiRequest("POST", "/api/trades/execute", {
             opportunityId: opportunity.id,
-            userId: userProfile?.id || 'user-1',
-            selectedBroker: userProfile?.selectedBroker || 'ninjatrader-sim',
-            isLiveTrading: userProfile?.isLiveTrading || false,
+            userId: user?.id || 'demo-user',
+            selectedBroker: user?.selectedBroker || 'ninjatrader-sim',
+            isLiveTrading: user?.isLiveTrading || false,
             duration: duration,
             contractCount: contracts,
             optionType: opportunity.optionType
@@ -72,8 +73,8 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
           onTradeExecuted(result);
           queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
           // Invalidate user balance to refresh portfolio
-          if (userProfile?.id) {
-            queryClient.invalidateQueries({ queryKey: [`/api/auth/balance/${userProfile.id}`] });
+          if (user?.id) {
+            queryClient.invalidateQueries({ queryKey: [`/api/auth/balance/${user.id}`] });
           }
           resolve();
         },

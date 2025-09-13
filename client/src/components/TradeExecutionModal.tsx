@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Target, ArrowRight } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
 
 interface TradeExecutionModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export default function TradeExecutionModal({
   const [swipeProgress, setSwipeProgress] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useUser();
 
   // Trade execution mutation
   const executeTradeMutation = useMutation({
@@ -36,6 +38,7 @@ export default function TradeExecutionModal({
       amount: number;
       isLiveTrading: boolean;
       selectedBroker?: string;
+      userId?: string;
     }) => {
       const response = await apiRequest('POST', '/api/trades/execute', tradeData);
       return response.json();
@@ -89,8 +92,9 @@ export default function TradeExecutionModal({
     executeTradeMutation.mutate({
       opportunityId,
       amount: parseFloat(investmentAmount),
-      isLiveTrading: false, // Paper trading for demo
-      selectedBroker: "Demo Broker"
+      isLiveTrading: user?.isLiveTrading || false,
+      selectedBroker: user?.selectedBroker || "ninjatrader-sim",
+      userId: user?.id || 'demo-user'
     });
   };
 

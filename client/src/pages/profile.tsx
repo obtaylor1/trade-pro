@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, User, Settings, RotateCcw, Info } from "lucide-react";
+import { ArrowLeft, User, Settings, RotateCcw, Info, LogIn, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
 import CreateAccountModal from "@/components/CreateAccountModal";
+import LoginModal from "@/components/LoginModal";
 
 export default function Profile() {
   const [, setLocation] = useLocation();
   const [isLiveTrading, setIsLiveTrading] = useState(false);
   const [isCreateAccountModalOpen, setIsCreateAccountModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { toast } = useToast();
+  const { user, isLoggedIn, logout } = useUser();
 
-  // Demo user data (matches your screenshot design)
+  // Demo user data fallback
   const demoUser = {
     name: "Demo User",
     accountType: "Individual",
@@ -21,6 +25,18 @@ export default function Profile() {
       commission: "$0.53 futures"
     }
   };
+
+  // Use real user data if logged in, otherwise use demo data
+  const displayUser = isLoggedIn && user ? {
+    name: user.name,
+    accountType: "Individual",
+    availableFunds: user.currentBalance,
+    selectedBroker: {
+      name: user.selectedBroker,
+      specialty: "Professional Platform",
+      commission: "$0.53 futures"
+    }
+  } : demoUser;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -56,6 +72,18 @@ export default function Profile() {
     setIsCreateAccountModalOpen(true);
   };
 
+  const handleLogin = () => {
+    setIsLoginModalOpen(true);
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged Out",
+      description: "You have been logged out of your account.",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 pb-20">
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
@@ -72,28 +100,59 @@ export default function Profile() {
           <h1 className="text-2xl font-bold text-white">Account Profile</h1>
         </div>
 
-        {/* Demo Mode Banner */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-4 border border-purple-500/30">
-          <div className="flex items-start space-x-3">
-            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Info className="h-3 w-3 text-white" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-white font-semibold text-sm mb-1">Demo Mode</h3>
-              <p className="text-white/90 text-sm leading-relaxed">
-                You're viewing the trading platform in demo mode. To save your trades and track performance,{" "}
-                <button
-                  onClick={handleCreateAccount}
-                  className="text-white underline hover:text-white/80 transition-colors font-medium"
-                  data-testid="create-account-link"
-                >
-                  create a free account
-                </button>
-                .
-              </p>
+        {/* Authentication Banner */}
+        {!isLoggedIn ? (
+          <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-4 border border-purple-500/30">
+            <div className="flex items-start space-x-3">
+              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Info className="h-3 w-3 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-white font-semibold text-sm mb-1">Demo Mode</h3>
+                <p className="text-white/90 text-sm leading-relaxed">
+                  You're viewing the trading platform in demo mode. To save your trades and track performance,{" "}
+                  <button
+                    onClick={handleCreateAccount}
+                    className="text-white underline hover:text-white/80 transition-colors font-medium"
+                    data-testid="create-account-link"
+                  >
+                    create a free account
+                  </button>
+                  {" "}or{" "}
+                  <button
+                    onClick={handleLogin}
+                    className="text-white underline hover:text-white/80 transition-colors font-medium"
+                    data-testid="login-link"
+                  >
+                    sign in
+                  </button>
+                  .
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-4 border border-green-500/30">
+            <div className="flex items-start space-x-3">
+              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <User className="h-3 w-3 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-white font-semibold text-sm mb-1">Logged In</h3>
+                <p className="text-white/90 text-sm leading-relaxed">
+                  Welcome back, {user?.name}! Your trades and progress are being saved.{" "}
+                  <button
+                    onClick={handleLogout}
+                    className="text-white underline hover:text-white/80 transition-colors font-medium"
+                    data-testid="logout-link"
+                  >
+                    Log out
+                  </button>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Portfolio Summary Card */}
         <div className="bg-gray-800 rounded-2xl border border-gray-700 p-6 space-y-6">
@@ -197,9 +256,9 @@ export default function Profile() {
               
               {/* User Details */}
               <div>
-                <h2 className="text-xl font-semibold text-white">{demoUser.name}</h2>
+                <h2 className="text-xl font-semibold text-white">{displayUser.name}</h2>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-400">{demoUser.accountType}</span>
+                  <span className="text-sm text-gray-400">{displayUser.accountType}</span>
                 </div>
               </div>
             </div>
@@ -217,7 +276,7 @@ export default function Profile() {
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-gray-400">Available Funds</h3>
             <div className="text-2xl font-bold text-white">
-              {formatCurrency(demoUser.availableFunds)}
+              {formatCurrency(displayUser.availableFunds)}
             </div>
             <p className="text-sm text-gray-500">
               {isLiveTrading ? 'Real Money Balance' : 'Paper Trading Balance'}
@@ -229,12 +288,12 @@ export default function Profile() {
             <h3 className="text-sm font-medium text-gray-400">Selected Broker</h3>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-lg font-semibold text-white">{demoUser.selectedBroker.name}</div>
-                <div className="text-sm text-blue-400">{demoUser.selectedBroker.specialty}</div>
+                <div className="text-lg font-semibold text-white">{displayUser.selectedBroker.name}</div>
+                <div className="text-sm text-blue-400">{displayUser.selectedBroker.specialty}</div>
               </div>
             </div>
             <p className="text-xs text-gray-500">
-              Commission: {demoUser.selectedBroker.commission}
+              Commission: {displayUser.selectedBroker.commission}
             </p>
           </div>
 
@@ -281,8 +340,8 @@ export default function Profile() {
                   <div className="flex items-start space-x-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full mt-2" />
                     <div className="text-sm text-green-300">
-                      <span className="font-medium">Simulator Active:</span> Trading with {demoUser.selectedBroker.name} fee structure. 
-                      All commissions ({demoUser.selectedBroker.commission}) are calculated realistically.
+                      <span className="font-medium">Simulator Active:</span> Trading with {displayUser.selectedBroker.name} fee structure. 
+                      All commissions ({displayUser.selectedBroker.commission}) are calculated realistically.
                     </div>
                   </div>
                 </div>
@@ -327,6 +386,12 @@ export default function Profile() {
       <CreateAccountModal
         isOpen={isCreateAccountModalOpen}
         onClose={() => setIsCreateAccountModalOpen(false)}
+      />
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
       />
     </div>
   );
