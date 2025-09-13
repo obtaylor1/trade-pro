@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, ArrowRight, Building2, Star } from "lucide-react";
+import { TrendingUp, ArrowRight, User, Star } from "lucide-react";
 import PortfolioChart from "@/components/PortfolioChart";
 import RadialProgress from "@/components/RadialProgress";
 import type { TradingOpportunity } from "@shared/schema";
@@ -201,11 +201,11 @@ export default function Home() {
           </button>
           <button 
             className="bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center space-x-2 border border-gray-700"
-            data-testid="market-news-button"
-            onClick={() => setLocation('/news')}
+            data-testid="profile-button"
+            onClick={() => setLocation('/profile')}
           >
-            <Building2 className="h-5 w-5" />
-            <span>Market News</span>
+            <User className="h-5 w-5" />
+            <span>Account</span>
           </button>
         </div>
       </div>
