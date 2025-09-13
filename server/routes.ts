@@ -125,8 +125,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: newUser.id,
         name: newUser.name,
         email: newUser.email,
-        startingCapital: parseFloat(newUser.startingCapital),
-        currentBalance: parseFloat(newUser.currentBalance),
+        startingCapital: parseFloat(newUser.startingCapital || '10000'),
+        currentBalance: parseFloat(newUser.currentBalance || '10000'),
         selectedBroker: newUser.selectedBroker,
         isLiveTrading: newUser.isLiveTrading,
       });
@@ -153,8 +153,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id,
         name: user.name,
         email: user.email,
-        startingCapital: parseFloat(user.startingCapital),
-        currentBalance: parseFloat(user.currentBalance),
+        startingCapital: parseFloat(user.startingCapital || '10000'),
+        currentBalance: parseFloat(user.currentBalance || '10000'),
         selectedBroker: user.selectedBroker,
         isLiveTrading: user.isLiveTrading,
       });
