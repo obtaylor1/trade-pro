@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, User, Settings, RotateCcw } from "lucide-react";
+import { ArrowLeft, User, Settings, RotateCcw, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import CreateAccountModal from "@/components/CreateAccountModal";
 
 export default function Profile() {
   const [, setLocation] = useLocation();
   const [isLiveTrading, setIsLiveTrading] = useState(false);
+  const [isCreateAccountModalOpen, setIsCreateAccountModalOpen] = useState(false);
   const { toast } = useToast();
 
   // Demo user data (matches your screenshot design)
@@ -50,6 +52,10 @@ export default function Profile() {
     });
   };
 
+  const handleCreateAccount = () => {
+    setIsCreateAccountModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 pb-20">
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
@@ -64,6 +70,29 @@ export default function Profile() {
             <ArrowLeft className="h-5 w-5 text-white" />
           </button>
           <h1 className="text-2xl font-bold text-white">Account Profile</h1>
+        </div>
+
+        {/* Demo Mode Banner */}
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-4 border border-purple-500/30">
+          <div className="flex items-start space-x-3">
+            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Info className="h-3 w-3 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-white font-semibold text-sm mb-1">Demo Mode</h3>
+              <p className="text-white/90 text-sm leading-relaxed">
+                You're viewing the trading platform in demo mode. To save your trades and track performance,{" "}
+                <button
+                  onClick={handleCreateAccount}
+                  className="text-white underline hover:text-white/80 transition-colors font-medium"
+                  data-testid="create-account-link"
+                >
+                  create a free account
+                </button>
+                .
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Portfolio Summary Card */}
@@ -293,6 +322,12 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Create Account Modal */}
+      <CreateAccountModal
+        isOpen={isCreateAccountModalOpen}
+        onClose={() => setIsCreateAccountModalOpen(false)}
+      />
     </div>
   );
 }
