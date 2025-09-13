@@ -63,11 +63,13 @@ export class MarketDataService {
         
         if (data["Note"]) {
           console.warn("API Rate limit warning:", data["Note"]);
-          // Wait 1 minute and retry for rate limits
+          // Wait 2 seconds and retry for rate limits
           if (i < retries - 1) {
-            await new Promise(resolve => setTimeout(resolve, 60000));
+            await new Promise(resolve => setTimeout(resolve, 2000));
             continue;
           }
+          // If this is the final retry, throw error to trigger fallback simulation
+          throw new Error("API rate limit exceeded after retries");
         }
         
         return data;
