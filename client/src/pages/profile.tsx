@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { ArrowLeft, User, Settings, RotateCcw, Info, LogIn, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
+import { queryClient } from "@/lib/queryClient";
 import CreateAccountModal from "@/components/CreateAccountModal";
 import LoginModal from "@/components/LoginModal";
 
@@ -12,7 +13,7 @@ export default function Profile() {
   const [isCreateAccountModalOpen, setIsCreateAccountModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { toast } = useToast();
-  const { user, isLoggedIn, logout } = useUser();
+  const { user, isLoggedIn, logout, updateUserFromRegistration } = useUser();
 
   // Demo user data fallback
   const demoUser = {
@@ -55,17 +56,58 @@ export default function Profile() {
   };
 
   const handleReconfigure = () => {
+    // Open account configuration modal
     toast({
-      title: "Reconfigure Account",
-      description: "Account configuration options would open here",
+      title: "Configuration Modal",
+      description: "Opening account settings...",
     });
+    // TODO: Implement account configuration modal
+    // This would allow users to change broker, account type, starting capital, etc.
   };
 
-  const handleResetPortfolio = () => {
-    toast({
-      title: "Portfolio Reset",
-      description: "Portfolio balance reset to $10,000.00",
-    });
+  const handleResetPortfolio = async () => {
+    if (!user || user.id === 'demo-user') {
+      toast({
+        title: "Login Required",
+        description: "Please log in to reset your portfolio",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/auth/reset-balance/${user.id}`, {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to reset portfolio');
+      }
+      
+      const data = await response.json();
+      
+      // Update the user context with new balance
+      updateUserFromRegistration({
+        ...user,
+        currentBalance: user.startingCapital
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/balance', user.id] });
+      
+      toast({
+        title: "Portfolio Reset Successfully",
+        description: `Your balance has been reset to $${user.startingCapital.toLocaleString()}`
+      });
+    } catch (error) {
+      console.error('Error resetting portfolio:', error);
+      toast({
+        title: "Reset Failed",
+        description: "Unable to reset portfolio. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleCreateAccount = () => {
