@@ -194,7 +194,7 @@ export default function Home() {
           <button 
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center space-x-2"
             data-testid="quick-trade-button"
-            onClick={() => setLocation('/trade')}
+            onClick={() => setLocation('/ai-suggestion')}
           >
             <TrendingUp className="h-5 w-5" />
             <span>Quick Trade</span>
