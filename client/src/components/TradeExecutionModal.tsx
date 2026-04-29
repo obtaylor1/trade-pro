@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Target, ArrowRight } from "lucide-react";
+import { X, Target, CheckCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
@@ -12,7 +12,7 @@ interface TradeExecutionModalProps {
   companyName: string;
   currentPrice: number;
   targetPrice: number;
-  opportunityId?: string; // Add opportunity ID for real trade execution
+  opportunityId?: string;
 }
 
 export default function TradeExecutionModal({
@@ -25,13 +25,10 @@ export default function TradeExecutionModal({
   opportunityId = "default-opportunity"
 }: TradeExecutionModalProps) {
   const [investmentAmount, setInvestmentAmount] = useState<string>("");
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [swipeProgress, setSwipeProgress] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useUser();
 
-  // Trade execution mutation
   const executeTradeMutation = useMutation({
     mutationFn: async (tradeData: {
       opportunityId: string;
@@ -43,16 +40,20 @@ export default function TradeExecutionModal({
       const response = await apiRequest('POST', '/api/trades/execute', tradeData);
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
         title: "Trade Executed Successfully!",
-        description: `Bought ${shares} shares of ${symbol} for $${investmentAmount}`,
+        description: `Bought ${shares} shares of ${symbol} for $${parseFloat(investmentAmount).toFixed(2)}`,
       });
-      
-      // Invalidate relevant queries to refresh data
+
+      // Fix: use array-format query keys so cache invalidation works correctly
       queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
       queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
-      
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/balance', user.id] });
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/user', user.id] });
+      }
+
       onClose();
       setInvestmentAmount("");
     },
@@ -68,18 +69,13 @@ export default function TradeExecutionModal({
   if (!isOpen) return null;
 
   const quickAmounts = [50, 100, 500];
-  const shares = investmentAmount ? (parseFloat(investmentAmount) / currentPrice).toFixed(2) : "0";
+  const shares = investmentAmount && currentPrice > 0
+    ? (parseFloat(investmentAmount) / currentPrice).toFixed(4)
+    : "0";
 
-  const handleQuickAmount = (amount: number) => {
-    setInvestmentAmount(amount.toString());
-  };
-
-  const handleSwipeStart = () => {
-    setIsConfirming(true);
-  };
-
-  const handleSwipeComplete = () => {
-    if (!investmentAmount || parseFloat(investmentAmount) <= 0) {
+  const handleConfirmTrade = () => {
+    const amount = parseFloat(investmentAmount);
+    if (!investmentAmount || isNaN(amount) || amount <= 0) {
       toast({
         title: "Invalid Amount",
         description: "Please enter a valid investment amount.",
@@ -88,27 +84,23 @@ export default function TradeExecutionModal({
       return;
     }
 
-    // Execute real trade via API
     executeTradeMutation.mutate({
       opportunityId,
-      amount: parseFloat(investmentAmount),
+      amount,
       isLiveTrading: user?.isLiveTrading || false,
       selectedBroker: user?.selectedBroker || "ninjatrader-sim",
-      userId: user?.id || 'demo-user'
+      userId: user?.id || 'demo-user',
     });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end" data-testid="trade-execution-modal">
-      {/* Background overlay */}
-      <div 
+      <div
         className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onClose}
       />
-      
-      {/* Modal sheet */}
+
       <div className="relative w-full max-w-md mx-auto bg-gray-800 rounded-t-2xl animate-slide-up">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white" data-testid="modal-title">
             Buy {symbol}
@@ -122,9 +114,7 @@ export default function TradeExecutionModal({
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Investment Amount Input */}
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">
               Investment Amount
@@ -137,17 +127,17 @@ export default function TradeExecutionModal({
                 onChange={(e) => setInvestmentAmount(e.target.value)}
                 className="w-full bg-gray-700 border border-gray-600 rounded-lg py-3 pl-8 pr-3 text-white text-lg focus:outline-none focus:border-blue-600"
                 placeholder="0.00"
+                min="1"
                 data-testid="investment-amount-input"
               />
             </div>
           </div>
 
-          {/* Quick Amount Buttons */}
           <div className="grid grid-cols-3 gap-3">
             {quickAmounts.map((amount) => (
               <button
                 key={amount}
-                onClick={() => handleQuickAmount(amount)}
+                onClick={() => setInvestmentAmount(amount.toString())}
                 className={`py-2 px-4 rounded-lg font-medium transition-colors ${
                   investmentAmount === amount.toString()
                     ? 'bg-blue-600 text-white'
@@ -160,11 +150,9 @@ export default function TradeExecutionModal({
             ))}
           </div>
 
-          {/* Trade Summary */}
-          {investmentAmount && (
+          {investmentAmount && parseFloat(investmentAmount) > 0 && (
             <div className="bg-gray-900 rounded-lg p-4 space-y-3" data-testid="trade-summary">
               <h3 className="text-lg font-semibold text-white">Trade Summary</h3>
-              
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Company</span>
@@ -194,33 +182,30 @@ export default function TradeExecutionModal({
             </div>
           )}
 
-          {/* Swipe to Confirm */}
-          {investmentAmount && parseFloat(investmentAmount) > 0 && (
-            <div className="relative">
-              <div 
-                className="w-full bg-blue-600 rounded-xl py-4 px-6 text-white font-semibold text-center cursor-pointer select-none overflow-hidden relative"
-                onMouseDown={handleSwipeStart}
-                onMouseUp={handleSwipeComplete}
-                onTouchStart={handleSwipeStart}
-                onTouchEnd={handleSwipeComplete}
-                data-testid="swipe-to-confirm"
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <Target className="h-6 w-6" />
-                  <span>Swipe to Confirm Trade</span>
-                  <ArrowRight className="h-6 w-6" />
-                </div>
-                
-                {/* Swipe progress indicator */}
-                {isConfirming && (
-                  <div className="absolute inset-0 bg-blue-700 transition-all duration-200" />
-                )}
-              </div>
-              
-              <p className="text-xs text-gray-400 text-center mt-2">
-                Hold to confirm your trade
-              </p>
-            </div>
+          {/* Confirm Trade button — clear, unambiguous action */}
+          <button
+            onClick={handleConfirmTrade}
+            disabled={!investmentAmount || parseFloat(investmentAmount) <= 0 || executeTradeMutation.isPending}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+            data-testid="confirm-trade-button"
+          >
+            {executeTradeMutation.isPending ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Executing Trade...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-5 w-5" />
+                <span>Confirm Trade</span>
+              </>
+            )}
+          </button>
+
+          {!user && (
+            <p className="text-xs text-amber-400 text-center">
+              You're trading in demo mode. Create an account to save your trades.
+            </p>
           )}
         </div>
       </div>

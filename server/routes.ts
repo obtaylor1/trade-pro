@@ -55,7 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.amount || 1000,
         validatedData.isLiveTrading || false,
         validatedData.selectedBroker,
-        req.body.userId || 'user-1' // Default user ID for demo
+        req.body.userId || 'demo-user'
       );
       res.json(result);
     } catch (error) {

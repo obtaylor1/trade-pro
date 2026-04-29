@@ -14,6 +14,7 @@ interface UserContextType {
   user: User | null;
   isLoggedIn: boolean;
   isLoading: boolean;
+  loginError: string | null;
   login: (email: string) => Promise<boolean>;
   logout: () => void;
   updateUserFromRegistration: (userData: User) => void;
@@ -24,15 +25,14 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
-  // Check for existing session on mount
   useEffect(() => {
     const savedUser = localStorage.getItem('trading-user');
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
+      } catch {
         localStorage.removeItem('trading-user');
       }
     }
@@ -41,19 +41,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string): Promise<boolean> => {
     setIsLoading(true);
+    setLoginError(null);
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
 
       const responseData = await response.json();
 
+      if (response.status === 404) {
+        setLoginError('No account found with that email. Please create an account first.');
+        return false;
+      }
+
       if (!response.ok) {
-        throw new Error(responseData.message || 'Failed to login');
+        setLoginError(responseData.message || 'Login failed. Please try again.');
+        return false;
       }
 
       const userData: User = {
@@ -69,8 +74,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setUser(userData);
       localStorage.setItem('trading-user', JSON.stringify(userData));
       return true;
-    } catch (error) {
-      console.error('Login error:', error);
+    } catch {
+      setLoginError('Network error. Please check your connection and try again.');
       return false;
     } finally {
       setIsLoading(false);
@@ -79,6 +84,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
+    setLoginError(null);
     localStorage.removeItem('trading-user');
   };
 
@@ -91,6 +97,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     user,
     isLoggedIn: !!user,
     isLoading,
+    loginError,
     login,
     logout,
     updateUserFromRegistration,

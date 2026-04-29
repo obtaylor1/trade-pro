@@ -5,6 +5,7 @@ import { TrendingUp, ArrowRight, User, Star } from "lucide-react";
 import PortfolioChart from "@/components/PortfolioChart";
 import RadialProgress from "@/components/RadialProgress";
 import type { TradingOpportunity } from "@shared/schema";
+import { useUser } from "@/contexts/UserContext";
 
 // Company logos for display
 const companyLogos: Record<string, string> = {
@@ -26,6 +27,7 @@ const companyLogos: Record<string, string> = {
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const { user } = useUser();
 
   // Fetch real trading opportunities for AI signals from all markets
   const { data: stockOpportunities, isLoading: stocksLoading } = useQuery<TradingOpportunity[]>({
@@ -58,10 +60,11 @@ export default function Home() {
     retry: 1
   });
 
-  // Mock portfolio data - TODO: replace with real user portfolio API
-  const portfolioValue = 10247.50;
-  const todayChange = 127.50;
-  const todayChangePercent = 1.26;
+  // Use real user balance if logged in, otherwise show demo values
+  const portfolioValue = user?.currentBalance ?? 10000;
+  const startingCapital = user?.startingCapital ?? 10000;
+  const todayChange = portfolioValue - startingCapital;
+  const todayChangePercent = startingCapital > 0 ? ((todayChange / startingCapital) * 100) : 0;
 
   // Get top AI signals from all five markets
   const topAISignals = [

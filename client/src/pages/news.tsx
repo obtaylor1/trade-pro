@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import DOMPurify from 'dompurify';
 import { Search, RefreshCw, Bookmark, Clock, ExternalLink, Filter, X, Star, ArrowLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -870,7 +871,7 @@ export default function NewsPage() {
                       ) : (
                         <div 
                           className="prose prose-invert max-w-none text-gray-300 leading-relaxed"
-                          dangerouslySetInnerHTML={{ __html: articleContent }}
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(articleContent) }}
                         />
                       )}
                     </div>

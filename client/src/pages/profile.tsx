@@ -214,74 +214,67 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Portfolio Metrics */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-xs text-gray-400 mb-1">Total Value</div>
-              <div className="text-lg font-bold text-white">$13,796.80</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xs text-gray-400 mb-1">Unrealized P&L</div>
-              <div className="text-lg font-bold text-green-400">$196.05</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xs text-gray-400 mb-1">Return</div>
-              <div className="text-lg font-bold text-green-400">+1.44%</div>
-            </div>
-          </div>
-
-          {/* Current Positions */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium text-white">Current Positions</h3>
-            
-            {/* Position 1 - MGC */}
-            <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="text-lg font-bold text-white">MGC</div>
-                  <div className="text-xs space-y-1">
-                    <div className="text-gray-400">Micro</div>
-                    <div className="text-amber-400 bg-amber-400/20 px-2 py-0.5 rounded text-xs">commodities</div>
-                    <div className="text-gray-400">Futures</div>
-                  </div>
+          {/* Portfolio Metrics - real user data */}
+          {isLoggedIn && user ? (
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-xs text-gray-400 mb-1">Current Balance</div>
+                <div className="text-lg font-bold text-white">{formatCurrency(user.currentBalance)}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-400 mb-1">P&L</div>
+                <div className={`text-lg font-bold ${user.currentBalance >= user.startingCapital ? 'text-green-400' : 'text-red-400'}`}>
+                  {formatCurrency(user.currentBalance - user.startingCapital)}
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-white">5 x</span>
-                    <span className="text-white font-semibold">$20.36</span>
-                    <div className="text-green-400 font-bold">$101.80</div>
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    Entry: $20.15 <span className="text-green-400">(+1.04%)</span>
-                  </div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-400 mb-1">Return</div>
+                <div className={`text-lg font-bold ${user.currentBalance >= user.startingCapital ? 'text-green-400' : 'text-red-400'}`}>
+                  {user.startingCapital > 0
+                    ? `${((user.currentBalance - user.startingCapital) / user.startingCapital * 100).toFixed(2)}%`
+                    : '0.00%'}
                 </div>
               </div>
             </div>
-
-            {/* Position 2 - MBT */}
-            <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="text-lg font-bold text-white">MBT</div>
-                  <div className="text-xs space-y-1">
-                    <div className="text-gray-400">Micro</div>
-                    <div className="text-purple-400 bg-purple-400/20 px-2 py-0.5 rounded text-xs">crypto</div>
-                    <div className="text-gray-400">Bitcoin</div>
-                    <div className="text-gray-400">Futures</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-white">2 x</span>
-                    <span className="text-white font-semibold">$6,847.50</span>
-                    <div className="text-green-400 font-bold">$13,695.00</div>
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    Entry: $6,800.00 <span className="text-green-400">$95.00</span>
-                  </div>
-                </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-4 opacity-50">
+              <div className="text-center">
+                <div className="text-xs text-gray-400 mb-1">Current Balance</div>
+                <div className="text-lg font-bold text-white">—</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-400 mb-1">P&L</div>
+                <div className="text-lg font-bold text-gray-400">—</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-400 mb-1">Return</div>
+                <div className="text-lg font-bold text-gray-400">—</div>
               </div>
             </div>
+          )}
+
+          {/* Trade history / positions placeholder */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-white">Recent Activity</h3>
+            {!isLoggedIn ? (
+              <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-700 text-center">
+                <div className="text-gray-400 text-sm mb-2">Sign in to view your trades</div>
+                <button
+                  onClick={handleLogin}
+                  className="text-blue-400 text-xs underline hover:text-blue-300 transition-colors"
+                >
+                  Sign in now
+                </button>
+              </div>
+            ) : (
+              <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-700 text-center">
+                <div className="text-3xl mb-2">📊</div>
+                <div className="text-white text-sm font-medium mb-1">No trades yet</div>
+                <div className="text-gray-400 text-xs">
+                  Head to the Markets tab to execute your first trade
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -291,9 +284,11 @@ export default function Profile() {
           {/* User Info Section */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              {/* Avatar */}
+              {/* Avatar - shows real user's first initial */}
               <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-lg">D</span>
+                <span className="text-white font-bold text-lg">
+                  {(isLoggedIn && user?.name ? user.name : 'D').charAt(0).toUpperCase()}
+                </span>
               </div>
               
               {/* User Details */}

@@ -19,7 +19,15 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
   const { user } = useUser();
   const [showChart, setShowChart] = useState(false);
   const [showTradeModal, setShowTradeModal] = useState(false);
-  
+
+  const invalidateUserBalance = () => {
+    if (user?.id) {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/balance', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user', user.id] });
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
+  };
+
   const executeTradeMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/trades/execute", {
@@ -32,11 +40,27 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
     },
     onSuccess: (result: TradeResult) => {
       onTradeExecuted(result);
-      queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
-      // Invalidate user balance to refresh portfolio
-      if (user?.id) {
-        queryClient.invalidateQueries({ queryKey: [`/api/auth/balance/${user.id}`] });
-      }
+      invalidateUserBalance();
+    },
+  });
+
+  // FIX: useMutation must be at the top level — not inside a callback function
+  const enhancedTradeMutation = useMutation({
+    mutationFn: async (params: { duration: 'weekly' | 'monthly'; contracts: number }) => {
+      const response = await apiRequest("POST", "/api/trades/execute", {
+        opportunityId: opportunity.id,
+        userId: user?.id || 'demo-user',
+        selectedBroker: user?.selectedBroker || 'ninjatrader-sim',
+        isLiveTrading: user?.isLiveTrading || false,
+        duration: params.duration,
+        contractCount: params.contracts,
+        optionType: opportunity.optionType,
+      });
+      return response.json();
+    },
+    onSuccess: (result: TradeResult) => {
+      onTradeExecuted(result);
+      invalidateUserBalance();
     },
   });
 
@@ -44,56 +68,35 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
     executeTradeMutation.mutate();
   };
 
-  const handleTradeFromModal = async (opportunity: TradingOpportunity) => {
+  const handleTradeFromModal = async (_opp: TradingOpportunity) => {
     return new Promise<void>((resolve, reject) => {
       executeTradeMutation.mutate(undefined, {
         onSuccess: () => resolve(),
-        onError: (error) => reject(error)
+        onError: (error) => reject(error),
       });
     });
   };
 
-  const handleOptionsTradeExecute = async (opportunity: TradingOpportunity, duration: 'weekly' | 'monthly', contracts: number) => {
+  const handleOptionsTradeExecute = async (_opp: TradingOpportunity, duration: 'weekly' | 'monthly', contracts: number) => {
     return new Promise<void>((resolve, reject) => {
-      // Enhanced trade data with duration and contract count
-      const enhancedTradeMutation = useMutation({
-        mutationFn: async () => {
-          const response = await apiRequest("POST", "/api/trades/execute", {
-            opportunityId: opportunity.id,
-            userId: user?.id || 'demo-user',
-            selectedBroker: user?.selectedBroker || 'ninjatrader-sim',
-            isLiveTrading: user?.isLiveTrading || false,
-            duration: duration,
-            contractCount: contracts,
-            optionType: opportunity.optionType
-          });
-          return response.json();
-        },
-        onSuccess: (result: TradeResult) => {
-          onTradeExecuted(result);
-          queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
-          // Invalidate user balance to refresh portfolio
-          if (user?.id) {
-            queryClient.invalidateQueries({ queryKey: [`/api/auth/balance/${user.id}`] });
-          }
-          resolve();
-        },
-        onError: (error) => reject(error)
+      enhancedTradeMutation.mutate({ duration, contracts }, {
+        onSuccess: () => resolve(),
+        onError: (error) => reject(error),
       });
-      
-      enhancedTradeMutation.mutate();
     });
   };
 
   const actionColor = opportunity.action === "BUY" ? "bg-trading-success" : "bg-trading-warning";
   const confidenceBarColor = opportunity.confidence >= 80 ? "bg-trading-success" : "bg-trading-warning";
 
-  const cardClassName = opportunity.isMicro 
+  const cardClassName = opportunity.isMicro
     ? "trade-card bg-gradient-to-br from-trading-gray to-purple-900/20 rounded-xl shadow-xl border border-purple-500/30 overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-purple-400/50 animate-slide-up"
     : "trade-card bg-trading-gray rounded-xl shadow-xl border border-gray-700 overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl animate-slide-up";
 
+  const isExecuting = executeTradeMutation.isPending || enhancedTradeMutation.isPending;
+
   return (
-    <div 
+    <div
       className={cardClassName}
       style={{ animationDelay: `${animationDelay}ms` }}
     >
@@ -118,8 +121,8 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
             {opportunity.market === "options" && (
               <div className="flex items-center space-x-3 mt-2">
                 <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                  opportunity.optionType === "CALL" 
-                    ? "bg-green-500/20 text-green-400" 
+                  opportunity.optionType === "CALL"
+                    ? "bg-green-500/20 text-green-400"
                     : "bg-red-500/20 text-red-400"
                 }`}>
                   {opportunity.optionType}
@@ -185,7 +188,7 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
             <span>{opportunity.confidence}%</span>
           </div>
           <div className="w-full bg-gray-700 rounded-full h-2">
-            <div 
+            <div
               className={`${confidenceBarColor} h-2 rounded-full transition-all duration-500`}
               style={{ width: `${opportunity.confidence}%` }}
             ></div>
@@ -203,22 +206,12 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
         </div>
 
         <div className="space-y-3">
-          {opportunity.market === 'options' && false && (
-            <button 
-              onClick={() => setShowChart(true)}
-              className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center shadow-lg border border-purple-500/30"
-            >
-              <BarChart3 className="h-5 w-5 mr-2" />
-              View Real-Time Chart
-            </button>
-          )}
-          
-          <button 
+          <button
             onClick={opportunity.market === 'options' ? () => onOpenOptionsWindow?.(opportunity) : handleExecuteTrade}
-            disabled={executeTradeMutation.isPending}
+            disabled={isExecuting}
             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg border border-blue-500/30"
           >
-            {executeTradeMutation.isPending ? (
+            {isExecuting ? (
               <>
                 <i className="fas fa-spinner fa-spin mr-2"></i>
                 Executing...
@@ -231,8 +224,7 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
             )}
           </button>
         </div>
-        
-        {/* Render modals at document level to avoid card positioning issues */}
+
         {opportunity.market === 'options' && showChart && (
           <OptionsDetailsModal
             opportunity={opportunity}

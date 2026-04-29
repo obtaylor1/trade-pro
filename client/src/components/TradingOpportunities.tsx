@@ -35,13 +35,22 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-12">
+      <div className="flex flex-col items-center justify-center py-16 space-y-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
-        <div className="ml-4 text-gray-300">
-          <div>Loading {selectedMarket} opportunities...</div>
-          {selectedMarket === 'stocks' && (
+        <div className="text-center text-gray-300">
+          <div className="font-medium">Loading {selectedMarket} opportunities...</div>
+          {selectedMarket === 'stocks' ? (
+            <div className="mt-2 space-y-1">
+              <div className="text-sm text-amber-400">
+                ⏱ Stocks fetch live data and may take up to 60 seconds
+              </div>
+              <div className="text-xs text-gray-500">
+                Fetching real-time prices from market data API
+              </div>
+            </div>
+          ) : (
             <div className="text-sm text-gray-500 mt-1">
-              Fetching real-time market data - this may take up to 60 seconds
+              This usually takes just a few seconds
             </div>
           )}
         </div>

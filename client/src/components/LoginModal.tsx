@@ -12,7 +12,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { login } = useUser();
+  const { login, loginError } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,19 +28,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         });
         onClose();
         setEmail("");
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Account not found. Please check your email or create a new account.",
-          variant: "destructive",
-        });
       }
-    } catch (error) {
-      toast({
-        title: "Login Error",
-        description: "There was an error logging in. Please try again.",
-        variant: "destructive",
-      });
+      // loginError is set in context and shown inline — no extra toast needed
+    } catch {
+      // Handled by context
     } finally {
       setIsSubmitting(false);
     }
@@ -114,10 +105,15 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             )}
           </button>
 
-          {/* Note */}
+          {/* Inline error message from context */}
+          {loginError && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-400">
+              {loginError}
+            </div>
+          )}
+
           <p className="text-xs text-gray-500 text-center">
-            Don't have an account? Use the "Create Free Account" link on your profile page.
-            No password required - just enter your email to sign in.
+            No password required — just enter the email you registered with.
           </p>
         </form>
       </div>
