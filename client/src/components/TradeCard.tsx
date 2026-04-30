@@ -180,6 +180,24 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
               <span className="text-violet-100 font-bold">{opportunity.impliedVolatility}</span>
             </div>
           )}
+          {opportunity.market === "options" && opportunity.delta && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex justify-between items-center p-2 bg-gradient-to-r from-orange-900/30 to-amber-900/30 rounded">
+                <span className="text-orange-200 font-medium text-xs">Δ Delta:</span>
+                <span className="text-orange-100 font-bold text-xs">{opportunity.delta}</span>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-gradient-to-r from-rose-900/30 to-pink-900/30 rounded">
+                <span className="text-rose-200 font-medium text-xs">Θ Theta/day:</span>
+                <span className="text-rose-100 font-bold text-xs">{opportunity.theta}</span>
+              </div>
+            </div>
+          )}
+          {opportunity.market === "options" && opportunity.breakevenPrice && (
+            <div className="flex justify-between items-center p-2 bg-gradient-to-r from-yellow-900/30 to-amber-900/30 rounded border border-yellow-600/20">
+              <span className="text-yellow-200 font-medium text-xs">⚖ Breakeven:</span>
+              <span className="text-yellow-100 font-bold text-xs">{opportunity.breakevenPrice} ({opportunity.moveNeeded} move needed)</span>
+            </div>
+          )}
           <div className="flex justify-between items-center p-2 bg-gradient-to-r from-red-900/40 to-red-800/40 rounded">
             <span className="text-red-200 font-medium">Risk:</span>
             <span className="text-red-100 font-bold">{opportunity.risk}</span>

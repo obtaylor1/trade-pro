@@ -28,6 +28,10 @@ export const tradingOpportunitySchema = z.object({
   premium: z.string().optional(),
   underlyingPrice: z.string().optional(),
   impliedVolatility: z.string().optional(),
+  delta: z.string().optional(),
+  theta: z.string().optional(),
+  breakevenPrice: z.string().optional(),
+  moveNeeded: z.string().optional(),
   // Futures-specific fields
   marginRequired: z.string().optional(),
   tickValue: z.string().optional(),

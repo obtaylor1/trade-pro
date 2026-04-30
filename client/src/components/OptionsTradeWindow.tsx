@@ -203,7 +203,7 @@ export default function OptionsTradeWindow({
                 <span className="text-white font-bold">${selectedPremium.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center p-2 bg-gradient-to-r from-purple-900/30 to-violet-900/30 rounded">
-                <span className="text-purple-200 text-sm font-medium">Total cost ({contractCount} contracts):</span>
+                <span className="text-purple-200 text-sm font-medium">Total cost ({contractCount} contract{contractCount > 1 ? 's' : ''}):</span>
                 <span className="text-white font-bold">${totalCost.toFixed(2)}</span>
               </div>
               <div className="border-t border-gray-500/50 pt-1 mt-1">
@@ -211,13 +211,19 @@ export default function OptionsTradeWindow({
                   <span className="text-red-200 text-sm font-medium">Maximum risk:</span>
                   <span className="text-red-100 font-bold">-${maxRisk.toFixed(2)}</span>
                 </div>
+                {opportunity.breakevenPrice && (
+                  <div className="flex justify-between items-center p-2 bg-gradient-to-r from-yellow-900/40 to-amber-900/40 rounded mb-1 border border-yellow-600/20">
+                    <span className="text-yellow-200 text-sm font-medium">⚖ Breakeven at expiry:</span>
+                    <span className="text-yellow-100 font-bold">{opportunity.breakevenPrice} ({opportunity.moveNeeded})</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center p-2 bg-gradient-to-r from-green-900/40 to-emerald-800/40 rounded mb-1">
-                  <span className="text-green-200 text-sm font-medium">Potential gain:</span>
+                  <span className="text-green-200 text-sm font-medium">Potential gain ({selectedDuration}):</span>
                   <span className="text-green-100 font-bold">+${potentialGain.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-gradient-to-r from-teal-800/60 to-cyan-800/60 rounded-lg border border-teal-600/30">
                   <span className="text-teal-100 text-sm font-bold">Net profit potential:</span>
-                  <span className="text-teal-50 font-bold">+${netProfit.toFixed(2)}</span>
+                  <span className="text-teal-50 font-bold text-lg">+${netProfit.toFixed(2)}</span>
                 </div>
               </div>
             </div>
