@@ -45,21 +45,21 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
   const getOptionsForMarket = (market: string): CommodityOption[] => {
     if (market === 'crypto') {
       return [
-        { symbol: 'MBT', name: 'Micro Bitcoin (MBT)', price: 6847.50, isMicro: true },
-        { symbol: 'MET', name: 'Micro Ethereum (MET)', price: 268.00, isMicro: true },
-        { symbol: 'NSL', name: 'Nano Solana (NSL)', price: 2.15, isMicro: true },
-        { symbol: 'NAV', name: 'Nano Avalanche (NAV)', price: 2.67, isMicro: true },
-        { symbol: 'NPG', name: 'Nano Polygon (NPG)', price: 0.87, isMicro: true },
-        { symbol: 'NDT', name: 'Nano Polkadot (NDT)', price: 0.64, isMicro: true }
+        { symbol: 'MBT', name: 'Micro Bitcoin (MBT)', price: 94850.00, isMicro: true },
+        { symbol: 'MET', name: 'Micro Ethereum (MET)', price: 1842.00, isMicro: true },
+        { symbol: 'NSL', name: 'Nano Solana (NSL)', price: 148.50, isMicro: true },
+        { symbol: 'NAV', name: 'Nano Avalanche (NAV)', price: 27.80, isMicro: true },
+        { symbol: 'NPG', name: 'Nano Polygon (NPG)', price: 0.44, isMicro: true },
+        { symbol: 'NDT', name: 'Nano Polkadot (NDT)', price: 6.35, isMicro: true }
       ];
     }
-    // Default to commodities
+    // Default to commodities — prices current as of April 2026
     return [
-      { symbol: 'MGC', name: 'Micro Gold (MGC)', price: 20.36, isMicro: true },
-      { symbol: 'MCL', name: 'Micro Crude Oil (MCL)', price: 7.83, isMicro: true },
-      { symbol: 'MSI', name: 'Micro Silver (MSI)', price: 2.35, isMicro: true },
-      { symbol: 'NCP', name: 'Nano Copper (NCP)', price: 0.38, isMicro: true },
-      { symbol: 'NNG', name: 'Nano Natural Gas (NNG)', price: 0.32, isMicro: true }
+      { symbol: 'MGC', name: 'Micro Gold (MGC)', price: 3285.50, isMicro: true },
+      { symbol: 'MCL', name: 'Micro Crude Oil (MCL)', price: 61.20, isMicro: true },
+      { symbol: 'MSI', name: 'Micro Silver (MSI)', price: 32.48, isMicro: true },
+      { symbol: 'NCP', name: 'Nano Copper (NCP)', price: 4.82, isMicro: true },
+      { symbol: 'NNG', name: 'Nano Natural Gas (NNG)', price: 3.82, isMicro: true }
     ];
   };
 
@@ -72,19 +72,19 @@ export default function SimpleLiveChart({ symbol: initialSymbol, name: initialNa
   // Get base price for different symbols
   const getBasePrice = (symbol: string): number => {
     const prices: Record<string, number> = {
-      'MGC': 20.36,  // Micro Gold
-      'MCL': 7.83,   // Micro Crude Oil
-      'MSI': 2.35,   // Micro Silver
-      'NCP': 0.38,   // Nano Copper
-      'NNG': 0.32,   // Nano Natural Gas
-      'MBT': 6847.50, // Micro Bitcoin
-      'MET': 268.00,  // Micro Ethereum
-      'NSL': 2.15,    // Nano Solana
-      'NAV': 2.67,    // Nano Avalanche
-      'NPG': 0.87,    // Nano Polygon
-      'NDT': 0.64     // Nano Polkadot
+      'MGC': 3285.50, // Micro Gold (per oz, Apr 2026)
+      'MCL': 61.20,   // Micro Crude Oil (per barrel, Apr 2026)
+      'MSI': 32.48,   // Micro Silver (per oz, Apr 2026)
+      'NCP': 4.82,    // Nano Copper (per lb, Apr 2026)
+      'NNG': 3.82,    // Nano Natural Gas (per MMBtu, Apr 2026)
+      'MBT': 94850.00, // Micro Bitcoin (Apr 2026)
+      'MET': 1842.00,  // Micro Ethereum (Apr 2026)
+      'NSL': 148.50,   // Nano Solana (Apr 2026)
+      'NAV': 27.80,    // Nano Avalanche (Apr 2026)
+      'NPG': 0.44,     // Nano Polygon (Apr 2026)
+      'NDT': 6.35      // Nano Polkadot (Apr 2026)
     };
-    return prices[symbol] || 20.00;
+    return prices[symbol] || 100.00;
   };
 
   // Generate initial historical data based on timeframe
