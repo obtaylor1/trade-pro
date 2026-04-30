@@ -743,11 +743,11 @@ export class MarketDataService {
       const callMoveNeeded = (((callStrike + callPremium - stock.currentPrice) / stock.currentPrice) * 100).toFixed(1);
       const putMoveNeeded  = (((stock.currentPrice - (putStrike - putPremium))  / stock.currentPrice) * 100).toFixed(1);
 
-      // Potential gain & net profit — match trade window weekly multiplier (×6 calls, ×5 puts)
+      // Potential gain & net profit — must match trade window weekly multiplier (×6 gain, ×5 net for both calls and puts)
       const callGain   = parseFloat((callPremium * 6).toFixed(2));
       const callProfit = parseFloat((callPremium * 5).toFixed(2));
-      const putGain    = parseFloat((putPremium  * 5).toFixed(2));
-      const putProfit  = parseFloat((putPremium  * 4).toFixed(2));
+      const putGain    = parseFloat((putPremium  * 6).toFixed(2));
+      const putProfit  = parseFloat((putPremium  * 5).toFixed(2));
 
       opportunities.push({
         id: `call-${stock.symbol.toLowerCase()}-${callStrike}`,
