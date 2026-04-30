@@ -24,6 +24,7 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
     if (user?.id) {
       queryClient.invalidateQueries({ queryKey: ['/api/auth/balance', user.id] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/trades/history', user.id] });
     }
     queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
   };

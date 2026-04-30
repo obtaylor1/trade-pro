@@ -46,12 +46,12 @@ export default function TradeExecutionModal({
         description: `Bought ${shares} shares of ${symbol} for $${parseFloat(investmentAmount).toFixed(2)}`,
       });
 
-      // Fix: use array-format query keys so cache invalidation works correctly
       queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
       queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
       if (user?.id) {
         queryClient.invalidateQueries({ queryKey: ['/api/auth/balance', user.id] });
         queryClient.invalidateQueries({ queryKey: ['/api/auth/user', user.id] });
+        queryClient.invalidateQueries({ queryKey: ['/api/trades/history', user.id] });
       }
 
       onClose();

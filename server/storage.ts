@@ -141,38 +141,62 @@ export class MemStorage implements IStorage {
     // Save paper trade to database if it's simulator mode and successful
     if (!isLiveTrading && success && userId) {
       try {
+        // Derive a clean ticker symbol from the opportunity id or name
+        const deriveSymbol = (id: string, name: string): string => {
+          if (id.includes('micro-commodity-gold') || id.includes('futures-gold')) return 'MGC';
+          if (id.includes('micro-commodity-oil') || id.includes('futures-oil')) return 'MCL';
+          if (id.includes('futures-nat-gas') || id.includes('natural-gas')) return 'MNG';
+          if (id.includes('futures-corn')) return 'ZC';
+          if (id.includes('futures-coffee')) return 'KC';
+          if (id.includes('futures-es') || id.includes('sp500')) return 'MES';
+          if (id.includes('crypto-eth') || id.includes('micro-eth')) return 'MET';
+          if (id.includes('crypto-btc') || id.includes('micro-btc')) return 'MBT';
+          if (id.includes('crypto-sol')) return 'SOL';
+          if (id.includes('stock-') || id.includes('call-') || id.includes('put-')) {
+            // Extract uppercase ticker from id like "stock-aapl" → "AAPL" or "call-aapl-205" → "AAPL"
+            const parts = id.split('-');
+            if (parts.length >= 2) return parts[1].toUpperCase();
+          }
+          if (id.includes('forex-')) {
+            const parts = id.split('-');
+            if (parts.length >= 2) return parts[1].toUpperCase();
+          }
+          // Fallback: use first word of name uppercased
+          return name.split(' ')[0].toUpperCase().slice(0, 6);
+        };
+
+        const entryPriceNum = parseFloat(opportunity.entryPrice.replace(/[^0-9.]/g, '')) || 1;
         const paperTrade: Omit<PaperTrade, 'id'> = {
           userId,
           tradeId: tradeResult.id,
           timestamp: new Date().toISOString(),
           broker: selectedBroker || 'ninjatrader-sim',
-          symbol: opportunity.id.includes('micro-commodity-gold') ? 'MGC' : 
-                  opportunity.id.includes('micro-commodity-oil') ? 'MCL' :
-                  opportunity.id.includes('crypto-eth') ? 'MET' :
-                  opportunity.id.includes('crypto-btc') ? 'MBT' : 'MGC',
+          symbol: deriveSymbol(opportunity.id, opportunity.name),
           assetName: opportunity.name,
           assetClass: opportunity.market,
           direction: opportunity.action,
-          quantity: Math.floor(amount / parseFloat(opportunity.entryPrice.replace(/[^0-9.]/g, ''))),
-          entryPrice: parseFloat(opportunity.entryPrice.replace(/[^0-9.]/g, '')),
-          currentPrice: parseFloat(opportunity.entryPrice.replace(/[^0-9.]/g, '')),
+          quantity: Math.max(1, Math.floor(amount / entryPriceNum)),
+          entryPrice: entryPriceNum,
+          currentPrice: entryPriceNum,
           positionSize: amount,
           commission,
-          margin: amount * 0.1, // 10% margin requirement
+          margin: amount * 0.1,
           grossPnL: originalProfit,
           netPnL: netProfitAfterFees,
-          status: 'OPEN',
+          // Paper trades resolve immediately — mark CLOSED so balance isn't locked forever
+          status: 'CLOSED',
           successRate: 0,
           executedAt: new Date().toISOString(),
+          closedAt: new Date().toISOString(),
         };
 
         await this.savePaperTrade(paperTrade);
         
-        // Update user's current balance based on trade result
+        // Balance update: only add the realized P&L (position is closed, capital is returned)
         const user = await this.getUserById(userId);
         if (user) {
           const currentBalance = parseFloat(user.currentBalance);
-          const newBalance = currentBalance + netProfitAfterFees - amount; // Subtract position size, add net P&L
+          const newBalance = currentBalance + netProfitAfterFees;
           await this.updateUserBalance(userId, newBalance);
         }
       } catch (error) {
@@ -364,14 +388,14 @@ export class MemStorage implements IStorage {
     const trades = await this.getUserTrades(userId);
     const startingBalance = parseFloat(user.startingCapital);
     
-    // Calculate total P&L from all trades
-    const totalPnL = trades.reduce((sum, trade) => sum + trade.netPnL, 0);
-    
-    // Calculate total amount currently invested in open positions
+    // Sum realized P&L from all closed paper trades
+    const closedTrades = trades.filter(t => t.status === 'CLOSED');
+    const totalPnL = closedTrades.reduce((sum, trade) => sum + trade.netPnL, 0);
+
+    // Deduct capital currently locked in any open positions
     const openTrades = trades.filter(t => t.status === 'OPEN');
     const totalInvested = openTrades.reduce((sum, trade) => sum + trade.positionSize, 0);
-    
-    // Current balance = starting balance + total P&L - invested amount
+
     return startingBalance + totalPnL - totalInvested;
   }
 }

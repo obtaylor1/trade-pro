@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, User, Settings, RotateCcw, Info, LogIn, LogOut } from "lucide-react";
+import { ArrowLeft, User, Settings, RotateCcw, Info, LogIn, LogOut, TrendingUp, TrendingDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
+import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import CreateAccountModal from "@/components/CreateAccountModal";
 import LoginModal from "@/components/LoginModal";
@@ -14,6 +15,12 @@ export default function Profile() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { toast } = useToast();
   const { user, isLoggedIn, logout, updateUserFromRegistration } = useUser();
+
+  // Fetch real trade history for logged-in users
+  const { data: tradeHistory = [] } = useQuery<any[]>({
+    queryKey: ['/api/trades/history', user?.id],
+    enabled: isLoggedIn && !!user?.id,
+  });
 
   // Demo user data fallback
   const demoUser = {
@@ -253,9 +260,17 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Trade history / positions placeholder */}
+          {/* Trade history — real data from API */}
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-white">Recent Activity</h3>
+            <h3 className="text-sm font-medium text-white">
+              Recent Activity
+              {tradeHistory.length > 0 && (
+                <span className="ml-2 text-xs text-gray-400 font-normal">
+                  ({tradeHistory.length} trade{tradeHistory.length !== 1 ? 's' : ''})
+                </span>
+              )}
+            </h3>
+
             {!isLoggedIn ? (
               <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-700 text-center">
                 <div className="text-gray-400 text-sm mb-2">Sign in to view your trades</div>
@@ -266,13 +281,48 @@ export default function Profile() {
                   Sign in now
                 </button>
               </div>
-            ) : (
+            ) : tradeHistory.length === 0 ? (
               <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-700 text-center">
                 <div className="text-3xl mb-2">📊</div>
                 <div className="text-white text-sm font-medium mb-1">No trades yet</div>
                 <div className="text-gray-400 text-xs">
                   Head to the Markets tab to execute your first trade
                 </div>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {tradeHistory.slice(0, 10).map((trade: any) => {
+                  const pnl = trade.netPnL ?? 0;
+                  const isGain = pnl >= 0;
+                  return (
+                    <div
+                      key={trade.id}
+                      className="bg-gray-900/50 rounded-lg p-3 border border-gray-700 flex items-center justify-between"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                          trade.direction === 'BUY'
+                            ? 'bg-green-500/20 text-green-400'
+                            : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {trade.direction === 'BUY' ? '↑' : '↓'}
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-white">{trade.symbol}</div>
+                          <div className="text-xs text-gray-400 capitalize">{trade.assetClass}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`text-sm font-bold ${isGain ? 'text-green-400' : 'text-red-400'}`}>
+                          {isGain ? '+' : ''}{formatCurrency(pnl)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(trade.executedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
