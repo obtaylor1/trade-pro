@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { type TradingOpportunity, type TradeResult } from "@shared/schema";
 import TradeCard from "./TradeCard";
 import FuturesTradeCard from "./FuturesTradeCard";
 import ForexBotCard from "./ForexBotCard";
 import SimpleLiveChart from "./SimpleLiveChart";
 import OptionsTradeWindow from "./OptionsTradeWindow";
+import { apiRequest } from "@/lib/queryClient";
+import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface TradingOpportunitiesProps {
   selectedMarket: string;
@@ -15,9 +18,55 @@ interface TradingOpportunitiesProps {
 
 export default function TradingOpportunities({ selectedMarket, onTradeExecuted, userProfile }: TradingOpportunitiesProps) {
   const queryClient = useQueryClient();
+  const { user } = useUser();
+  const { toast } = useToast();
   const [optionsTradeWindow, setOptionsTradeWindow] = useState<{ isOpen: boolean; opportunity: TradingOpportunity | null }>({
     isOpen: false,
     opportunity: null
+  });
+
+  // Real options trade execution — used by OptionsTradeWindow
+  const optionsTradeMutation = useMutation({
+    mutationFn: async (params: {
+      opportunity: TradingOpportunity;
+      duration: 'weekly' | 'monthly';
+      contracts: number;
+    }) => {
+      const basePremium = parseFloat(params.opportunity.entryPrice.replace(/[^0-9.]/g, '')) || 0.25;
+      const selectedPremium = params.duration === 'weekly' ? basePremium : basePremium * 1.8;
+      const totalCost = parseFloat((selectedPremium * params.contracts).toFixed(2));
+      const potentialGain = totalCost * (params.duration === 'weekly' ? 6 : 4);
+      const netProfitCalc = parseFloat((potentialGain - totalCost).toFixed(2));
+
+      const response = await apiRequest("POST", "/api/trades/execute", {
+        opportunityId: params.opportunity.id,
+        userId: user?.id || 'demo-user',
+        selectedBroker: user?.selectedBroker || 'ninjatrader-sim',
+        isLiveTrading: user?.isLiveTrading || false,
+        duration: params.duration,
+        contractCount: params.contracts,
+        optionType: params.opportunity.optionType,
+        amount: totalCost,
+        netProfitOverride: netProfitCalc,
+      });
+      return response.json() as Promise<TradeResult>;
+    },
+    onSuccess: (result) => {
+      onTradeExecuted(result);
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/balance', user.id] });
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/user', user.id] });
+        queryClient.invalidateQueries({ queryKey: ['/api/trades/history', user.id] });
+      }
+      toast({
+        title: result.success ? "Options Trade Executed!" : "Trade Failed",
+        description: result.message,
+        variant: result.success ? "default" : "destructive",
+      });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to execute options trade", variant: "destructive" });
+    },
   });
   
   const { data: opportunities, isLoading, error, isFetching } = useQuery<TradingOpportunity[]>({
@@ -218,8 +267,7 @@ export default function TradingOpportunities({ selectedMarket, onTradeExecuted, 
           isOpen={optionsTradeWindow.isOpen}
           onClose={() => setOptionsTradeWindow({ isOpen: false, opportunity: null })}
           onExecuteTrade={async (opportunity, duration, contracts) => {
-            // Handle the trade execution here
-            console.log('Executing options trade:', opportunity, duration, contracts);
+            await optionsTradeMutation.mutateAsync({ opportunity, duration, contracts });
             setOptionsTradeWindow({ isOpen: false, opportunity: null });
           }}
           containerRef={{ current: document.getElementById('trading-cards-container') }}

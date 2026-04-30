@@ -241,8 +241,8 @@ export default function OptionsTradeWindow({
               opportunity.optionType === 'CALL' ? 'text-green-200' : 'text-red-200'
             }`}>
               {opportunity.optionType === 'CALL' 
-                ? `This call option profits if ${opportunity.id.split('-')[1]?.toUpperCase()} moves above $${opportunity.strikePrice} before expiration.`
-                : `This put option profits if ${opportunity.id.split('-')[1]?.toUpperCase()} moves below $${opportunity.strikePrice} before expiration.`
+                ? `This call option profits if ${opportunity.id.split('-')[1]?.toUpperCase()} moves above ${opportunity.strikePrice} before expiration.`
+                : `This put option profits if ${opportunity.id.split('-')[1]?.toUpperCase()} moves below ${opportunity.strikePrice} before expiration.`
               }
             </p>
           </div>

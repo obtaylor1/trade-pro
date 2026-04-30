@@ -45,9 +45,13 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
     },
   });
 
-  // FIX: useMutation must be at the top level — not inside a callback function
   const enhancedTradeMutation = useMutation({
-    mutationFn: async (params: { duration: 'weekly' | 'monthly'; contracts: number }) => {
+    mutationFn: async (params: {
+      duration: 'weekly' | 'monthly';
+      contracts: number;
+      amount: number;
+      netProfitOverride: number;
+    }) => {
       const response = await apiRequest("POST", "/api/trades/execute", {
         opportunityId: opportunity.id,
         userId: user?.id || 'demo-user',
@@ -56,6 +60,8 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
         duration: params.duration,
         contractCount: params.contracts,
         optionType: opportunity.optionType,
+        amount: params.amount,
+        netProfitOverride: params.netProfitOverride,
       });
       return response.json();
     },
@@ -78,12 +84,19 @@ export default function TradeCard({ opportunity, onTradeExecuted, animationDelay
     });
   };
 
+  // Compute the same pricing math the modal uses, so amount + profit are accurate
   const handleOptionsTradeExecute = async (_opp: TradingOpportunity, duration: 'weekly' | 'monthly', contracts: number) => {
+    const basePremium = parseFloat(opportunity.entryPrice.replace(/[^0-9.]/g, '')) || 0.25;
+    const selectedPremium = duration === 'weekly' ? basePremium : basePremium * 1.8;
+    const totalCost = parseFloat((selectedPremium * contracts).toFixed(2));
+    const potentialGain = totalCost * (duration === 'weekly' ? 6 : 4);
+    const netProfitCalc = parseFloat((potentialGain - totalCost).toFixed(2));
+
     return new Promise<void>((resolve, reject) => {
-      enhancedTradeMutation.mutate({ duration, contracts }, {
-        onSuccess: () => resolve(),
-        onError: (error) => reject(error),
-      });
+      enhancedTradeMutation.mutate(
+        { duration, contracts, amount: totalCost, netProfitOverride: netProfitCalc },
+        { onSuccess: () => resolve(), onError: (error) => reject(error) }
+      );
     });
   };
 

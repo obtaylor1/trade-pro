@@ -84,11 +84,12 @@ export class MemStorage implements IStorage {
   }
 
   async executeTrade(
-    opportunityId: string, 
+    opportunityId: string,
     amount: number = 1000,
     isLiveTrading: boolean = false,
     selectedBroker?: string,
-    userId?: string
+    userId?: string,
+    netProfitOverride?: number
   ): Promise<TradeResult> {
     const opportunity = this.opportunities.get(opportunityId);
     
@@ -122,8 +123,10 @@ export class MemStorage implements IStorage {
       commission = fees.stockCommission || 0;
     }
 
-    // Parse the original net profit and subtract commission
-    const originalProfit = parseFloat(opportunity.netProfit.replace(/[^-0-9.]/g, '')) || 0;
+    // Use the caller-provided net profit (e.g. from options modal math) or fall back to opportunity value
+    const originalProfit = netProfitOverride !== undefined
+      ? netProfitOverride
+      : (parseFloat(opportunity.netProfit.replace(/[^-0-9.]/g, '')) || 0);
     const netProfitAfterFees = originalProfit - commission;
     const success = Math.random() > 0.15; // 85% success rate
 

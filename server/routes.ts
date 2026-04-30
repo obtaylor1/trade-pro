@@ -50,12 +50,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/trades/execute", async (req, res) => {
     try {
       const validatedData = tradeExecutionSchema.parse(req.body);
+      const netProfitOverride = typeof req.body.netProfitOverride === 'number'
+        ? req.body.netProfitOverride
+        : undefined;
+
       const result = await storage.executeTrade(
-        validatedData.opportunityId, 
+        validatedData.opportunityId,
         validatedData.amount || 1000,
         validatedData.isLiveTrading || false,
         validatedData.selectedBroker,
-        req.body.userId || 'demo-user'
+        req.body.userId || 'demo-user',
+        netProfitOverride
       );
       res.json(result);
     } catch (error) {
