@@ -121,7 +121,7 @@ export default function AISignalPage() {
       updateBalance(data.newBalance);
       const p = opp.entryPrice;
       const fmt = p < 1 ? p.toFixed(4) : p.toFixed(2);
-      toast({ title: "⚡ Trade Executed", description: `Trade executed at $${fmt} (market price at time of order) · Balance: $${parseFloat(data.newBalance).toFixed(2)}` });
+      toast({ title: `✅ Trade executed at $${fmt} (live market price)`, description: `New balance: $${parseFloat(data.newBalance).toFixed(2)}` });
       setSelected(null);
       queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
     },

@@ -544,7 +544,7 @@ export default function MarketsPage() {
     },
     onSuccess: (data, vars) => {
       updateBalance(data.newBalance);
-      toast({ title: "⚡ Trade Executed", description: `Trade executed at $${vars.liveP.toFixed(vars.liveP < 1 ? 4 : 2)} (market price at time of order) · Balance: $${parseFloat(data.newBalance).toFixed(2)}` });
+      toast({ title: `✅ Trade executed at $${vars.liveP.toFixed(vars.liveP < 1 ? 4 : 2)} (live market price)`, description: `New balance: $${parseFloat(data.newBalance).toFixed(2)}` });
       queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/snapshots"] });
     },
