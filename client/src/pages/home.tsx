@@ -13,7 +13,7 @@ function ConfBar({ val }: { val: number }) {
   const color = val >= 75 ? "#22c55e" : val >= 60 ? "#f59e0b" : "#ef4444";
   return (
     <div className="flex items-center gap-2 mt-1">
-      <div className="flex-1 h-1.5 rounded-full" style={{ background: "#243044" }}>
+      <div className="flex-1 h-1.5 rounded-full" style={{ background: "rgba(40,56,81,1)" }}>
         <div className="h-1.5 rounded-full conf-bar-fill" style={{ width: `${val}%` }} />
       </div>
       <span className="text-xs font-semibold" style={{ color }}>{val}%</span>
@@ -284,7 +284,7 @@ function SignalCard({ opp, onTrade, trading }: { opp: TradingOpportunity; onTrad
       <div className="text-lg font-black">{opp.ticker}</div>
       <div className="text-xs mb-2 truncate" style={{ color: "#64748b" }}>{opp.name}</div>
       <div className="flex items-center gap-2 mb-2">
-        <div className="flex-1 h-1.5 rounded-full" style={{ background: "#243044" }}>
+        <div className="flex-1 h-1.5 rounded-full" style={{ background: "rgba(40,56,81,1)" }}>
           <div className="h-1.5 rounded-full conf-bar-fill" style={{ width: `${opp.confidence}%` }} />
         </div>
         <span className="text-xs font-semibold" style={{ color: cc }}>{opp.confidence}%</span>

@@ -89,7 +89,7 @@ function ConfBar({ val }: { val: number }) {
   const c = val >= 75 ? "#22c55e" : val >= 60 ? "#f59e0b" : "#ef4444";
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 rounded-full" style={{ background: "#243044" }}>
+      <div className="flex-1 h-1.5 rounded-full" style={{ background: "rgba(40,56,81,1)" }}>
         <div className="h-1.5 rounded-full conf-bar-fill" style={{ width: `${val}%` }} />
       </div>
       <span className="text-xs font-semibold" style={{ color: c }}>{val}%</span>
