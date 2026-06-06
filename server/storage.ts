@@ -1,406 +1,129 @@
-import { type TradingOpportunity, type TradeResult, type PaperTrade, type TradeSummary, type UserRegistration, type UserLogin, type DatabaseUser } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { marketDataService } from "./marketDataService";
 import { db } from "./db";
-import { paperTrades, users } from "@shared/schema";
+import { users, trades, watchlist, learnProgress, portfolioSnapshots } from "@shared/schema";
+import type { User, InsertUser, Trade, InsertTrade, LearnProgress, PortfolioSnapshot } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
-  getTradingOpportunities(market: string): Promise<TradingOpportunity[]>;
-  executeTrade(opportunityId: string, amount?: number, isLiveTrading?: boolean, selectedBroker?: string, userId?: string): Promise<TradeResult>;
-  savePaperTrade(trade: Omit<PaperTrade, 'id'>): Promise<PaperTrade>;
-  getUserTrades(userId: string, limit?: number): Promise<PaperTrade[]>;
-  getTradeSummary(userId: string): Promise<TradeSummary>;
-  updateTradeStatus(tradeId: string, status: string, currentPrice?: number): Promise<void>;
-  
-  // User management
-  registerUser(userData: UserRegistration): Promise<DatabaseUser>;
-  loginUser(email: string): Promise<DatabaseUser | null>;
+  // Users
+  createUser(data: InsertUser): Promise<User>;
+  getUserById(id: string): Promise<User | null>;
+  getUserByEmail(email: string): Promise<User | null>;
   updateUserBalance(userId: string, newBalance: number): Promise<void>;
-  getUserByEmail(email: string): Promise<DatabaseUser | null>;
+  updateUserOnboarding(userId: string, marketInterests: string[], paperBalance: number): Promise<void>;
+
+  // Trades
+  createTrade(data: Omit<InsertTrade, "id">): Promise<Trade>;
+  getUserTrades(userId: string): Promise<Trade[]>;
+  closeTrade(tradeId: string, exitPrice: number, pnl: number): Promise<void>;
+
+  // Watchlist
+  addToWatchlist(userId: string, ticker: string, market: string): Promise<void>;
+  removeFromWatchlist(userId: string, ticker: string): Promise<void>;
+  getUserWatchlist(userId: string): Promise<{ id: string; ticker: string; market: string }[]>;
+
+  // Learn Progress
+  getLearnProgress(userId: string): Promise<LearnProgress[]>;
+  updateLearnProgress(userId: string, moduleId: number, completed: boolean, quizScore: number): Promise<void>;
+
+  // Portfolio Snapshots
+  saveSnapshot(userId: string, balance: number): Promise<void>;
+  getSnapshots(userId: string, limit?: number): Promise<PortfolioSnapshot[]>;
+
+  // Reset
+  resetPortfolio(userId: string): Promise<void>;
 }
 
-// Cache for market data to avoid hitting API limits
-interface DataCache {
-  data: TradingOpportunity[];
-  timestamp: number;
-  market: string;
-}
-
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-export class MemStorage implements IStorage {
-  private opportunities: Map<string, TradingOpportunity>;
-  private tradeResults: Map<string, TradeResult>;
-  private cache: Map<string, DataCache>;
-
-  constructor() {
-    this.opportunities = new Map();
-    this.tradeResults = new Map();
-    this.cache = new Map();
+export class DbStorage implements IStorage {
+  async createUser(data: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values({ ...data, id: randomUUID() }).returning();
+    return user;
   }
 
-
-
-  async getTradingOpportunities(market: string): Promise<TradingOpportunity[]> {
-    // Check cache first
-    const cached = this.cache.get(market);
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log(`Using cached data for ${market}`);
-      return cached.data;
-    }
-
-    try {
-      // Fetch fresh data from market data service
-      console.log(`Fetching fresh data for ${market}`);
-      const opportunities = await marketDataService.generateTradingOpportunities(market);
-      
-      // Update cache
-      this.cache.set(market, {
-        data: opportunities,
-        timestamp: Date.now(),
-        market
-      });
-
-      // Store in opportunities map for trade execution
-      opportunities.forEach(opportunity => {
-        this.opportunities.set(opportunity.id, opportunity);
-      });
-
-      return opportunities;
-    } catch (error) {
-      console.error(`Error fetching market data for ${market}:`, error);
-      
-      // Return cached data if available, even if expired
-      if (cached) {
-        console.log(`Using expired cache for ${market} due to API error`);
-        return cached.data;
-      }
-      
-      // Fallback to empty array if no cache available
-      console.log(`No cache available for ${market}, returning empty array`);
-      return [];
-    }
+  async getUserById(id: string): Promise<User | null> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user ?? null;
   }
 
-  async executeTrade(
-    opportunityId: string,
-    amount: number = 1000,
-    isLiveTrading: boolean = false,
-    selectedBroker?: string,
-    userId?: string,
-    netProfitOverride?: number
-  ): Promise<TradeResult> {
-    const opportunity = this.opportunities.get(opportunityId);
-    
-    if (!opportunity) {
-      throw new Error("Trading opportunity not found");
-    }
-
-    // Get broker fee structure based on selected broker
-    const getBrokerFees = (brokerId: string | undefined) => {
-      const brokerFees: Record<string, any> = {
-        'td-ameritrade-sim': { futuresCommission: 2.25, optionCommission: 0.65, stockCommission: 0 },
-        'interactive-brokers-sim': { futuresCommission: 0.85, optionCommission: 0.70, stockCommission: 0.005 },
-        'ninjatrader-sim': { futuresCommission: 0.53, optionCommission: 0, stockCommission: 0 },
-        'tastytrade-sim': { futuresCommission: 1.25, optionCommission: 1.00, stockCommission: 0 },
-        'coinbase-pro-sim': { cryptoFee: 0.50, futuresCommission: 0, stockCommission: 0 }
-      };
-      return brokerFees[brokerId || 'ninjatrader-sim'] || brokerFees['ninjatrader-sim'];
-    };
-
-    const fees = getBrokerFees(selectedBroker);
-    
-    // Calculate fees based on trade type
-    let commission = 0;
-    if (opportunityId.includes('micro-commodity') || opportunityId.includes('futures')) {
-      commission = fees.futuresCommission || 0.53;
-    } else if (opportunityId.includes('crypto')) {
-      commission = (amount * (fees.cryptoFee || 0.50)) / 100;
-    } else if (opportunityId.includes('option')) {
-      commission = fees.optionCommission || 0.65;
-    } else {
-      commission = fees.stockCommission || 0;
-    }
-
-    // Use the caller-provided net profit (e.g. from options modal math) or fall back to opportunity value
-    const originalProfit = netProfitOverride !== undefined
-      ? netProfitOverride
-      : (parseFloat(opportunity.netProfit.replace(/[^-0-9.]/g, '')) || 0);
-    const netProfitAfterFees = originalProfit - commission;
-    const success = Math.random() > 0.15; // 85% success rate
-
-    const tradeResult: TradeResult = {
-      id: randomUUID(),
-      opportunityId,
-      executedAt: new Date().toISOString(),
-      success,
-      message: success 
-        ? `Trade for ${opportunity.name} executed successfully. Commission: $${commission.toFixed(2)}` 
-        : 'Trade failed - insufficient margin or market conditions',
-      expectedProfit: `$${netProfitAfterFees.toFixed(2)}`
-    };
-
-    // Save paper trade to database if it's simulator mode and successful
-    if (!isLiveTrading && success && userId) {
-      try {
-        // Derive a clean ticker symbol from the opportunity id or name
-        const deriveSymbol = (id: string, name: string): string => {
-          if (id.includes('micro-commodity-gold') || id.includes('futures-gold')) return 'MGC';
-          if (id.includes('micro-commodity-oil') || id.includes('futures-oil')) return 'MCL';
-          if (id.includes('futures-nat-gas') || id.includes('natural-gas')) return 'MNG';
-          if (id.includes('futures-corn')) return 'ZC';
-          if (id.includes('futures-coffee')) return 'KC';
-          if (id.includes('futures-es') || id.includes('sp500')) return 'MES';
-          if (id.includes('crypto-eth') || id.includes('micro-eth')) return 'MET';
-          if (id.includes('crypto-btc') || id.includes('micro-btc')) return 'MBT';
-          if (id.includes('crypto-sol')) return 'SOL';
-          if (id.includes('stock-') || id.includes('call-') || id.includes('put-')) {
-            // Extract uppercase ticker from id like "stock-aapl" → "AAPL" or "call-aapl-205" → "AAPL"
-            const parts = id.split('-');
-            if (parts.length >= 2) return parts[1].toUpperCase();
-          }
-          if (id.includes('forex-')) {
-            const parts = id.split('-');
-            if (parts.length >= 2) return parts[1].toUpperCase();
-          }
-          // Fallback: use first word of name uppercased
-          return name.split(' ')[0].toUpperCase().slice(0, 6);
-        };
-
-        const entryPriceNum = parseFloat(opportunity.entryPrice.replace(/[^0-9.]/g, '')) || 1;
-        const paperTrade: Omit<PaperTrade, 'id'> = {
-          userId,
-          tradeId: tradeResult.id,
-          timestamp: new Date().toISOString(),
-          broker: selectedBroker || 'ninjatrader-sim',
-          symbol: deriveSymbol(opportunity.id, opportunity.name),
-          assetName: opportunity.name,
-          assetClass: opportunity.market,
-          direction: opportunity.action,
-          quantity: Math.max(1, Math.floor(amount / entryPriceNum)),
-          entryPrice: entryPriceNum,
-          currentPrice: entryPriceNum,
-          positionSize: amount,
-          commission,
-          margin: amount * 0.1,
-          grossPnL: originalProfit,
-          netPnL: netProfitAfterFees,
-          // Paper trades resolve immediately — mark CLOSED so balance isn't locked forever
-          status: 'CLOSED',
-          successRate: 0,
-          executedAt: new Date().toISOString(),
-          closedAt: new Date().toISOString(),
-        };
-
-        await this.savePaperTrade(paperTrade);
-        
-        // Balance update: only add the realized P&L (position is closed, capital is returned)
-        const user = await this.getUserById(userId);
-        if (user) {
-          const currentBalance = parseFloat(user.currentBalance);
-          const newBalance = currentBalance + netProfitAfterFees;
-          await this.updateUserBalance(userId, newBalance);
-        }
-      } catch (error) {
-        console.error('Error saving paper trade:', error);
-      }
-    }
-
-    this.tradeResults.set(tradeResult.id, tradeResult);
-    return tradeResult;
-  }
-
-  async savePaperTrade(trade: Omit<PaperTrade, 'id'>): Promise<PaperTrade> {
-    const id = randomUUID();
-    
-    await db.insert(paperTrades).values({
-      id,
-      userId: trade.userId,
-      tradeId: trade.tradeId,
-      timestamp: new Date(trade.timestamp),
-      broker: trade.broker,
-      symbol: trade.symbol,
-      assetName: trade.assetName,
-      assetClass: trade.assetClass,
-      direction: trade.direction,
-      quantity: trade.quantity.toString(),
-      entryPrice: trade.entryPrice.toString(),
-      currentPrice: trade.currentPrice.toString(),
-      positionSize: trade.positionSize.toString(),
-      stopLoss: trade.stopLoss?.toString(),
-      takeProfit: trade.takeProfit?.toString(),
-      commission: trade.commission.toString(),
-      margin: trade.margin.toString(),
-      grossPnL: trade.grossPnL.toString(),
-      netPnL: trade.netPnL.toString(),
-      status: trade.status,
-      successRate: trade.successRate.toString(),
-      executedAt: new Date(trade.executedAt),
-      closedAt: trade.closedAt ? new Date(trade.closedAt) : null,
-    });
-
-    return { id, ...trade };
-  }
-
-  async getUserTrades(userId: string, limit = 50): Promise<PaperTrade[]> {
-    const trades = await db
-      .select()
-      .from(paperTrades)
-      .where(eq(paperTrades.userId, userId))
-      .orderBy(desc(paperTrades.executedAt))
-      .limit(limit);
-
-    return trades.map(trade => ({
-      id: trade.id,
-      userId: trade.userId,
-      tradeId: trade.tradeId,
-      timestamp: trade.timestamp.toISOString(),
-      broker: trade.broker,
-      symbol: trade.symbol,
-      assetName: trade.assetName,
-      assetClass: trade.assetClass,
-      direction: trade.direction as "BUY" | "SELL",
-      quantity: parseFloat(trade.quantity),
-      entryPrice: parseFloat(trade.entryPrice),
-      currentPrice: parseFloat(trade.currentPrice),
-      positionSize: parseFloat(trade.positionSize),
-      stopLoss: trade.stopLoss ? parseFloat(trade.stopLoss) : undefined,
-      takeProfit: trade.takeProfit ? parseFloat(trade.takeProfit) : undefined,
-      commission: parseFloat(trade.commission),
-      margin: parseFloat(trade.margin),
-      grossPnL: parseFloat(trade.grossPnL),
-      netPnL: parseFloat(trade.netPnL),
-      status: trade.status as "OPEN" | "CLOSED" | "PENDING",
-      successRate: parseFloat(trade.successRate),
-      executedAt: trade.executedAt.toISOString(),
-      closedAt: trade.closedAt?.toISOString(),
-    }));
-  }
-
-  async getTradeSummary(userId: string): Promise<TradeSummary> {
-    const trades = await this.getUserTrades(userId);
-    
-    const totalTrades = trades.length;
-    const openTrades = trades.filter(t => t.status === 'OPEN').length;
-    const closedTrades = trades.filter(t => t.status === 'CLOSED').length;
-    const winningTrades = trades.filter(t => t.netPnL > 0).length;
-    const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
-    
-    const totalPnL = trades.reduce((sum, t) => sum + t.netPnL, 0);
-    const avgReturnPerTrade = totalTrades > 0 ? totalPnL / totalTrades : 0;
-    
-    const largestGain = Math.max(...trades.map(t => t.netPnL), 0);
-    const largestLoss = Math.min(...trades.map(t => t.netPnL), 0);
-    
-    const totalCommissions = trades.reduce((sum, t) => sum + t.commission, 0);
-    const totalVolume = trades.reduce((sum, t) => sum + t.positionSize, 0);
-
-    return {
-      userId,
-      totalTrades,
-      openTrades,
-      closedTrades,
-      winRate,
-      avgReturnPerTrade,
-      largestGain,
-      largestLoss,
-      netAccountGrowth: totalPnL,
-      totalCommissions,
-      totalVolume,
-    };
-  }
-
-  async updateTradeStatus(tradeId: string, status: string, currentPrice?: number): Promise<void> {
-    const updateData: any = { status };
-    
-    if (currentPrice) {
-      updateData.currentPrice = currentPrice.toString();
-    }
-    
-    if (status === 'CLOSED') {
-      updateData.closedAt = new Date();
-    }
-
-    await db
-      .update(paperTrades)
-      .set(updateData)
-      .where(eq(paperTrades.tradeId, tradeId));
-  }
-
-  // User management methods
-  async registerUser(userData: UserRegistration): Promise<DatabaseUser> {
-    const userId = randomUUID();
-    
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        id: userId,
-        name: userData.name,
-        email: userData.email,
-        startingCapital: userData.startingCapital.toString(),
-        currentBalance: userData.startingCapital.toString(),
-        selectedBroker: userData.selectedBroker,
-        isLiveTrading: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
-
-    return newUser;
-  }
-
-  async loginUser(email: string): Promise<DatabaseUser | null> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
-
-    return user || null;
-  }
-
-  async getUserByEmail(email: string): Promise<DatabaseUser | null> {
-    return this.loginUser(email);
-  }
-
-  async getUserById(userId: string): Promise<DatabaseUser | null> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-
-    return user || null;
+  async getUserByEmail(email: string): Promise<User | null> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user ?? null;
   }
 
   async updateUserBalance(userId: string, newBalance: number): Promise<void> {
-    await db
-      .update(users)
-      .set({
-        currentBalance: newBalance.toString(),
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId));
+    await db.update(users).set({ paperBalance: String(newBalance) }).where(eq(users.id, userId));
   }
 
-  async calculateUserCurrentBalance(userId: string): Promise<number> {
-    const user = await this.getUserById(userId);
-    if (!user) return 0;
+  async updateUserOnboarding(userId: string, marketInterests: string[], paperBalance: number): Promise<void> {
+    await db.update(users).set({
+      marketInterests,
+      paperBalance: String(paperBalance),
+      onboardingComplete: true,
+    }).where(eq(users.id, userId));
+  }
 
-    const trades = await this.getUserTrades(userId);
-    const startingBalance = parseFloat(user.startingCapital);
-    
-    // Sum realized P&L from all closed paper trades
-    const closedTrades = trades.filter(t => t.status === 'CLOSED');
-    const totalPnL = closedTrades.reduce((sum, trade) => sum + trade.netPnL, 0);
+  async createTrade(data: Omit<InsertTrade, "id">): Promise<Trade> {
+    const [trade] = await db.insert(trades).values({ ...data, id: randomUUID() }).returning();
+    return trade;
+  }
 
-    // Deduct capital currently locked in any open positions
-    const openTrades = trades.filter(t => t.status === 'OPEN');
-    const totalInvested = openTrades.reduce((sum, trade) => sum + trade.positionSize, 0);
+  async getUserTrades(userId: string): Promise<Trade[]> {
+    return db.select().from(trades).where(eq(trades.userId, userId)).orderBy(desc(trades.entryAt));
+  }
 
-    return startingBalance + totalPnL - totalInvested;
+  async closeTrade(tradeId: string, exitPrice: number, pnl: number): Promise<void> {
+    await db.update(trades).set({
+      status: "CLOSED",
+      exitPrice: String(exitPrice),
+      exitAt: new Date(),
+      pnl: String(pnl),
+    }).where(eq(trades.id, tradeId));
+  }
+
+  async addToWatchlist(userId: string, ticker: string, market: string): Promise<void> {
+    await db.insert(watchlist).values({ id: randomUUID(), userId, ticker, market }).onConflictDoNothing();
+  }
+
+  async removeFromWatchlist(userId: string, ticker: string): Promise<void> {
+    await db.delete(watchlist).where(and(eq(watchlist.userId, userId), eq(watchlist.ticker, ticker)));
+  }
+
+  async getUserWatchlist(userId: string): Promise<{ id: string; ticker: string; market: string }[]> {
+    return db.select({ id: watchlist.id, ticker: watchlist.ticker, market: watchlist.market })
+      .from(watchlist).where(eq(watchlist.userId, userId)).orderBy(desc(watchlist.addedAt));
+  }
+
+  async getLearnProgress(userId: string): Promise<LearnProgress[]> {
+    return db.select().from(learnProgress).where(eq(learnProgress.userId, userId));
+  }
+
+  async updateLearnProgress(userId: string, moduleId: number, completed: boolean, quizScore: number): Promise<void> {
+    const existing = await db.select().from(learnProgress)
+      .where(and(eq(learnProgress.userId, userId), eq(learnProgress.moduleId, moduleId)));
+    if (existing.length > 0) {
+      await db.update(learnProgress).set({ completed, quizScore, completedAt: completed ? new Date() : null })
+        .where(and(eq(learnProgress.userId, userId), eq(learnProgress.moduleId, moduleId)));
+    } else {
+      await db.insert(learnProgress).values({
+        id: randomUUID(), userId, moduleId, completed, quizScore,
+        completedAt: completed ? new Date() : null,
+      });
+    }
+  }
+
+  async saveSnapshot(userId: string, balance: number): Promise<void> {
+    await db.insert(portfolioSnapshots).values({ id: randomUUID(), userId, balance: String(balance) });
+  }
+
+  async getSnapshots(userId: string, limit = 30): Promise<PortfolioSnapshot[]> {
+    return db.select().from(portfolioSnapshots).where(eq(portfolioSnapshots.userId, userId))
+      .orderBy(desc(portfolioSnapshots.snapshotAt)).limit(limit);
+  }
+
+  async resetPortfolio(userId: string): Promise<void> {
+    await db.update(users).set({ paperBalance: "10000" }).where(eq(users.id, userId));
+    await db.update(trades).set({ status: "CLOSED", pnl: "0" }).where(eq(trades.userId, userId));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DbStorage();

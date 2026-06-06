@@ -1,180 +1,126 @@
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Modern Dark Theme Design System */
-  --background: hsl(218.2 47.4% 9%); /* #111827 - Main background */
-  --foreground: hsl(210 40% 98%); /* White text */
-  --card: hsl(217.2 32.6% 17.5%); /* #1f2937 - Card backgrounds */
-  --card-foreground: hsl(210 40% 98%);
-  --popover: hsl(217.2 32.6% 17.5%);
-  --popover-foreground: hsl(210 40% 98%);
-  --primary: hsl(217.2 91.2% 59.8%); /* #3b82f6 - Electric blue accent */
-  --primary-foreground: hsl(210 40% 98%);
-  --secondary: hsl(217.2 32.6% 17.5%);
-  --secondary-foreground: hsl(210 40% 98%);
-  --muted: hsl(217.2 32.6% 17.5%);
-  --muted-foreground: hsl(215 20.2% 65.1%);
-  --accent: hsl(217.2 32.6% 17.5%);
-  --accent-foreground: hsl(210 40% 98%);
-  --destructive: hsl(0 62.8% 63.5%); /* #f43f5e - Salmon red for losses */
-  --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(217.2 32.6% 17.5%);
-  --input: hsl(217.2 32.6% 17.5%);
-  --ring: hsl(217.2 91.2% 59.8%);
-  --success: hsl(158.1 64.4% 51.6%); /* #10b981 - Mint green for gains */
-  --success-foreground: hsl(210 40% 98%);
-  --chart-1: hsl(217.2 91.2% 59.8%);
-  --chart-2: hsl(158.1 64.4% 51.6%);
-  --chart-3: hsl(43 96.4% 56.3%);
-  --chart-4: hsl(147.1429 78.5047% 41.9608%);
-  --chart-5: hsl(341.4894 75.2000% 50.9804%);
-  --sidebar: hsl(217.2 32.6% 17.5%);
-  --sidebar-foreground: hsl(210 40% 98%);
-  --sidebar-primary: hsl(217.2 91.2% 59.8%);
-  --sidebar-primary-foreground: hsl(210 40% 98%);
-  --sidebar-accent: hsl(217.2 32.6% 17.5%);
-  --sidebar-accent-foreground: hsl(210 40% 98%);
-  --sidebar-border: hsl(217.2 32.6% 17.5%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-  --radius: 0.75rem; /* Consistent with rounded-xl */
-  
-  /* Trading-specific colors */
-  --trading-dark: hsl(222.2 84% 4.9%);
-  --trading-gray: hsl(217.2 32.6% 17.5%);
-  --trading-blue: hsl(213 82% 37%);
-  --trading-light-blue: hsl(217.2 91.2% 59.8%);
-  --trading-success: hsl(158.1 64.4% 51.6%);
-  --trading-warning: hsl(43 96.4% 56.3%);
-  --trading-error: hsl(0 84.2% 60.2%);
-  
-  /* Animation keyframes */
-  --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 2px 4px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 4px 6px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 8px 10px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --tracking-normal: 0em;
-  --spacing: 0.25rem;
+  --background: 215 28% 7%;
+  --foreground: 213 31% 91%;
+  --card: 217 33% 13%;
+  --card-foreground: 213 31% 91%;
+  --popover: 217 33% 13%;
+  --popover-foreground: 213 31% 91%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217 33% 18%;
+  --secondary-foreground: 213 31% 91%;
+  --muted: 217 33% 18%;
+  --muted-foreground: 215 20% 55%;
+  --accent: 217 33% 18%;
+  --accent-foreground: 213 31% 91%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 217 33% 18%;
+  --input: 217 33% 18%;
+  --ring: 217 91% 60%;
+  --radius: 0.75rem;
+
+  /* Brand colors */
+  --color-bg: #0d1117;
+  --color-card: #1a2332;
+  --color-blue: #3b82f6;
+  --color-green: #22c55e;
+  --color-red: #ef4444;
+  --color-gold: #f59e0b;
+  --color-border: #243044;
+  --color-muted: #64748b;
 }
 
-.dark {
-  /* Dark theme is now the default - using same values as root */
-  --background: hsl(218.2 47.4% 9%); /* #111827 - Main background */
-  --foreground: hsl(210 40% 98%); /* White text */
-  --card: hsl(217.2 32.6% 17.5%); /* #1f2937 - Card backgrounds */
-  --card-foreground: hsl(210 40% 98%);
-  --popover: hsl(217.2 32.6% 17.5%);
-  --popover-foreground: hsl(210 40% 98%);
-  --primary: hsl(217.2 91.2% 59.8%); /* #3b82f6 - Electric blue accent */
-  --primary-foreground: hsl(210 40% 98%);
-  --secondary: hsl(217.2 32.6% 17.5%);
-  --secondary-foreground: hsl(210 40% 98%);
-  --muted: hsl(217.2 32.6% 17.5%);
-  --muted-foreground: hsl(215 20.2% 65.1%);
-  --accent: hsl(217.2 32.6% 17.5%);
-  --accent-foreground: hsl(210 40% 98%);
-  --destructive: hsl(0 62.8% 63.5%); /* #f43f5e - Salmon red for losses */
-  --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(217.2 32.6% 17.5%);
-  --input: hsl(217.2 32.6% 17.5%);
-  --ring: hsl(217.2 91.2% 59.8%);
-  --success: hsl(158.1 64.4% 51.6%); /* #10b981 - Mint green for gains */
-  --success-foreground: hsl(210 40% 98%);
-  --chart-1: hsl(217.2 91.2% 59.8%);
-  --chart-2: hsl(158.1 64.4% 51.6%);
-  --chart-3: hsl(43 96.4% 56.3%);
-  --chart-4: hsl(147.1429 78.5047% 41.9608%);
-  --chart-5: hsl(341.4894 75.2000% 50.9804%);
-  --sidebar: hsl(217.2 32.6% 17.5%);
-  --sidebar-foreground: hsl(210 40% 98%);
-  --sidebar-primary: hsl(217.2 91.2% 59.8%);
-  --sidebar-primary-foreground: hsl(210 40% 98%);
-  --sidebar-accent: hsl(217.2 32.6% 17.5%);
-  --sidebar-accent-foreground: hsl(210 40% 98%);
-  --sidebar-border: hsl(217.2 32.6% 17.5%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-  --radius: 0.75rem; /* Consistent with rounded-xl */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
+html, body, #root {
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--color-bg);
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
+
+/* Bottom nav safe area */
+.page-container {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Animations */
 @keyframes fadeIn {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.3); }
+  50%       { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
 
-@keyframes slideUp {
-  0% { transform: translateY(20px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
+.animate-pulse-glow { animation: pulse-glow 2s infinite; }
+
+.skeleton {
+  background: linear-gradient(90deg, #1a2332 25%, #243044 50%, #1a2332 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
 }
 
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
-  50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+/* Card hover */
+.trade-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.trade-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-in-out;
+/* Confidence bar colors */
+.conf-low    { background: #ef4444; }
+.conf-medium { background: #f59e0b; }
+.conf-high   { background: #22c55e; }
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.animate-slide-up {
-  animation: slideUp 0.3s ease-out;
+/* Signal type badges */
+.badge-breakout   { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+.badge-reversal   { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+.badge-momentum   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+.badge-mean       { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+
+/* Input styles */
+input, textarea, select {
+  background-color: var(--color-card) !important;
+  color: #e2e8f0 !important;
+  border-color: var(--color-border) !important;
 }
+input::placeholder { color: var(--color-muted) !important; }
+input:focus { border-color: var(--color-blue) !important; outline: none; box-shadow: 0 0 0 2px rgba(59,130,246,0.2) !important; }
 
-.animate-pulse-glow {
-  animation: pulseGlow 2s infinite;
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  html {
-    @apply dark; /* Enable dark theme by default */
-  }
-
-  body {
-    @apply font-sans antialiased;
-    @apply bg-gray-900 text-white; /* Use specific colors for reliability */
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-}
-
-@layer utilities {
-  /* Custom utility classes for the trading app */
-  .text-gain {
-    color: hsl(158.1 64.4% 51.6%); /* Mint green for gains */
-  }
-  
-  .text-loss {
-    color: hsl(0 62.8% 63.5%); /* Salmon red for losses */
-  }
-  
-  .bg-trading-card {
-    background-color: hsl(217.2 32.6% 17.5%); /* Card background */
-  }
-  
-  .border-trading {
-    border-color: hsl(217.2 32.6% 17.5%);
-  }
-  
-  .shadow-trading {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-  }
-}
+/* Button press effect */
+button:active { transform: scale(0.98); }

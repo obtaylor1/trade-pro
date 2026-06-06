@@ -1,1034 +1,264 @@
-import { type TradingOpportunity } from "@shared/schema";
+import type { TradingOpportunity } from "@shared/schema";
 
-interface AlphaVantageQuote {
-  "01. symbol": string;
-  "02. open": string;
-  "03. high": string;
-  "04. low": string;
-  "05. price": string;
-  "06. volume": string;
-  "07. latest trading day": string;
-  "08. previous close": string;
-  "09. change": string;
-  "10. change percent": string;
+// ─── Base Mock Prices (updated every 60s with ±0.5% drift) ───────────────────
+
+interface MockPrice {
+  price: number;
+  change24h: number;
+  name: string;
 }
 
-interface AlphaVantageResponse {
-  "Global Quote": AlphaVantageQuote;
+const mockPrices: Record<string, MockPrice> = {
+  // Stocks
+  AAPL:  { price: 213.50, change24h: 1.2,  name: "Apple Inc." },
+  MSFT:  { price: 441.00, change24h: 0.8,  name: "Microsoft Corp." },
+  GOOGL: { price: 178.30, change24h: -0.4, name: "Alphabet Inc." },
+  AMZN:  { price: 196.40, change24h: 1.5,  name: "Amazon.com Inc." },
+  NVDA:  { price: 137.20, change24h: 3.1,  name: "NVIDIA Corp." },
+  JNJ:   { price: 158.90, change24h: -0.2, name: "Johnson & Johnson" },
+  PG:    { price: 171.60, change24h: 0.4,  name: "Procter & Gamble" },
+  SPY:   { price: 524.80, change24h: 0.6,  name: "SPDR S&P 500 ETF" },
+  QQQ:   { price: 452.30, change24h: 1.1,  name: "Invesco QQQ Trust" },
+  // Crypto
+  BTC:   { price: 98450,  change24h: 2.3,  name: "Bitcoin" },
+  ETH:   { price: 3820,   change24h: 1.8,  name: "Ethereum" },
+  SOL:   { price: 182.50, change24h: 4.2,  name: "Solana" },
+  BNB:   { price: 634.20, change24h: 0.9,  name: "BNB" },
+  ADA:   { price: 0.892,  change24h: -1.1, name: "Cardano" },
+  AVAX:  { price: 41.30,  change24h: 3.5,  name: "Avalanche" },
+  // Commodities
+  GOLD:  { price: 3285.00, change24h: 0.3, name: "Gold (oz)" },
+  OIL:   { price: 61.20,   change24h: -1.2,name: "Crude Oil (bbl)" },
+  SILVER:{ price: 38.40,   change24h: 0.7, name: "Silver (oz)" },
+  NATGAS:{ price: 3.82,    change24h: 2.1, name: "Natural Gas (MMBtu)" },
+  // Forex (price = units of quote per 1 base)
+  "EUR-USD": { price: 1.0845, change24h: 0.15, name: "EUR/USD" },
+  "GBP-USD": { price: 1.2731, change24h: -0.22,name: "GBP/USD" },
+  "USD-JPY": { price: 155.40, change24h: 0.31, name: "USD/JPY" },
+  "AUD-USD": { price: 0.6412, change24h: 0.18, name: "AUD/USD" },
+};
+
+// Drift prices every 60 seconds
+setInterval(() => {
+  for (const key of Object.keys(mockPrices)) {
+    const drift = (Math.random() - 0.5) * 0.01; // ±0.5%
+    mockPrices[key].price = parseFloat((mockPrices[key].price * (1 + drift)).toFixed(key === "ADA" || key.includes("-") ? 4 : 2));
+    mockPrices[key].change24h = parseFloat(((mockPrices[key].change24h + (Math.random() - 0.5) * 0.2)).toFixed(2));
+  }
+}, 60000);
+
+export function getPrice(ticker: string): MockPrice {
+  return mockPrices[ticker] ?? { price: 100, change24h: 0, name: ticker };
 }
 
-interface CryptoQuote {
-  "1. symbol": string;
-  "2. name": string;
-  "3. type": string;
-  "4. currency": string;
-  "5. open": string;
-  "6. high": string;
-  "7. low": string;
-  "8. price": string;
-  "9. volume": string;
-  "10. market cap": string;
-  "11. previous close": string;
-  "12. change": string;
-  "13. change percent": string;
+// ─── Signal generation helpers ────────────────────────────────────────────────
+
+const SIGNAL_TYPES = ["BREAKOUT", "REVERSAL", "MOMENTUM", "MEAN_REVERSION"] as const;
+
+function pickSignal(): typeof SIGNAL_TYPES[number] {
+  return SIGNAL_TYPES[Math.floor(Math.random() * SIGNAL_TYPES.length)];
 }
 
-interface CryptoResponse {
-  "Global Quote": CryptoQuote;
+function confidence(base: number): number {
+  return Math.min(97, Math.max(52, base + Math.floor((Math.random() - 0.5) * 14)));
 }
 
-export class MarketDataService {
-  private apiKey: string;
-  private baseUrl = "https://www.alphavantage.co/query";
+function rsi(base: number): number {
+  return Math.min(78, Math.max(22, base + Math.floor((Math.random() - 0.5) * 10)));
+}
 
-  constructor() {
-    this.apiKey = process.env.ALPHA_VANTAGE_API_KEY || "";
-    if (!this.apiKey) {
-      throw new Error("ALPHA_VANTAGE_API_KEY environment variable is required");
-    }
-  }
+// ─── Rationales ───────────────────────────────────────────────────────────────
 
-  private async fetchWithRetry(url: string, retries = 3): Promise<any> {
-    for (let i = 0; i < retries; i++) {
-      try {
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        
-        if (data["Error Message"]) {
-          throw new Error(`API Error: ${data["Error Message"]}`);
-        }
-        
-        if (data["Note"]) {
-          console.warn("API Rate limit warning:", data["Note"]);
-          // Wait 2 seconds and retry for rate limits
-          if (i < retries - 1) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            continue;
-          }
-          // If this is the final retry, throw error to trigger fallback simulation
-          throw new Error("API rate limit exceeded after retries");
-        }
-        
-        return data;
-      } catch (error) {
-        console.error(`Attempt ${i + 1} failed:`, error);
-        if (i === retries - 1) throw error;
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-  }
+const stockRationales: Record<string, string> = {
+  AAPL: "Apple's iPhone 17 cycle demand is strong with services revenue hitting record highs. AI features driving upgrade cycle. RSI pulling back to support after 3-week rally — ideal entry zone.",
+  MSFT: "Azure AI cloud revenue growing 33% YoY. GitHub Copilot seats doubling quarterly. Price consolidating above 200-day MA, setting up for continuation move.",
+  GOOGL: "Google's AI Overviews now in 100+ countries, boosting search engagement. YouTube ad revenue accelerating. Trading near key support at $175 — favorable risk/reward.",
+  AMZN: "AWS market share stable at 32%. Prime membership at record. Advertising segment growing 21% YoY. Breakout above $190 resistance with volume confirmation.",
+  NVDA: "AI chip demand outpacing supply through 2026. Blackwell GPU orders backlogged 12+ months. Strong momentum after earnings beat — RSI elevated but trend intact.",
+  JNJ: "Defensive play as market volatility rises. Dividend aristocrat with 61-year payout streak. Trading at 52-week support — mean reversion setup with downside protection.",
+  PG: "Consumer staples outperforming in risk-off environment. Pricing power maintained despite volume pressure. Approaching oversold on RSI — counter-trend bounce likely.",
+  SPY: "S&P 500 holding above 200 SMA despite rate uncertainty. Breadth improving with small-caps joining rally. Momentum building — breakout above 520 resistance confirmed.",
+  QQQ: "Tech sector leading as AI narrative strengthens. Nasdaq breadth expanding. MACD crossing bullish on daily chart — high-probability continuation setup.",
+};
 
-  async getStockQuote(symbol: string): Promise<AlphaVantageResponse> {
-    const url = `${this.baseUrl}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${this.apiKey}`;
-    return this.fetchWithRetry(url);
-  }
+const cryptoRationales: Record<string, string> = {
+  BTC: "Bitcoin spot ETF inflows hitting $500M/day. Halving supply shock still working through system. On-chain accumulation at exchange lows — classic pre-rally setup.",
+  ETH: "Ethereum staking yield at 4.2% attracting institutional capital. Layer-2 activity surging. ETH/BTC ratio reversing from key support — altcoin rotation incoming.",
+  SOL: "Solana DeFi TVL hitting all-time highs. Transaction fees 99% cheaper than ETH driving developer migration. Momentum accelerating — breakout from 2-week consolidation.",
+  BNB: "Binance ecosystem tokens gaining as CEX volumes recover. BNB burn mechanism reducing supply monthly. Holding key $600 support with bullish divergence on RSI.",
+  ADA: "Cardano's Chang hard fork enabling on-chain governance. Developer activity increasing 40% YoY. Deeply oversold vs. BTC — mean reversion trade with 3:1 risk/reward.",
+  AVAX: "Avalanche subnet adoption accelerating in gaming and DeFi. Institutional validators joining. RSI at 45 — neither overbought nor oversold, ideal momentum entry.",
+};
 
-  async getCryptoQuote(symbol: string): Promise<CryptoResponse> {
-    const url = `${this.baseUrl}?function=CURRENCY_EXCHANGE_RATE&from_currency=${symbol}&to_currency=USD&apikey=${this.apiKey}`;
-    return this.fetchWithRetry(url);
-  }
+const commodityRationales: Record<string, string> = {
+  GOLD: "Central bank gold buying at 55-year highs. Geopolitical uncertainty premium elevated. Dollar weakening as Fed rate cut expectations rise — gold's fundamental tailwinds strong.",
+  OIL: "OPEC+ maintaining production cuts through Q3. Summer driving demand picking up. WTI holding $60 support — seasonal demand + supply discipline = upside catalyst.",
+  SILVER: "Silver's industrial demand surging from solar panel manufacturing. Gold/silver ratio historically high, suggesting catch-up trade. Breakout above $38 resistance target $42.",
+  NATGAS: "Natural gas storage deficit building ahead of summer cooling season. LNG export capacity expanding. RSI bouncing from oversold — contrarian entry with strong risk/reward.",
+};
 
-  private calculateAdvancedMetrics(currentPrice: number, changePercent: string, volume: number, previousClose: number, sector: string) {
-    const change = parseFloat(changePercent.replace('%', ''));
-    const isPositive = change > 0;
-    const volatility = Math.abs(change);
-    
-    // Sector-based risk adjustment
-    const sectorRiskMultipliers = {
-      "Healthcare": 0.8,      // Lower risk - defensive sector
-      "Consumer Staples": 0.7, // Lowest risk - essential goods
-      "Technology": 1.3,       // Higher risk but higher reward
-      "Dividend ETF": 0.6,     // Very low risk
-      "Low Volatility ETF": 0.5 // Lowest risk option
-    };
-    
-    const riskMultiplier = sectorRiskMultipliers[sector as keyof typeof sectorRiskMultipliers] || 1.0;
-    
-    // MACD + RSI inspired confidence calculation
-    let confidence = 70; // Base confidence
-    
-    // Volume analysis (higher volume = higher confidence)
-    const avgVolume = volume > 1000000 ? 1.1 : 0.9; // Volume confidence multiplier
-    
-    // Trend analysis
-    if (isPositive && volatility < 2) confidence += 15; // Gentle uptrend
-    if (isPositive && volatility > 5) confidence += 5;  // Strong momentum but risky
-    if (!isPositive && volatility > 3) confidence -= 20; // Strong downtrend
-    if (!isPositive && volatility < 1) confidence += 10; // Minor dip, buying opportunity
-    
-    // Apply sector adjustment
-    confidence = confidence * avgVolume;
-    confidence = Math.max(55, Math.min(95, confidence));
-    
-    // Risk-reward calculation based on research findings
-    const baseRisk = currentPrice * 0.02 * riskMultiplier; // 2% base risk adjusted by sector
-    const potentialGainMultiplier = sector.includes("ETF") ? 1.5 : 2.0; // ETFs have lower but steadier gains
-    const basePotentialGain = currentPrice * 0.06 * potentialGainMultiplier * (volatility > 3 ? 1.3 : 1.0);
-    
-    // Determine action based on technical analysis principles
-    let action = "BUY";
-    if (!isPositive && volatility > 4) action = "SELL"; // Strong downtrend
-    if (isPositive && volatility > 8) action = "SELL"; // Overbought condition
-    
-    // Risk level classification
-    let riskLevel = "Medium";
-    if (riskMultiplier <= 0.7) riskLevel = "Low";
-    if (riskMultiplier >= 1.2) riskLevel = "High";
-    
+const forexRationales: Record<string, string> = {
+  "EUR-USD": "ECB signaling slower rate cuts than Fed — euro gaining carry appeal. Eurozone PMI surprising to the upside 3 months running. Breakout above 1.08 resistance confirmed.",
+  "GBP-USD": "UK inflation stickier than peers, delaying Bank of England cuts. GBP positioned for strength. Pullback to 1.27 support offering low-risk entry in prevailing uptrend.",
+  "USD-JPY": "Bank of Japan finally tightening — yen strengthening trend emerging. USD/JPY rejection from 156 resistance. Reversal setup with tight stop above recent highs.",
+  "AUD-USD": "Australia's commodity export revenues strong. China stimulus boosting AUD sentiment. AUD/USD bouncing from 0.64 support — range-bound with bullish bias.",
+};
+
+// ─── Generate Opportunities ───────────────────────────────────────────────────
+
+export function generateOpportunities(market: string): TradingOpportunity[] {
+  if (market === "stocks") return generateStocks();
+  if (market === "crypto") return generateCrypto();
+  if (market === "commodities") return generateCommodities();
+  if (market === "options") return generateOptions();
+  if (market === "forex") return generateForex();
+  return [];
+}
+
+function generateStocks(): TradingOpportunity[] {
+  const tickers = ["AAPL","MSFT","GOOGL","AMZN","NVDA","JNJ","PG","SPY","QQQ"];
+  return tickers.map((ticker) => {
+    const { price, change24h, name } = getPrice(ticker);
+    const action = change24h > 0 ? "BUY" : change24h < -1 ? "SELL" : "BUY";
+    const conf = confidence(ticker === "NVDA" ? 82 : ticker === "AAPL" ? 78 : 68);
+    const target = parseFloat((price * 1.035).toFixed(2));
+    const stop = parseFloat((price * 0.975).toFixed(2));
     return {
-      risk: `-$${Math.round(baseRisk)}`,
-      potentialGain: `+$${Math.round(basePotentialGain)}`,
-      netProfit: `+$${Math.round(basePotentialGain - baseRisk)}`,
-      confidence,
-      action,
-      riskLevel,
-      volatility: volatility.toFixed(2),
-      volumeSignal: avgVolume > 1 ? "Strong" : "Weak"
+      id: `stock-${ticker.toLowerCase()}`,
+      market: "stocks" as const,
+      ticker, name, action: action as "BUY" | "SELL" | "HOLD",
+      signalType: pickSignal(),
+      entryPrice: price, targetPrice: target, stopLoss: stop,
+      confidence: conf, change24h,
+      rationale: stockRationales[ticker] ?? `${name} showing strong momentum.`,
+      rsi: rsi(ticker === "NVDA" ? 68 : 52),
+      macd: change24h > 0 ? "Bullish crossover" : "Bearish divergence",
+      volume: "Above avg",
     };
-  }
-
-  private generateAdvancedRationale(stock: any, quote: AlphaVantageQuote, changePercent: string, metrics: any): string {
-    const change = parseFloat(changePercent.replace('%', ''));
-    const isPositive = change > 0;
-    const volatility = Math.abs(change);
-    
-    // Exchange-specific and sector-specific rationales based on 2025 market research
-    const sectorInsights = {
-      "Healthcare": {
-        positive: "Defensive healthcare sector showing resilience amid market volatility. Strong pipeline of treatments and aging demographics driving long-term growth. FDA approvals creating positive catalysts.",
-        negative: "Healthcare correction creating opportunity in quality names. Regulatory concerns temporary. Essential nature of healthcare services provides downside protection."
-      },
-      "Consumer Staples": {
-        positive: "Consumer staples benefiting from stable demand patterns. Pricing power evident in inflationary environment. Dividend yield attractive relative to bonds.",
-        negative: "Minor pullback in defensive sector creating entry opportunity. Strong brand moats and recurring revenue streams support valuation floor."
-      },
-      "Technology": {
-        positive: "AI revolution driving tech sector transformation. Cloud computing growth accelerating with enterprise digital transformation. Strong balance sheets support continued innovation investment.",
-        negative: "Tech correction creating opportunity in quality growth names. Valuations becoming more attractive after recent pullback. Long-term digital trends remain intact."
-      },
-      "Dividend ETF": {
-        positive: "Dividend-focused strategy outperforming in current market environment. Quality companies with sustainable payout ratios. Income generation attractive amid economic uncertainty.",
-        negative: "Minor ETF rebalancing creating temporary pressure. Underlying dividend growth stocks remain fundamentally strong. Yield spread vs. bonds attractive."
-      },
-      "Low Volatility ETF": {
-        positive: "Low-volatility factor outperforming during market stress. Quality companies with stable earnings growth. Risk-adjusted returns superior to broad market indices.",
-        negative: "Factor rotation temporary. Historical outperformance in uncertain markets makes this attractive defensive play. Diversification benefits clear."
-      }
-    };
-    
-    const exchangeContext = {
-      "NYSE": "NYSE-listed blue chip with institutional backing.",
-      "NASDAQ": "NASDAQ growth stock with innovation focus.", 
-      "NYSE Arca": "ETF with broad market accessibility.",
-      "CBOE BZX": "Low-cost ETF structure with efficient trading."
-    };
-    
-    const sectorRationale = sectorInsights[stock.sector as keyof typeof sectorInsights];
-    const baseRationale = isPositive ? sectorRationale?.positive : sectorRationale?.negative;
-    const exchangeNote = exchangeContext[stock.exchange as keyof typeof exchangeContext];
-    
-    // Add technical analysis context
-    const technicalContext = volatility > 3 
-      ? `High volatility (${volatility.toFixed(1)}%) creating trading opportunities with clear risk management levels.`
-      : `Low volatility environment suggesting consolidation. ${metrics.volumeSignal} volume signal confirms trend direction.`;
-    
-    // MACD + RSI strategy context (73% win rate research)
-    const strategyNote = metrics.confidence > 80 
-      ? "Technical indicators align with fundamental analysis for high-probability setup."
-      : "Mixed signals suggest careful position sizing and risk management.";
-    
-    return `${baseRationale} ${exchangeNote} ${technicalContext} ${strategyNote}`;
-  }
-
-  private generateRealisticStockData(stock: any) {
-    // Base prices for major stocks (approximations based on 2025 market levels)
-    const basePrices = {
-      "JNJ": 165.50,
-      "PG": 142.30,
-      "KO": 58.75,
-      "AAPL": 195.25,
-      "MSFT": 420.80,
-      "GOOGL": 145.60,
-      "VYM": 115.40,
-      "USMV": 82.15
-    };
-
-    const basePrice = basePrices[stock.symbol as keyof typeof basePrices] || 100.00;
-    
-    // Generate realistic daily volatility based on sector
-    const sectorVolatility = {
-      "Healthcare": 0.015,      // 1.5% daily volatility
-      "Consumer Staples": 0.012, // 1.2% daily volatility
-      "Technology": 0.025,       // 2.5% daily volatility
-      "Dividend ETF": 0.008,     // 0.8% daily volatility
-      "Low Volatility ETF": 0.006 // 0.6% daily volatility
-    };
-
-    const volatility = sectorVolatility[stock.sector as keyof typeof sectorVolatility] || 0.02;
-    
-    // Generate random but realistic price movement
-    const randomChange = (Math.random() - 0.5) * 2 * volatility; // -volatility to +volatility
-    const currentPrice = basePrice * (1 + randomChange);
-    const previousClose = basePrice;
-    const changePercent = `${(randomChange * 100).toFixed(2)}%`;
-    
-    // Generate realistic volume based on stock type
-    const baseVolumes = {
-      "JNJ": 8500000,
-      "PG": 6200000,
-      "KO": 12400000,
-      "AAPL": 45600000,
-      "MSFT": 28300000,
-      "GOOGL": 18900000,
-      "VYM": 3200000,
-      "USMV": 2100000
-    };
-
-    const baseVolume = baseVolumes[stock.symbol as keyof typeof baseVolumes] || 5000000;
-    const volumeVariation = 0.8 + (Math.random() * 0.4); // 80% to 120% of base volume
-    const volume = Math.round(baseVolume * volumeVariation);
-
-    return {
-      price: currentPrice,
-      changePercent,
-      volume,
-      previousClose
-    };
-  }
-
-  async generateTradingOpportunities(market: string): Promise<TradingOpportunity[]> {
-    const opportunities: TradingOpportunity[] = [];
-
-    try {
-      if (market === "stocks") {
-        // Enhanced stock selection across major exchanges with low-risk, high-reward focus
-        const exchangeStocks = {
-          // NYSE - Blue chip dividend aristocrats
-          nyse: [
-            { symbol: "JNJ", name: "Johnson & Johnson", exchange: "NYSE", sector: "Healthcare" },
-            { symbol: "PG", name: "Procter & Gamble", exchange: "NYSE", sector: "Consumer Staples" },
-            { symbol: "KO", name: "Coca-Cola", exchange: "NYSE", sector: "Consumer Staples" }
-          ],
-          // NASDAQ - Tech growth with strong fundamentals  
-          nasdaq: [
-            { symbol: "AAPL", name: "Apple Inc.", exchange: "NASDAQ", sector: "Technology" },
-            { symbol: "MSFT", name: "Microsoft Corp.", exchange: "NASDAQ", sector: "Technology" },
-            { symbol: "GOOGL", name: "Alphabet Inc.", exchange: "NASDAQ", sector: "Technology" }
-          ],
-          // Low-volatility ETFs for risk management
-          etfs: [
-            { symbol: "VYM", name: "Vanguard High Dividend Yield ETF", exchange: "NYSE Arca", sector: "Dividend ETF" },
-            { symbol: "USMV", name: "iShares MSCI USA Min Vol Factor ETF", exchange: "CBOE BZX", sector: "Low Volatility ETF" }
-          ]
-        };
-
-        // Select best opportunities using multi-factor analysis
-        const selectedStocks = [
-          ...exchangeStocks.nyse.slice(0, 2), // Top 2 NYSE dividend stocks
-          ...exchangeStocks.nasdaq.slice(0, 2), // Top 2 NASDAQ tech stocks  
-          ...exchangeStocks.etfs.slice(0, 1) // 1 low-risk ETF
-        ];
-        
-        for (const stock of selectedStocks) {
-          try {
-            let quote: AlphaVantageQuote | null = null;
-            let currentPrice: number;
-            let changePercent: string;
-            let volume: number;
-            let previousClose: number;
-
-            try {
-              const data = await this.getStockQuote(stock.symbol);
-              quote = data["Global Quote"];
-              
-              if (quote && quote["05. price"]) {
-                currentPrice = parseFloat(quote["05. price"]);
-                changePercent = quote["10. change percent"];
-                volume = parseInt(quote["06. volume"]);
-                previousClose = parseFloat(quote["08. previous close"]);
-              } else {
-                throw new Error(`No API data for ${stock.symbol}`);
-              }
-            } catch (apiError) {
-              console.log(`API failed for ${stock.symbol}, using realistic simulation data`);
-              // Generate realistic market data based on current market conditions
-              const simulatedData = this.generateRealisticStockData(stock);
-              currentPrice = simulatedData.price;
-              changePercent = simulatedData.changePercent;
-              volume = simulatedData.volume;
-              previousClose = simulatedData.previousClose;
-              
-              // Create simulated quote object
-              quote = {
-                "01. symbol": stock.symbol,
-                "02. open": simulatedData.previousClose.toString(),
-                "03. high": (currentPrice * 1.02).toString(),
-                "04. low": (currentPrice * 0.98).toString(),
-                "05. price": currentPrice.toString(),
-                "06. volume": volume.toString(),
-                "07. latest trading day": new Date().toISOString().split('T')[0],
-                "08. previous close": simulatedData.previousClose.toString(),
-                "09. change": (currentPrice - simulatedData.previousClose).toString(),
-                "10. change percent": changePercent
-              };
-            }
-            
-            // Enhanced technical analysis
-            const technicalMetrics = this.calculateAdvancedMetrics(currentPrice, changePercent, volume, previousClose, stock.sector);
-
-            opportunities.push({
-              id: `stock-${stock.symbol.toLowerCase()}`,
-              name: `${stock.name} (${stock.symbol})`,
-              type: `${stock.sector} - ${stock.exchange}`,
-              entryPrice: `$${currentPrice.toFixed(2)}`,
-              risk: technicalMetrics.risk,
-              potentialGain: technicalMetrics.potentialGain,
-              netProfit: technicalMetrics.netProfit,
-              confidence: Math.round(technicalMetrics.confidence),
-              action: technicalMetrics.action as "BUY" | "SELL",
-              market: "stocks",
-              rationale: this.generateAdvancedRationale(stock, quote, changePercent, technicalMetrics),
-              isMicro: false,
-              exchange: stock.exchange,
-              sector: stock.sector,
-              volume: volume.toLocaleString(),
-              riskLevel: technicalMetrics.riskLevel
-            });
-
-            // Rate limiting delay only for successful API calls
-            if (quote && quote["05. price"]) {
-              await new Promise(resolve => setTimeout(resolve, 12000));
-            }
-          } catch (error) {
-            console.error(`Error processing ${stock.symbol}:`, error);
-          }
-        }
-      }
-
-      // For crypto and commodities, we'll use a simplified approach due to API limitations
-      if (market === "crypto") {
-        // We'll fetch BTC as an example and create derived opportunities
-        try {
-          const btcData = await this.getStockQuote("BTC-USD");
-          const quote = btcData["Global Quote"];
-          
-          if (quote && quote["05. price"]) {
-            const btcPrice = parseFloat(quote["05. price"]);
-            const changePercent = quote["10. change percent"] || "0%";
-            // Generate crypto metrics  
-            const metrics = {
-              confidence: 75,
-              action: Math.random() > 0.5 ? "BUY" : "SELL"
-            };
-
-            opportunities.push({
-              id: "crypto-btc",
-              name: "Bitcoin (BTC)",
-              type: "Cryptocurrency",
-              entryPrice: `$${btcPrice.toLocaleString()}`,
-              risk: `-$${Math.round(btcPrice * 0.05)}`,
-              potentialGain: `+$${Math.round(btcPrice * 0.15)}`,
-              netProfit: `+$${Math.round(btcPrice * 0.10)}`,
-              confidence: Math.round(metrics.confidence),
-              action: metrics.action as "BUY" | "SELL",
-              market: "crypto",
-              rationale: "Bitcoin showing strong institutional adoption momentum. ETF inflows creating sustained buying pressure. Technical indicators suggest continued upward trend with strong support levels.",
-              isMicro: false
-            });
-          }
-        } catch (error) {
-          console.error("Error fetching crypto data:", error);
-        }
-
-        // Micro Bitcoin futures (0.1 BTC contract size)
-        if (opportunities.length > 0) {
-          const btcOpportunity = opportunities[0];
-          const btcPrice = parseFloat(btcOpportunity.entryPrice.replace(/[$,]/g, ''));
-          const microBtcPrice = btcPrice * 0.1; // 0.1 BTC contract
-          
-          opportunities.push({
-            id: "micro-crypto-btc",
-            name: "Micro Bitcoin (MBT)",
-            type: "Micro Cryptocurrency",
-            entryPrice: `$${microBtcPrice.toFixed(2)}`,
-            risk: `-$${(microBtcPrice * 0.05).toFixed(2)}`,
-            potentialGain: `+$${(microBtcPrice * 0.15).toFixed(2)}`,
-            netProfit: `+$${(microBtcPrice * 0.10).toFixed(2)}`,
-            confidence: 88,
-            action: "BUY",
-            market: "crypto",
-            rationale: "Bitcoin ETF approval driving institutional adoption. Halving event creating supply shock. Micro contracts provide precise exposure with 0.1 BTC size.",
-            isMicro: true,
-            contractSize: "0.1 BTC (1/50th standard)",
-            minimumTrade: `$${(microBtcPrice * 0.01).toFixed(2)}`
-          });
-        }
-
-        // Micro Ethereum futures (0.1 ETH contract size)
-        opportunities.push({
-          id: "micro-crypto-eth",
-          name: "Micro Ethereum (MET)",
-          type: "Micro Cryptocurrency",
-          entryPrice: "$184.20",
-          risk: "-$9.21",
-          potentialGain: "+$27.63",
-          netProfit: "+$18.42",
-          confidence: 83,
-          action: "BUY",
-          market: "crypto",
-          rationale: "Ethereum staking rewards attracting institutional validators. Layer 2 adoption surging — Base, Arbitrum, and Optimism processing record transaction volumes. ETF inflows supporting price floor. Micro contracts enable precise DeFi exposure at just 0.1 ETH.",
-          isMicro: true,
-          contractSize: "0.1 ETH (1/10th standard)",
-          minimumTrade: "$18.42"
-        });
-
-        // Nano cryptocurrency options for ultra-precise trading
-        opportunities.push({
-          id: "nano-crypto-sol",
-          name: "Nano Solana (NSL)",
-          type: "Nano Cryptocurrency",
-          entryPrice: "$14.85",
-          risk: "-$0.74",
-          potentialGain: "+$2.23",
-          netProfit: "+$1.49",
-          confidence: 79,
-          action: "BUY",
-          market: "crypto",
-          rationale: "Solana leading in DeFi activity and NFT volume. PayFi use cases driving real-world adoption. Low-latency 400ms block times attracting high-frequency trading. Nano contracts offer 0.1 SOL exposure.",
-          isMicro: true,
-          contractSize: "0.1 SOL (1/100th standard)",
-          minimumTrade: "$1.49"
-        });
-
-        opportunities.push({
-          id: "nano-crypto-avax",
-          name: "Nano Avalanche (NAV)",
-          type: "Nano Cryptocurrency",
-          entryPrice: "$2.78",
-          risk: "-$0.14",
-          potentialGain: "+$0.42",
-          netProfit: "+$0.28",
-          confidence: 72,
-          action: "BUY",
-          market: "crypto",
-          rationale: "Avalanche subnet technology enabling institutional blockchain deployments. Emerging market DeFi adoption growing. Gaming and AI project launches bringing new users to the ecosystem.",
-          isMicro: true,
-          contractSize: "0.1 AVAX (1/100th standard)",
-          minimumTrade: "$0.28"
-        });
-
-        opportunities.push({
-          id: "nano-crypto-matic",
-          name: "Nano Polygon (NPG)",
-          type: "Nano Cryptocurrency",
-          entryPrice: "$0.44",
-          risk: "-$0.02",
-          potentialGain: "+$0.07",
-          netProfit: "+$0.05",
-          confidence: 68,
-          action: "BUY",
-          market: "crypto",
-          rationale: "Polygon AggLayer unifying liquidity across ZK chains. Enterprise adoption of Polygon CDK for custom blockchains. Token supply burn mechanism supporting price. Nano exposure at fraction of standard contract cost.",
-          isMicro: true,
-          contractSize: "0.1 POL (1/1000th standard)",
-          minimumTrade: "$0.05"
-        });
-
-        opportunities.push({
-          id: "nano-crypto-dot",
-          name: "Nano Polkadot (NDT)",
-          type: "Nano Cryptocurrency",
-          entryPrice: "$0.64",
-          risk: "-$0.03",
-          potentialGain: "+$0.10",
-          netProfit: "+$0.07",
-          confidence: 67,
-          action: "BUY",
-          market: "crypto",
-          rationale: "Polkadot JAM upgrade enhancing cross-chain interoperability. Staking yield competitive with DeFi alternatives. Parachain ecosystem expanding with new project launches. 0.1 DOT nano contract provides affordable entry.",
-          isMicro: true,
-          contractSize: "0.1 DOT (1/100th standard)",
-          minimumTrade: "$0.07"
-        });
-      }
-
-      if (market === "commodities") {
-        // Professional futures trading opportunities with full contract specifications
-        
-        // Gold Futures (GC) - CME Group
-        opportunities.push({
-          id: "futures-gold-gc",
-          name: "Gold Futures (GC)",
-          type: "GCZ26 • Dec 2026",
-          entryPrice: "$3,285.50",
-          risk: "-$1,000.00",
-          potentialGain: "+$3,500.00",
-          netProfit: "+$2,500.00",
-          confidence: 84,
-          action: "BUY",
-          market: "commodities",
-          rationale: "Gold at all-time highs driven by central bank buying and de-dollarization. US tariff uncertainty boosting safe-haven demand. Fed holding rates steady while inflation remains elevated. Technical breakout confirmed above $3,250 resistance on heavy institutional volume.",
-          isMicro: false,
-          contractSize: "100 troy oz",
-          underlyingPrice: "$3,285.50/oz",
-          marginRequired: "$12,000.00",
-          tickValue: "$100.00 per $1.00 move",
-          expirationDate: "2026-12-29",
-          leverage: "27:1",
-          strategy: "EMA Cross + SMA Filter (21/50 EMA above 200 SMA)",
-          stopLoss: "$3,248.00",
-          takeProfit: "$3,380.00",
-          tradingTimeframe: "Swing Trading",
-          timeframeDuration: "3-7 days",
-          chartTimeframe: "4-hour charts with 21/50 EMA",
-          timeframeDescription: "Using 21/50 EMA pullbacks above 200 SMA trend filter"
-        });
-
-        // Crude Oil Futures (CL) - NYMEX
-        opportunities.push({
-          id: "futures-crude-oil-cl",
-          name: "Crude Oil Futures (CL)",
-          type: "CLZ26 • Dec 2026",
-          entryPrice: "$61.20",
-          risk: "-$1,500.00",
-          potentialGain: "+$4,000.00",
-          netProfit: "+$2,500.00",
-          confidence: 72,
-          action: "BUY",
-          market: "commodities",
-          rationale: "Crude oversold after tariff-driven demand concerns. OPEC+ extended production cuts through Q3 2026 supporting price floor. US strategic petroleum reserve refill underway. Bounce expected from $59 support — technical RSI deeply oversold at current levels.",
-          isMicro: false,
-          contractSize: "1,000 barrels",
-          underlyingPrice: "$61.20/barrel",
-          marginRequired: "$4,500.00",
-          tickValue: "$10.00 per $0.01 move",
-          expirationDate: "2026-12-18",
-          leverage: "14:1",
-          strategy: "200 SMA Trend Filter + Fundamental Analysis",
-          stopLoss: "$59.50",
-          takeProfit: "$66.50",
-          tradingTimeframe: "Position Trading",
-          timeframeDuration: "2-4 weeks",
-          chartTimeframe: "Daily charts with 100/200 SMA",
-          timeframeDescription: "Position above 200 SMA with supply-demand fundamentals"
-        });
-
-        // Corn Futures (C) - CBOT
-        opportunities.push({
-          id: "futures-corn-c",
-          name: "Corn Futures (C)",
-          type: "CZ26 • Dec 2026",
-          entryPrice: "$4.52",
-          risk: "-$1,125.00",
-          potentialGain: "+$2,250.00",
-          netProfit: "+$1,125.00",
-          confidence: 71,
-          action: "BUY",
-          market: "commodities",
-          rationale: "Trade war tariff uncertainty reducing export demand temporarily. Strong domestic ethanol blending mandate supporting floor prices. Planting season weather forecasts showing dry conditions in key Iowa/Illinois growing regions. Seasonal low forming ahead of Q2 planting reports.",
-          isMicro: false,
-          contractSize: "5,000 bushels",
-          underlyingPrice: "$4.52/bushel",
-          marginRequired: "$1,300.00",
-          tickValue: "$12.50 per $0.0025 move",
-          expirationDate: "2026-12-14",
-          leverage: "17:1",
-          strategy: "Weather Premium + Seasonal",
-          stopLoss: "$4.30",
-          takeProfit: "$4.97",
-          tradingTimeframe: "Position Trading",
-          timeframeDuration: "4-8 weeks",
-          chartTimeframe: "Weekly charts",
-          timeframeDescription: "Seasonal agriculture cycle and weather patterns"
-        });
-
-        // Coffee Futures (KC) - ICE
-        opportunities.push({
-          id: "futures-coffee-kc",
-          name: "Coffee Futures (KC)",
-          type: "KCZ26 • Dec 2026",
-          entryPrice: "$328.50",
-          risk: "-$2,000.00",
-          potentialGain: "+$5,625.00",
-          netProfit: "+$3,625.00",
-          confidence: 73,
-          action: "BUY",
-          market: "commodities",
-          rationale: "Arabica prices near multi-year highs on continued Brazil and Vietnam supply shortfalls. Global coffee consumption outpacing production for third consecutive year. Certified ICE warehouse stocks at critical lows. Seasonal harvest concerns for 2026/27 crop cycle adding supply risk premium.",
-          isMicro: false,
-          contractSize: "37,500 lbs",
-          underlyingPrice: "$3.285/lb",
-          marginRequired: "$5,500.00",
-          tickValue: "$18.75 per $0.0005 move",
-          expirationDate: "2026-12-18",
-          leverage: "22:1",
-          strategy: "Weather Risk + Supply Shock",
-          stopLoss: "$315.00",
-          takeProfit: "$353.00",
-          tradingTimeframe: "Swing Trading",
-          timeframeDuration: "1-2 weeks",
-          chartTimeframe: "Daily charts",
-          timeframeDescription: "Weather events and supply disruption momentum"
-        });
-
-        // Natural Gas Futures (NG) - NYMEX  
-        opportunities.push({
-          id: "futures-natural-gas-ng",
-          name: "Natural Gas Futures (NG)",
-          type: "NGZ26 • Dec 2026",
-          entryPrice: "$3.82",
-          risk: "-$1,000.00",
-          potentialGain: "+$2,800.00",
-          netProfit: "+$1,800.00",
-          confidence: 74,
-          action: "BUY",
-          market: "commodities",
-          rationale: "LNG export terminals running at full capacity — record US LNG exports tightening domestic supply. Storage drawdowns above 5-year average. Industrial demand recovery and data center electricity growth driving structural uptrend. Summer cooling season ahead.",
-          isMicro: false,
-          contractSize: "10,000 MMBtu",
-          underlyingPrice: "$3.82/MMBtu",
-          marginRequired: "$1,500.00",
-          tickValue: "$10.00 per $0.001 move",
-          expirationDate: "2026-12-29",
-          leverage: "25:1",
-          strategy: "9/21 EMA Cross + VWAP Scalping",
-          stopLoss: "$3.55",
-          takeProfit: "$4.30",
-          tradingTimeframe: "Day Trading",
-          timeframeDuration: "1-4 hours",
-          chartTimeframe: "5/15-min with 9/20 EMA + VWAP",
-          timeframeDescription: "Fast EMA crosses above VWAP for intraday momentum"
-        });
-
-        // S&P 500 Index Futures (ES) - CME
-        opportunities.push({
-          id: "futures-sp500-es",
-          name: "S&P 500 Futures (ES)",
-          type: "ESM26 • Jun 2026",
-          entryPrice: "$5,248.00",
-          risk: "-$2,500.00",
-          potentialGain: "+$6,250.00",
-          netProfit: "+$3,750.00",
-          confidence: 76,
-          action: "BUY",
-          market: "commodities",
-          rationale: "Market rebounding from tariff-driven correction. Q1 2026 earnings beating estimates by 8% on average. Fed signaling 2 rate cuts in H2 2026 supporting risk appetite. Key support at 5,200 holding. AI sector capex boom driving earnings growth in tech heavyweights.",
-          isMicro: false,
-          contractSize: "$50 x S&P 500 Index",
-          underlyingPrice: "5,248.00 points",
-          marginRequired: "$18,000.00",
-          tickValue: "$12.50 per 0.25 point move",
-          expirationDate: "2026-06-19",
-          leverage: "14:1",
-          strategy: "Automated 9/21 EMA Cross + 200 SMA Filter",
-          stopLoss: "5,148.00",
-          takeProfit: "5,498.00",
-          tradingTimeframe: "Algorithmic Trading",
-          timeframeDuration: "Automated execution",
-          chartTimeframe: "1-min charts with EMA algorithms",
-          timeframeDescription: "High-frequency EMA cross signals above 200 SMA trend"
-        });
-      }
-
-      if (market === "options") {
-        return this.generateOptionsOpportunities();
-      }
-
-      if (market === "forex") {
-        return this.generateForexOpportunities();
-      }
-
-    } catch (error) {
-      console.error("Error generating trading opportunities:", error);
-      throw new Error("Failed to fetch market data");
-    }
-
-    return opportunities;
-  }
-
-  private generateOptionsOpportunities(): TradingOpportunity[] {
-    const opportunities: TradingOpportunity[] = [];
-    
-    // Popular stocks for options trading — prices current as of April 2026
-    const optionsStocks = [
-      { symbol: "AAPL", name: "Apple Inc.", currentPrice: 207.50, volatility: 0.28 },
-      { symbol: "TSLA", name: "Tesla Inc.", currentPrice: 285.00, volatility: 0.42 },
-      { symbol: "MSFT", name: "Microsoft Corp.", currentPrice: 441.00, volatility: 0.22 },
-      { symbol: "NVDA", name: "NVIDIA Corp.", currentPrice: 1052.00, volatility: 0.45 },
-      { symbol: "SPY", name: "SPDR S&P 500 ETF", currentPrice: 524.80, volatility: 0.20 }
-    ];
-
-    optionsStocks.forEach((stock, index) => {
-      // Premium priced on volatility: higher-vol stocks cost more ($0.25–$0.90)
-      const callPremium = parseFloat(Math.max(0.25, Math.min(0.90, stock.volatility * 2.0)).toFixed(2));
-      const putPremium  = parseFloat(Math.max(0.25, Math.min(0.90, stock.volatility * 1.7)).toFixed(2));
-
-      const callStrike = Math.round(stock.currentPrice * 1.05); // 5% out of the money
-      const putStrike  = Math.round(stock.currentPrice * 0.95); // 5% out of the money
-
-      // Greeks — simplified but realistic for 5% OTM, 30-day micro options
-      const callDelta = parseFloat((stock.volatility * 0.75).toFixed(2));   // ~0.15–0.34
-      const putDelta  = parseFloat(-(stock.volatility * 0.70).toFixed(2));  // ~-0.14 to -0.32
-      const callTheta = parseFloat(-(callPremium / 21).toFixed(3));          // daily time decay
-      const putTheta  = parseFloat(-(putPremium  / 21).toFixed(3));
-
-      // Breakeven prices
-      const callBreakeven = (callStrike + callPremium).toFixed(2);
-      const putBreakeven  = (putStrike  - putPremium ).toFixed(2);
-
-      // % the stock must move from current price to reach breakeven
-      const callMoveNeeded = (((callStrike + callPremium - stock.currentPrice) / stock.currentPrice) * 100).toFixed(1);
-      const putMoveNeeded  = (((stock.currentPrice - (putStrike - putPremium))  / stock.currentPrice) * 100).toFixed(1);
-
-      // Potential gain & net profit — must match trade window weekly multiplier (×6 gain, ×5 net for both calls and puts)
-      const callGain   = parseFloat((callPremium * 6).toFixed(2));
-      const callProfit = parseFloat((callPremium * 5).toFixed(2));
-      const putGain    = parseFloat((putPremium  * 6).toFixed(2));
-      const putProfit  = parseFloat((putPremium  * 5).toFixed(2));
-
-      opportunities.push({
-        id: `call-${stock.symbol.toLowerCase()}-${callStrike}`,
-        name: `Micro ${stock.name} Call`,
-        type: `${callStrike} Call • 30 Days`,
-        entryPrice: `$${callPremium.toFixed(2)}`,
-        risk: `-$${callPremium.toFixed(2)}`,
-        potentialGain: `+$${callGain.toFixed(2)}`,
-        netProfit: `+$${callProfit.toFixed(2)}`,
-        confidence: Math.round(82 - (stock.volatility * 40)),
-        action: "BUY",
-        market: "options",
-        rationale: this.generateOptionsRationale(stock, "CALL", callStrike, callPremium),
-        isMicro: true,
-        optionType: "CALL",
-        strikePrice: `$${callStrike}`,
-        expirationDate: this.getExpirationDate(30),
-        premium: `$${callPremium.toFixed(2)}`,
-        underlyingPrice: `$${stock.currentPrice.toFixed(2)}`,
-        impliedVolatility: `${(stock.volatility * 100).toFixed(1)}%`,
-        contractSize: "1 share per micro contract",
-        minimumTrade: `$${callPremium.toFixed(2)}`,
-        delta: `${callDelta > 0 ? '+' : ''}${callDelta}`,
-        theta: `${callTheta}`,
-        breakevenPrice: `$${callBreakeven}`,
-        moveNeeded: `+${callMoveNeeded}%`,
-      });
-
-      // Put options — only for first 3 stocks
-      if (index < 3) {
-        opportunities.push({
-          id: `put-${stock.symbol.toLowerCase()}-${putStrike}`,
-          name: `Micro ${stock.name} Put`,
-          type: `${putStrike} Put • 30 Days`,
-          entryPrice: `$${putPremium.toFixed(2)}`,
-          risk: `-$${putPremium.toFixed(2)}`,
-          potentialGain: `+$${putGain.toFixed(2)}`,
-          netProfit: `+$${putProfit.toFixed(2)}`,
-          confidence: Math.round(76 - (stock.volatility * 35)),
-          action: "BUY",
-          market: "options",
-          rationale: this.generateOptionsRationale(stock, "PUT", putStrike, putPremium),
-          isMicro: true,
-          optionType: "PUT",
-          strikePrice: `$${putStrike}`,
-          expirationDate: this.getExpirationDate(30),
-          premium: `$${putPremium.toFixed(2)}`,
-          underlyingPrice: `$${stock.currentPrice.toFixed(2)}`,
-          impliedVolatility: `${(stock.volatility * 100).toFixed(1)}%`,
-          contractSize: "1 share per micro contract",
-          minimumTrade: `$${putPremium.toFixed(2)}`,
-          delta: `${putDelta}`,
-          theta: `${putTheta}`,
-          breakevenPrice: `$${putBreakeven}`,
-          moveNeeded: `-${putMoveNeeded}%`,
-        });
-      }
-    });
-
-    return opportunities;
-  }
-
-  private calculateOptionPremium(currentPrice: number, strikePrice: number, daysToExpiration: number, volatility: number, optionType: string): number {
-    // Simplified Black-Scholes approximation for educational purposes
-    const timeValue = Math.sqrt(daysToExpiration / 365) * volatility * currentPrice * 0.4;
-    const intrinsicValue = optionType === "CALL" 
-      ? Math.max(0, currentPrice - strikePrice)
-      : Math.max(0, strikePrice - currentPrice);
-    
-    const premium = intrinsicValue + timeValue;
-    return Math.max(0.05, premium); // Minimum premium of $0.05
-  }
-
-  private generateOptionsRationale(stock: any, optionType: string, strikePrice: number, premium: number): string {
-    const stockRationales: Record<string, { call: string; put: string }> = {
-      AAPL: {
-        call: `Apple AI integration across iPhone lineup driving services revenue to record highs. Strong buy signal confirmed — 21 EMA crossed above 50 EMA on daily chart. Institutional accumulation visible in options flow. $${strikePrice} call offers ${(((strikePrice / stock.currentPrice) - 1) * 100).toFixed(1)}% upside target at only $${premium.toFixed(2)} max risk per micro contract.`,
-        put: `Apple facing China revenue headwinds and tariff exposure on iPhone supply chain. RSI showing overbought conditions above 70. Short-term pullback setup — hedge protection or bearish trade at $${strikePrice} put. Only $${premium.toFixed(2)} premium for downside exposure if market pulls back.`,
-      },
-      TSLA: {
-        call: `Tesla energy storage and FSD licensing revenue accelerating. Q2 delivery guidance beating expectations. High IV (${(stock.volatility * 100).toFixed(0)}%) means explosive moves possible — $${strikePrice} call targets breakout above resistance. Max loss just $${premium.toFixed(2)} per micro contract with 6× potential upside.`,
-        put: `Tesla facing EV demand softness and margin compression from price cuts. Elon distraction discount persisting. High implied volatility (${(stock.volatility * 100).toFixed(0)}%) creates attractive put premium. $${strikePrice} put profits if TSLA breaks support. Risk capped at $${premium.toFixed(2)} per micro contract.`,
-      },
-      MSFT: {
-        call: `Microsoft Azure AI cloud revenue up 33% YoY — GitHub Copilot and M365 Copilot driving enterprise upsell. Steady low-volatility uptrend ideal for covered call strategy. $${strikePrice} call targets continued momentum. Conservative $${premium.toFixed(2)} entry with quality fundamentals behind it.`,
-        put: `Microsoft richly valued at current levels. Regulatory antitrust overhang in EU. Any cloud spending slowdown could pressure stock. $${strikePrice} put provides downside hedge at only $${premium.toFixed(2)} — low IV (${(stock.volatility * 100).toFixed(0)}%) keeps cost of protection affordable.`,
-      },
-      NVDA: {
-        call: `NVIDIA Blackwell GPU demand far exceeding supply — backlog stretching 12+ months. Data center revenue up 400%+ YoY. Extremely high IV (${(stock.volatility * 100).toFixed(0)}%) reflects explosive move potential. $${strikePrice} call costs $${premium.toFixed(2)} and can deliver 6–8× if NVDA continues AI dominance rally.`,
-        put: `NVIDIA trading at premium AI multiples — vulnerable to any earnings miss or competition narrative. AMD and Intel intensifying GPU competition. $${strikePrice} put hedges against valuation compression. High IV (${(stock.volatility * 100).toFixed(0)}%) means premium reflects real risk but also real reward at $${premium.toFixed(2)} per contract.`,
-      },
-      SPY: {
-        call: `S&P 500 rebounding from tariff-driven correction. Fed signaling 2 rate cuts in H2 2026. Q1 earnings beating estimates by 8%. $${strikePrice} call offers broad market upside with defined risk. SPY low IV (${(stock.volatility * 100).toFixed(0)}%) means affordable $${premium.toFixed(2)} entry — excellent risk/reward for recovery trade.`,
-        put: `Market valuations stretched amid tariff and recession uncertainty. VIX elevated — institutions hedging portfolios. $${strikePrice} SPY put provides portfolio protection or bearish speculation. Low IV (${(stock.volatility * 100).toFixed(0)}%) keeps put cost at just $${premium.toFixed(2)} — cheap portfolio insurance.`,
-      },
-    };
-    const rationale = stockRationales[stock.symbol];
-    if (rationale) {
-      return optionType === "CALL" ? rationale.call : rationale.put;
-    }
-    const direction = optionType === "CALL" ? "upward" : "downward";
-    return `Technical indicators confirm ${direction} momentum for ${stock.symbol}. Micro option provides leveraged exposure with maximum risk of just $${premium.toFixed(2)} per contract. Strike $${strikePrice} targets meaningful price move within 30 days.`;
-  }
-
-  private getExpirationDate(daysFromNow: number): string {
-    const date = new Date();
-    date.setDate(date.getDate() + daysFromNow);
-    return date.toISOString().split('T')[0];
-  }
-
-  private generateForexOpportunities(): TradingOpportunity[] {
-    const opportunities: TradingOpportunity[] = [];
-    
-    // Advanced forex trading bot strategies with proven success rates
-    const forexBotStrategies = [
-      {
-        pair: "EUR/USD",
-        name: "Euro / US Dollar",
-        currentPrice: 1.0845,
-        strategy: "Forex Fury (93% Win Rate)",
-        botFeatures: ["High win rate automation", "Low drawdown protection", "Asian session optimized"],
-        rationale: "Forex Fury bot signals: ECB hawkish pivot creating steady accumulation pattern. Low-volatility Asian session providing optimal entry conditions. Automated risk management with 93% historical win rate. Small, consistent profits with minimal drawdown exposure.",
-        confidence: 93,
-        riskLevel: "Low",
-        automationLevel: "Full",
-        sessionOptimal: "Asian (Low Volatility)"
-      },
-      {
-        pair: "GBP/USD",
-        name: "British Pound / US Dollar",
-        currentPrice: 1.2685,
-        strategy: "Scalping Bot (Quick Profits)",
-        botFeatures: ["High-speed execution", "Multiple timeframes", "No martingale risk"],
-        rationale: "Forex Robotron scalping signals: GBP volatility creating rapid profit opportunities. M5-H1 timeframe analysis confirming breakout momentum. High-frequency bot capturing quick moves with trailing stops. No dangerous martingale - pure scalping strategy.",
-        confidence: 85,
-        riskLevel: "Medium",
-        automationLevel: "Full",
-        sessionOptimal: "London (High Volatility)"
-      },
-      {
-        pair: "USD/JPY", 
-        name: "US Dollar / Japanese Yen",
-        currentPrice: 149.25,
-        strategy: "AI Reversal Logic",
-        botFeatures: ["Smart position reversal", "Mistake correction", "Volatility adaptive"],
-        rationale: "GPS Forex Robot AI: Initial carry trade position monitoring intervention levels. If trade moves against us, AI immediately reverses position to capitalize on BoJ intervention. Self-correcting logic minimizes losses while capturing volatility spikes.",
-        confidence: 88,
-        riskLevel: "Medium",
-        automationLevel: "AI-Driven",
-        sessionOptimal: "Tokyo (Intervention Risk)"
-      },
-      {
-        pair: "AUD/USD",
-        name: "Australian Dollar / US Dollar", 
-        currentPrice: 0.6425,
-        strategy: "Triple Strategy EA",
-        botFeatures: ["Scalping + Trend + Counter-trend", "Multi-condition logic", "Built-in money management"],
-        rationale: "Forex Diamond EA deploying 3-strategy approach: Range scalping at current levels, trend-following for breakouts, counter-trend for reversals. High-frequency signals with integrated risk management adapting to market conditions.",
-        confidence: 82,
-        riskLevel: "Medium", 
-        automationLevel: "Multi-Strategy",
-        sessionOptimal: "Sydney (Commodity Correlation)"
-      },
-      {
-        pair: "USD/CAD",
-        name: "US Dollar / Canadian Dollar",
-        currentPrice: 1.3785,
-        strategy: "Long-Term Stabilizer", 
-        botFeatures: ["Steady profit focus", "Durable/Turbo modes", "Auto risk adjustment"],
-        rationale: "FXStabilizer bot in Durable mode: Oil price correlation creating steady directional bias. Long-term profit accumulation with automatic risk scaling. Conservative approach building consistent gains while protecting against commodity volatility.",
-        confidence: 79,
-        riskLevel: "Low",
-        automationLevel: "Adaptive",
-        sessionOptimal: "New York (Oil Correlation)"
-      }
-    ];
-
-    forexBotStrategies.forEach((forex, index) => {
-      // Smart bot logic for determining optimal direction
-      const isLong = this.determineBotDirection(forex.strategy, forex.pair);
-      const action = isLong ? "BUY" : "SELL";
-      const baseAmount = 50; // $50 minimum as requested
-      const leverage = 30; // Standard forex leverage
-      const positionSize = baseAmount * leverage; // $1,500 position with $50 margin
-      
-      // Bot-optimized profit calculations based on strategy type
-      const botMetrics = this.calculateBotMetrics(forex.strategy, forex.confidence);
-      const potentialProfit = botMetrics.profit.toFixed(2);
-      const risk = botMetrics.risk.toFixed(2);
-
-      opportunities.push({
-        id: `forex-${forex.pair.toLowerCase().replace('/', '')}`,
-        name: forex.name,
-        type: `${forex.pair} • ${forex.strategy}`,
-        entryPrice: forex.currentPrice.toFixed(4),
-        risk: `-$${risk}`,
-        potentialGain: `+$${potentialProfit}`,
-        netProfit: `+$${(parseFloat(potentialProfit) * 0.7).toFixed(2)}`,
-        confidence: forex.confidence,
-        action: action,
-        market: "forex",
-        rationale: forex.rationale,
-        isMicro: false,
-        minimumTrade: "$50.00",
-        leverage: "30:1",
-        spread: "0.8 pips",
-        swapLong: action === "BUY" ? "+$0.25/day" : "-$0.15/day",
-        swapShort: action === "SELL" ? "+$0.25/day" : "-$0.15/day",
-        strategy: forex.strategy,
-        lotSize: "1,000 units (micro lot)",
-        marginRequired: "$50.00",
-
-      });
-    });
-
-    return opportunities;
-  }
-
-  private determineBotDirection(strategy: string, pair: string): boolean {
-    // Smart bot logic based on strategy characteristics
-    const strategyDirectionality = {
-      "Forex Fury (93% Win Rate)": true, // Trend following - typically long bias
-      "Scalping Bot (Quick Profits)": Math.random() > 0.5, // Rapid direction changes
-      "AI Reversal Logic": false, // Contrarian approach  
-      "Triple Strategy EA": Math.random() > 0.4, // Multi-strategy, slight long bias
-      "Long-Term Stabilizer": true // Steady accumulation, long bias
-    };
-
-    return strategyDirectionality[strategy as keyof typeof strategyDirectionality] ?? (Math.random() > 0.5);
-  }
-
-  private calculateBotMetrics(strategy: string, confidence: number): { profit: number; risk: number } {
-    const baseAmount = 50;
-    const leverage = 30;
-    const positionSize = baseAmount * leverage;
-
-    // Bot-specific risk/reward profiles based on real trading bot characteristics
-    const botProfiles = {
-      "Forex Fury (93% Win Rate)": {
-        winRate: 0.93,
-        avgWin: 0.008, // Small consistent wins
-        avgLoss: 0.004, // Very small losses
-        riskPercent: 0.01 // 1% risk - very conservative
-      },
-      "Scalping Bot (Quick Profits)": {
-        winRate: 0.75,
-        avgWin: 0.012, // Quick scalp profits
-        avgLoss: 0.008, // Fast stop losses
-        riskPercent: 0.015 // 1.5% risk
-      },
-      "AI Reversal Logic": {
-        winRate: 0.88,
-        avgWin: 0.015, // AI correction captures good moves
-        avgLoss: 0.005, // Smart loss cutting
-        riskPercent: 0.012 // 1.2% risk
-      },
-      "Triple Strategy EA": {
-        winRate: 0.82,
-        avgWin: 0.018, // Multi-strategy higher wins
-        avgLoss: 0.009, // Diversified risk
-        riskPercent: 0.018 // 1.8% risk
-      },
-      "Long-Term Stabilizer": {
-        winRate: 0.79,
-        avgWin: 0.025, // Longer-term bigger moves
-        avgLoss: 0.012, // Larger stops for trend
-        riskPercent: 0.015 // 1.5% risk
-      }
-    };
-
-    const profile = botProfiles[strategy as keyof typeof botProfiles] ?? botProfiles["Scalping Bot (Quick Profits)"];
-    
-    // Calculate expected value based on bot win rate and risk/reward
-    const expectedProfit = (profile.winRate * profile.avgWin - (1 - profile.winRate) * profile.avgLoss) * positionSize;
-    const maxRisk = positionSize * profile.riskPercent;
-
-    return {
-      profit: Math.max(1.50, expectedProfit), // Minimum $1.50 profit
-      risk: Math.max(1.00, maxRisk) // Minimum $1.00 risk
-    };
-  }
+  });
 }
 
-export const marketDataService = new MarketDataService();
+function generateCrypto(): TradingOpportunity[] {
+  const tickers = ["BTC","ETH","SOL","BNB","ADA","AVAX"];
+  return tickers.map((ticker) => {
+    const { price, change24h, name } = getPrice(ticker);
+    const action = change24h > 1 ? "BUY" : change24h < -1.5 ? "SELL" : "BUY";
+    const conf = confidence(ticker === "BTC" ? 80 : ticker === "ETH" ? 74 : 65);
+    const target = parseFloat((price * 1.06).toFixed(price < 1 ? 4 : 2));
+    const stop = parseFloat((price * 0.96).toFixed(price < 1 ? 4 : 2));
+    return {
+      id: `crypto-${ticker.toLowerCase()}`,
+      market: "crypto" as const,
+      ticker, name, action: action as "BUY" | "SELL" | "HOLD",
+      signalType: pickSignal(),
+      entryPrice: price, targetPrice: target, stopLoss: stop,
+      confidence: conf, change24h,
+      rationale: cryptoRationales[ticker] ?? `${name} showing strong on-chain metrics.`,
+      rsi: rsi(ticker === "BTC" ? 58 : 50),
+      macd: change24h > 0 ? "Bullish momentum" : "Consolidating",
+      volume: "High",
+    };
+  });
+}
+
+function generateCommodities(): TradingOpportunity[] {
+  const tickers = ["GOLD","OIL","SILVER","NATGAS"];
+  return tickers.map((ticker) => {
+    const { price, change24h, name } = getPrice(ticker);
+    const action = change24h > 0 ? "BUY" : "SELL";
+    const conf = confidence(ticker === "GOLD" ? 77 : 65);
+    const target = parseFloat((price * 1.04).toFixed(2));
+    const stop = parseFloat((price * 0.97).toFixed(2));
+    return {
+      id: `commodity-${ticker.toLowerCase()}`,
+      market: "commodities" as const,
+      ticker, name, action: action as "BUY" | "SELL" | "HOLD",
+      signalType: pickSignal(),
+      entryPrice: price, targetPrice: target, stopLoss: stop,
+      confidence: conf, change24h,
+      rationale: commodityRationales[ticker] ?? `${name} driven by supply/demand imbalance.`,
+      rsi: rsi(50),
+      macd: "Neutral",
+      volume: "Normal",
+    };
+  });
+}
+
+function generateOptions(): TradingOpportunity[] {
+  const configs = [
+    { ticker: "AAPL", underlying: "AAPL", type: "CALL" as const, volMult: 1.4 },
+    { ticker: "TSLA", underlying: "TSLA", type: "PUT"  as const, volMult: 1.7 },
+    { ticker: "SPY",  underlying: "SPY",  type: "CALL" as const, volMult: 1.1 },
+    { ticker: "QQQ",  underlying: "QQQ",  type: "PUT"  as const, volMult: 1.2 },
+    { ticker: "NVDA", underlying: "NVDA", type: "CALL" as const, volMult: 1.9 },
+  ];
+  const teslaMock = { price: 285.00, name: "Tesla Inc." };
+  return configs.map((c) => {
+    const underlying = c.ticker === "TSLA" ? teslaMock : getPrice(c.ticker);
+    const iv = parseFloat((0.20 + Math.random() * 0.30).toFixed(2));
+    const premium = parseFloat((iv * c.volMult * (c.ticker === "TSLA" ? 1.0 : 0.85)).toFixed(2));
+    const strike = c.type === "CALL"
+      ? parseFloat((underlying.price * 1.05).toFixed(0))
+      : parseFloat((underlying.price * 0.95).toFixed(0));
+    const expiry = new Date(); expiry.setDate(expiry.getDate() + 30);
+    const expiryStr = expiry.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const conf = confidence(c.ticker === "SPY" ? 76 : c.ticker === "AAPL" ? 73 : 65);
+    return {
+      id: `option-${c.ticker.toLowerCase()}-${c.type.toLowerCase()}`,
+      market: "options" as const,
+      ticker: c.ticker,
+      name: `Micro ${underlying.name} ${c.type === "CALL" ? "Call" : "Put"}`,
+      action: "BUY" as const,
+      signalType: c.type === "CALL" ? "MOMENTUM" as const : "REVERSAL" as const,
+      entryPrice: premium,
+      targetPrice: parseFloat((premium * 6).toFixed(2)),
+      stopLoss: 0,
+      confidence: conf,
+      rationale: stockRationales[c.ticker] ?? `${underlying.name} showing elevated implied volatility — premium selling opportunity.`,
+      optionType: c.type,
+      strikePrice: strike,
+      premium,
+      expiry: expiryStr,
+      change24h: (Math.random() - 0.4) * 4,
+      rsi: rsi(52),
+    };
+  });
+}
+
+function generateForex(): TradingOpportunity[] {
+  const pairs = ["EUR-USD","GBP-USD","USD-JPY","AUD-USD"];
+  return pairs.map((pair) => {
+    const { price, change24h, name } = getPrice(pair);
+    const isYen = pair === "USD-JPY";
+    const action = change24h > 0 ? "BUY" : "SELL";
+    const conf = confidence(68);
+    const pip = isYen ? 0.01 : 0.0001;
+    const target = parseFloat((price + pip * 50 * (action === "BUY" ? 1 : -1)).toFixed(isYen ? 2 : 4));
+    const stop  = parseFloat((price - pip * 25 * (action === "BUY" ? 1 : -1)).toFixed(isYen ? 2 : 4));
+    return {
+      id: `forex-${pair.toLowerCase()}`,
+      market: "forex" as const,
+      ticker: pair, name, action: action as "BUY" | "SELL" | "HOLD",
+      signalType: pickSignal(),
+      entryPrice: price, targetPrice: target, stopLoss: stop,
+      confidence: conf, change24h,
+      rationale: forexRationales[pair] ?? `${name} forming technical setup on 4H chart.`,
+      rsi: rsi(52),
+      macd: change24h > 0 ? "Bullish" : "Bearish",
+      volume: "High liquidity",
+    };
+  });
+}
+
+// AI Signal feed — combined cross-market signals
+export function generateAISignals(): TradingOpportunity[] {
+  return [
+    ...generateStocks().slice(0, 3),
+    ...generateCrypto().slice(0, 2),
+    ...generateCommodities().slice(0, 1),
+    ...generateForex().slice(0, 1),
+    ...generateOptions().slice(0, 1),
+  ].sort((a, b) => b.confidence - a.confidence);
+}
+
+export const marketDataService = { generateOpportunities, generateAISignals, getPrice };

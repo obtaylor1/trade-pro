@@ -1,234 +1,136 @@
 import { z } from "zod";
-import { pgTable, text, timestamp, numeric, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, numeric, integer, boolean, json } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
 
-// Trading opportunity schema
-export const tradingOpportunitySchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  type: z.string(),
-  entryPrice: z.string(),
-  risk: z.string(),
-  potentialGain: z.string(),
-  netProfit: z.string(),
-  confidence: z.number().min(0).max(100),
-  action: z.enum(["BUY", "SELL"]),
-  market: z.enum(["stocks", "commodities", "crypto", "options", "forex"]),
-  rationale: z.string(),
-  isMicro: z.boolean().default(false),
-  contractSize: z.string().optional(),
-  minimumTrade: z.string().optional(),
-  exchange: z.string().optional(),
-  sector: z.string().optional(),
-  volume: z.string().optional(),
-  riskLevel: z.string().optional(),
-  // Options-specific fields
-  optionType: z.enum(["CALL", "PUT"]).optional(),
-  strikePrice: z.string().optional(),
-  expirationDate: z.string().optional(),
-  premium: z.string().optional(),
-  underlyingPrice: z.string().optional(),
-  impliedVolatility: z.string().optional(),
-  delta: z.string().optional(),
-  theta: z.string().optional(),
-  breakevenPrice: z.string().optional(),
-  moveNeeded: z.string().optional(),
-  // Futures-specific fields
-  marginRequired: z.string().optional(),
-  tickValue: z.string().optional(),
-  leverage: z.string().optional(),
-  strategy: z.string().optional(),
-  stopLoss: z.string().optional(),
-  takeProfit: z.string().optional(),
-  // Forex-specific fields
-  spread: z.string().optional(),
-  swapLong: z.string().optional(),
-  swapShort: z.string().optional(),
-  lotSize: z.string().optional(),
-  // Forex bot-specific fields
-  botStrategy: z.string().optional(),
-  botRiskLevel: z.string().optional(),
-  botAutomation: z.string().optional(),
-  botSession: z.string().optional(),
-  
-  // Trading timeframe fields
-  tradingTimeframe: z.string().optional(),
-  timeframeDuration: z.string().optional(),
-  chartTimeframe: z.string().optional(),
-  timeframeDescription: z.string().optional()
-});
+// ─── Database Tables ──────────────────────────────────────────────────────────
 
-export const tradeExecutionSchema = z.object({
-  opportunityId: z.string(),
-  amount: z.number().optional().default(1000),
-  isLiveTrading: z.boolean().default(false),
-  selectedBroker: z.string().optional(),
-});
-
-export const tradeResultSchema = z.object({
-  id: z.string(),
-  opportunityId: z.string(),
-  executedAt: z.string(),
-  success: z.boolean(),
-  message: z.string(),
-  expectedProfit: z.string()
-});
-
-// User Profile Schema
-export const userProfileSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  accountType: z.enum(["individual", "joint", "retirement"]),
-  availableFunds: z.number(),
-  virtualFunds: z.number(),
-  selectedBroker: z.string().optional(),
-  isLiveTrading: z.boolean().default(false),
-});
-
-// Simulator Setup Schema
-export const simulatorSetupSchema = z.object({
-  userName: z.string().min(1, "Name is required"),
-  initialCapital: z.number().min(100, "Minimum starting balance is $100"),
-  selectedBroker: z.string().min(1, "Please select a broker"),
-  accountType: z.enum(["individual", "joint", "retirement"]).default("individual"),
-});
-
-// Broker Schema
-export const brokerSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  assetClass: z.enum(["stocks", "commodities", "crypto", "options", "forex"]),
-  logoUrl: z.string().optional(),
-  features: z.array(z.string()),
-  rating: z.number().min(1).max(5),
-  fees: z.object({
-    stockCommission: z.number().default(0),
-    optionCommission: z.number().default(0),
-    futuresCommission: z.number().default(0),
-    cryptoFee: z.number().default(0), // percentage
-    marginRate: z.number().default(0), // percentage
-    inactivityFee: z.number().default(0),
-  }),
-});
-
-// Portfolio Position Schema
-export const portfolioPositionSchema = z.object({
-  id: z.string(),
-  symbol: z.string(),
-  name: z.string(),
-  quantity: z.number(),
-  entryPrice: z.number(),
-  currentPrice: z.number(),
-  marketValue: z.number(),
-  unrealizedPnL: z.number(),
-  unrealizedPnLPercent: z.number(),
-  assetClass: z.string(),
-});
-
-// Paper Trade Schema for detailed trade tracking
-export const paperTradeSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  tradeId: z.string(),
-  timestamp: z.string(),
-  broker: z.string(),
-  symbol: z.string(),
-  assetName: z.string(),
-  assetClass: z.string(),
-  direction: z.enum(["BUY", "SELL"]),
-  quantity: z.number(),
-  entryPrice: z.number(),
-  currentPrice: z.number(),
-  positionSize: z.number(),
-  stopLoss: z.number().optional(),
-  takeProfit: z.number().optional(),
-  commission: z.number(),
-  margin: z.number(),
-  grossPnL: z.number(),
-  netPnL: z.number(),
-  status: z.enum(["OPEN", "CLOSED", "PENDING"]),
-  successRate: z.number(), // % progress toward target
-  executedAt: z.string(),
-  closedAt: z.string().optional(),
-});
-
-// Trade Summary Schema for aggregated statistics
-export const tradeSummarySchema = z.object({
-  userId: z.string(),
-  totalTrades: z.number(),
-  openTrades: z.number(),
-  closedTrades: z.number(),
-  winRate: z.number(),
-  avgReturnPerTrade: z.number(),
-  largestGain: z.number(),
-  largestLoss: z.number(),
-  netAccountGrowth: z.number(),
-  totalCommissions: z.number(),
-  totalVolume: z.number(),
-});
-
-// Database Tables
-export const paperTrades = pgTable("paper_trades", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
-  tradeId: text("trade_id").notNull(),
-  timestamp: timestamp("timestamp").notNull(),
-  broker: text("broker").notNull(),
-  symbol: text("symbol").notNull(),
-  assetName: text("asset_name").notNull(),
-  assetClass: text("asset_class").notNull(),
-  direction: text("direction").notNull(), // BUY or SELL
-  quantity: numeric("quantity").notNull(),
-  entryPrice: numeric("entry_price").notNull(),
-  currentPrice: numeric("current_price").notNull(),
-  positionSize: numeric("position_size").notNull(),
-  stopLoss: numeric("stop_loss"),
-  takeProfit: numeric("take_profit"),
-  commission: numeric("commission").notNull(),
-  margin: numeric("margin").notNull(),
-  grossPnL: numeric("gross_pnl").notNull(),
-  netPnL: numeric("net_pnl").notNull(),
-  status: text("status").notNull(), // OPEN, CLOSED, PENDING
-  successRate: numeric("success_rate").notNull(),
-  executedAt: timestamp("executed_at").notNull(),
-  closedAt: timestamp("closed_at"),
-});
-
-export const users = pgTable("users", {
+export const users = pgTable("users_v2", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").unique().notNull(),
-  startingCapital: numeric("starting_capital").default("10000"),
-  currentBalance: numeric("current_balance").default("10000"),
-  selectedBroker: text("selected_broker").default("ninjatrader-sim"),
-  isLiveTrading: boolean("is_live_trading").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  passwordHash: text("password_hash").notNull(),
+  paperBalance: numeric("paper_balance").default("10000").notNull(),
+  onboardingComplete: boolean("onboarding_complete").default(false).notNull(),
+  marketInterests: json("market_interests").$type<string[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// User registration/login schemas
-export const userRegistrationSchema = z.object({
+export const trades = pgTable("trades_v2", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  market: text("market").notNull(),
+  ticker: text("ticker").notNull(),
+  tickerName: text("ticker_name").notNull(),
+  action: text("action").notNull(), // BUY | SELL
+  entryPrice: numeric("entry_price").notNull(),
+  units: numeric("units").notNull(),
+  investedAmount: numeric("invested_amount").notNull(),
+  status: text("status").default("OPEN").notNull(), // OPEN | CLOSED
+  entryAt: timestamp("entry_at").defaultNow().notNull(),
+  exitPrice: numeric("exit_price"),
+  exitAt: timestamp("exit_at"),
+  pnl: numeric("pnl").default("0"),
+  potentialGain: numeric("potential_gain"),
+});
+
+export const watchlist = pgTable("watchlist_v2", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  ticker: text("ticker").notNull(),
+  market: text("market").notNull(),
+  addedAt: timestamp("added_at").defaultNow().notNull(),
+});
+
+export const learnProgress = pgTable("learn_progress_v2", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  moduleId: integer("module_id").notNull(),
+  completed: boolean("completed").default(false).notNull(),
+  quizScore: integer("quiz_score").default(0),
+  completedAt: timestamp("completed_at"),
+});
+
+export const portfolioSnapshots = pgTable("portfolio_snapshots_v2", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  balance: numeric("balance").notNull(),
+  snapshotAt: timestamp("snapshot_at").defaultNow().notNull(),
+});
+
+// ─── Insert Schemas ───────────────────────────────────────────────────────────
+
+export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
+export const insertTradeSchema = createInsertSchema(trades).omit({ id: true, entryAt: true });
+export const insertWatchlistSchema = createInsertSchema(watchlist).omit({ id: true, addedAt: true });
+export const insertLearnProgressSchema = createInsertSchema(learnProgress).omit({ id: true });
+export const insertPortfolioSnapshotSchema = createInsertSchema(portfolioSnapshots).omit({ id: true, snapshotAt: true });
+
+// ─── Auth Schemas ─────────────────────────────────────────────────────────────
+
+export const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  startingCapital: z.number().min(100, "Minimum starting capital is $100"),
-  selectedBroker: z.string().default("ninjatrader-sim"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-export const userLoginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+export const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
-export type TradingOpportunity = z.infer<typeof tradingOpportunitySchema>;
-export type TradeExecution = z.infer<typeof tradeExecutionSchema>;
-export type TradeResult = z.infer<typeof tradeResultSchema>;
-export type UserProfile = z.infer<typeof userProfileSchema>;
-export type Broker = z.infer<typeof brokerSchema>;
-export type PortfolioPosition = z.infer<typeof portfolioPositionSchema>;
-export type SimulatorSetup = z.infer<typeof simulatorSetupSchema>;
-export type PaperTrade = z.infer<typeof paperTradeSchema>;
-export type TradeSummary = z.infer<typeof tradeSummarySchema>;
-export type UserRegistration = z.infer<typeof userRegistrationSchema>;
-export type UserLogin = z.infer<typeof userLoginSchema>;
+export const onboardingSchema = z.object({
+  marketInterests: z.array(z.string()).min(1, "Select at least one market"),
+  paperBalance: z.number().min(100).default(10000),
+});
 
-// Database user type
-export type DatabaseUser = typeof users.$inferSelect;
+// ─── Trading Opportunity Schema ───────────────────────────────────────────────
+
+export const tradingOpportunitySchema = z.object({
+  id: z.string(),
+  market: z.enum(["stocks", "commodities", "crypto", "options", "forex"]),
+  ticker: z.string(),
+  name: z.string(),
+  action: z.enum(["BUY", "SELL", "HOLD"]),
+  signalType: z.enum(["BREAKOUT", "REVERSAL", "MOMENTUM", "MEAN_REVERSION"]),
+  entryPrice: z.number(),
+  targetPrice: z.number(),
+  stopLoss: z.number(),
+  confidence: z.number(),
+  rationale: z.string(),
+  rsi: z.number().optional(),
+  macd: z.string().optional(),
+  volume: z.string().optional(),
+  change24h: z.number().optional(),
+  // Options specific
+  optionType: z.enum(["CALL", "PUT"]).optional(),
+  strikePrice: z.number().optional(),
+  premium: z.number().optional(),
+  expiry: z.string().optional(),
+});
+
+export const executeTradeSchema = z.object({
+  userId: z.string(),
+  opportunityId: z.string(),
+  investedAmount: z.number().positive(),
+  market: z.string(),
+  ticker: z.string(),
+  tickerName: z.string(),
+  action: z.string(),
+  entryPrice: z.number(),
+  units: z.number(),
+  potentialGain: z.number().optional(),
+});
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+export type Trade = typeof trades.$inferSelect;
+export type InsertTrade = typeof trades.$inferInsert;
+export type Watchlist = typeof watchlist.$inferSelect;
+export type LearnProgress = typeof learnProgress.$inferSelect;
+export type PortfolioSnapshot = typeof portfolioSnapshots.$inferSelect;
+export type TradingOpportunity = z.infer<typeof tradingOpportunitySchema>;
+export type ExecuteTrade = z.infer<typeof executeTradeSchema>;
+export type SignupInput = z.infer<typeof signupSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;

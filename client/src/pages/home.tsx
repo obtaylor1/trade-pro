@@ -1,391 +1,268 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, ArrowRight, User, Star } from "lucide-react";
-import PortfolioChart from "@/components/PortfolioChart";
-import RadialProgress from "@/components/RadialProgress";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import type { TradingOpportunity } from "@shared/schema";
-import { useUser } from "@/contexts/UserContext";
 
-// Company logos for display
-const companyLogos: Record<string, string> = {
-  "AAPL": "🍎",
-  "GOOGL": "🔍", 
-  "ALPHABET": "🔍",
-  "MSFT": "Ⓜ️",
-  "TSLA": "⚡",
-  "NVDA": "💾",
-  "META": "📘",
-  "AMZN": "📦",
-  "NFLX": "🎬",
-  "JNJ": "🏥",
-  "PG": "🧴",
-  "KO": "🥤",
-  "VYM": "💰",
-  "USMV": "📊"
-};
+type Period = "1D" | "1W" | "1M" | "3M" | "1Y";
 
-export default function Home() {
-  const [, setLocation] = useLocation();
-  const { user } = useUser();
+function ConfBar({ val }: { val: number }) {
+  const color = val >= 75 ? "#22c55e" : val >= 60 ? "#f59e0b" : "#ef4444";
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <div className="flex-1 h-1.5 rounded-full" style={{ background: "#243044" }}>
+        <div className="h-1.5 rounded-full transition-all" style={{ width: `${val}%`, background: color }} />
+      </div>
+      <span className="text-xs font-semibold" style={{ color }}>{val}%</span>
+    </div>
+  );
+}
 
-  // Fetch real trading opportunities for AI signals from all markets
-  const { data: stockOpportunities, isLoading: stocksLoading } = useQuery<TradingOpportunity[]>({
-    queryKey: ["/api/opportunities", "stocks"],
-    staleTime: 10 * 60 * 1000, // 10 minutes cache
-    retry: 1
-  });
-
-  const { data: commoditiesOpportunities, isLoading: commoditiesLoading } = useQuery<TradingOpportunity[]>({
-    queryKey: ["/api/opportunities", "commodities"],
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
-    retry: 1
-  });
-
-  const { data: cryptoOpportunities, isLoading: cryptoLoading } = useQuery<TradingOpportunity[]>({
-    queryKey: ["/api/opportunities", "crypto"],
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
-    retry: 1
-  });
-
-  const { data: optionsOpportunities, isLoading: optionsLoading } = useQuery<TradingOpportunity[]>({
-    queryKey: ["/api/opportunities", "options"],
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
-    retry: 1
-  });
-
-  const { data: forexOpportunities, isLoading: forexLoading } = useQuery<TradingOpportunity[]>({
-    queryKey: ["/api/opportunities", "forex"],
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
-    retry: 1
-  });
-
-  // Use real user balance if logged in, otherwise show demo values
-  const portfolioValue = user?.currentBalance ?? 10000;
-  const startingCapital = user?.startingCapital ?? 10000;
-  const todayChange = portfolioValue - startingCapital;
-  const todayChangePercent = startingCapital > 0 ? ((todayChange / startingCapital) * 100) : 0;
-
-  // Get top AI signals from all five markets
-  const topAISignals = [
-    // Stocks
-    stockOpportunities && stockOpportunities.length > 0 
-      ? {
-          market: "stocks",
-          symbol: stockOpportunities[0].name.split(' ')[0] || stockOpportunities[0].id,
-          companyName: stockOpportunities[0].name,
-          reason: stockOpportunities[0].rationale,
-          confidence: stockOpportunities[0].confidence,
-          logo: companyLogos[stockOpportunities[0].name.split(' ')[0]] || "📈",
-          color: "text-blue-400"
-        }
-      : stocksLoading 
-      ? {
-          market: "stocks",
-          symbol: "AAPL",
-          companyName: "Apple Inc.", 
-          reason: "Loading AI analysis...",
-          confidence: 85,
-          logo: "🍎",
-          color: "text-blue-400"
-        }
-      : {
-          market: "stocks",
-          symbol: "AAPL",
-          companyName: "Apple Inc.", 
-          reason: "Strong positive momentum detected ahead of earnings with bullish technical indicators",
-          confidence: 85,
-          logo: "🍎",
-          color: "text-blue-400"
-        },
-
-    // Commodities
-    commoditiesOpportunities && commoditiesOpportunities.length > 0 
-      ? {
-          market: "commodities",
-          symbol: commoditiesOpportunities[0].name.split(' ')[0] || commoditiesOpportunities[0].id,
-          companyName: commoditiesOpportunities[0].name,
-          reason: commoditiesOpportunities[0].rationale,
-          confidence: commoditiesOpportunities[0].confidence,
-          logo: "🥇",
-          color: "text-amber-400"
-        }
-      : commoditiesLoading 
-      ? {
-          market: "commodities",
-          symbol: "GC",
-          companyName: "Gold Futures", 
-          reason: "Loading AI analysis...",
-          confidence: 78,
-          logo: "🥇",
-          color: "text-amber-400"
-        }
-      : {
-          market: "commodities",
-          symbol: "GC",
-          companyName: "Gold Futures", 
-          reason: "Safe haven demand rising amid economic uncertainty",
-          confidence: 78,
-          logo: "🥇",
-          color: "text-amber-400"
-        },
-
-    // Crypto
-    cryptoOpportunities && cryptoOpportunities.length > 0 
-      ? {
-          market: "crypto",
-          symbol: cryptoOpportunities[0].name.split(' ')[0] || cryptoOpportunities[0].id,
-          companyName: cryptoOpportunities[0].name,
-          reason: cryptoOpportunities[0].rationale,
-          confidence: cryptoOpportunities[0].confidence,
-          logo: "₿",
-          color: "text-orange-400"
-        }
-      : cryptoLoading 
-      ? {
-          market: "crypto",
-          symbol: "BTC",
-          companyName: "Bitcoin", 
-          reason: "Loading AI analysis...",
-          confidence: 72,
-          logo: "₿",
-          color: "text-orange-400"
-        }
-      : {
-          market: "crypto",
-          symbol: "BTC",
-          companyName: "Bitcoin", 
-          reason: "Institutional adoption accelerating with positive momentum",
-          confidence: 72,
-          logo: "₿",
-          color: "text-orange-400"
-        },
-
-    // Options
-    optionsOpportunities && optionsOpportunities.length > 0 
-      ? {
-          market: "options",
-          symbol: optionsOpportunities[0].name.split(' ')[0] || optionsOpportunities[0].id,
-          companyName: optionsOpportunities[0].name,
-          reason: optionsOpportunities[0].rationale,
-          confidence: optionsOpportunities[0].confidence,
-          logo: "📊",
-          color: "text-purple-400"
-        }
-      : optionsLoading 
-      ? {
-          market: "options",
-          symbol: "SPY",
-          companyName: "S&P 500 Options", 
-          reason: "Loading AI analysis...",
-          confidence: 88,
-          logo: "📊",
-          color: "text-purple-400"
-        }
-      : {
-          market: "options",
-          symbol: "SPY",
-          companyName: "S&P 500 Options", 
-          reason: "High implied volatility creating profitable call opportunities",
-          confidence: 88,
-          logo: "📊",
-          color: "text-purple-400"
-        },
-
-    // Forex
-    forexOpportunities && forexOpportunities.length > 0 
-      ? {
-          market: "forex",
-          symbol: forexOpportunities[0].name.split(' ')[0] || forexOpportunities[0].id,
-          companyName: forexOpportunities[0].name,
-          reason: forexOpportunities[0].rationale,
-          confidence: forexOpportunities[0].confidence,
-          logo: "💱",
-          color: "text-green-400"
-        }
-      : forexLoading 
-      ? {
-          market: "forex",
-          symbol: "EUR/USD",
-          companyName: "Euro / US Dollar", 
-          reason: "Loading AI analysis...",
-          confidence: 76,
-          logo: "💱",
-          color: "text-green-400"
-        }
-      : {
-          market: "forex",
-          symbol: "EUR/USD",
-          companyName: "Euro / US Dollar", 
-          reason: "Central bank policy divergence creating strong trend opportunity",
-          confidence: 76,
-          logo: "💱",
-          color: "text-green-400"
-        }
-  ];
-
-  // Create watchlist from top 4 stock opportunities
-  const watchlistData = stockOpportunities?.slice(0, 4).map((opportunity, index) => {
-    const symbol = opportunity.name.split(' ')[0] || opportunity.id;
-    const price = parseFloat(opportunity.entryPrice.replace(/[^0-9.-]/g, ''));
-    
-    // Generate realistic price changes (mock until we have real price data)
-    const changePercents = [1.66, -0.87, 1.10, -1.37];
-    const changePercent = changePercents[index] || (Math.random() - 0.5) * 4;
-    const change = (price * changePercent) / 100;
-    
-    return {
-      symbol,
-      name: opportunity.name,
-      price: price || 100,
-      change: change,
-      changePercent: changePercent,
-      logo: companyLogos[symbol] || "📈"
-    };
-  }) || [];
-
-  const handleAISignalClick = () => {
-    setLocation('/ai-suggestion');
+function SignalBadge({ type }: { type: string }) {
+  const cls: Record<string, string> = {
+    BREAKOUT: "badge-breakout", REVERSAL: "badge-reversal",
+    MOMENTUM: "badge-momentum", MEAN_REVERSION: "badge-mean",
   };
+  const label: Record<string, string> = { MEAN_REVERSION: "MEAN REV" };
+  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cls[type] ?? "badge-breakout"}`}>{label[type] ?? type}</span>;
+}
+
+function MarketBadge({ market }: { market: string }) {
+  const colors: Record<string, string> = {
+    stocks: "#3b82f6", crypto: "#f59e0b", options: "#8b5cf6", forex: "#22c55e", commodities: "#ef4444",
+  };
+  const c = colors[market] ?? "#64748b";
+  return (
+    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
+      style={{ background: `${c}22`, color: c, border: `1px solid ${c}44` }}>
+      {market}
+    </span>
+  );
+}
+
+function buildChartData(snapshots: any[], balance: number) {
+  if (!snapshots || snapshots.length < 2) {
+    const now = Date.now();
+    return Array.from({ length: 7 }, (_, i) => ({
+      t: new Date(now - (6 - i) * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      v: parseFloat((balance * (0.994 + Math.random() * 0.012)).toFixed(2)),
+    }));
+  }
+  return snapshots.map((s: any) => ({
+    t: new Date(s.snapshotAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    v: parseFloat(s.balance),
+  }));
+}
+
+export default function HomePage() {
+  const { user, token, updateBalance } = useAuth();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [period, setPeriod] = useState<Period>("1W");
+  const periods: Period[] = ["1D", "1W", "1M", "3M", "1Y"];
+
+  const balance = parseFloat(String(user?.paperBalance ?? 10000));
+  const startBal = 10000;
+  const todayPnL = parseFloat((balance - startBal).toFixed(2));
+  const todayPnLPct = ((todayPnL / startBal) * 100).toFixed(2);
+
+  const { data: snapshots } = useQuery<any[]>({
+    queryKey: ["/api/portfolio/snapshots"],
+    queryFn: () =>
+      fetch("/api/portfolio/snapshots", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+    enabled: !!token,
+  });
+
+  const { data: signals, isLoading: signalsLoading } = useQuery<TradingOpportunity[]>({
+    queryKey: ["/api/ai-signals"],
+    queryFn: () => fetch("/api/ai-signals").then((r) => r.json()),
+    refetchInterval: 60000,
+  });
+
+  const { data: watchlistItems } = useQuery<any[]>({
+    queryKey: ["/api/watchlist"],
+    queryFn: () =>
+      fetch("/api/watchlist", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+    enabled: !!token,
+  });
+
+  const tradeMutation = useMutation({
+    mutationFn: async (opp: TradingOpportunity) => {
+      const invested = 1.0;
+      const units = parseFloat((invested / opp.entryPrice).toFixed(6));
+      const res = await fetch("/api/trades/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          market: opp.market, ticker: opp.ticker, tickerName: opp.name,
+          action: opp.action, entryPrice: opp.entryPrice, units, investedAmount: invested,
+          potentialGain: opp.targetPrice,
+        }),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.message); }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      updateBalance(data.newBalance);
+      toast({ title: "✅ Paper trade opened!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolio/snapshots"] });
+    },
+    onError: (e: any) => toast({ title: "Trade failed", description: e.message, variant: "destructive" }),
+  });
+
+  const chartData = buildChartData(snapshots ?? [], balance);
+  const chartColor = balance >= startBal ? "#22c55e" : "#ef4444";
 
   return (
-    <div className="min-h-screen bg-gray-900 pb-20">
-      {/* Main Content */}
-      <div className="max-w-md mx-auto px-4 py-6 space-y-6">
-        
-        {/* Portfolio Summary Card */}
-        <PortfolioChart
-          currentValue={portfolioValue}
-          todayChange={todayChange}
-          todayChangePercent={todayChangePercent}
-          className="animate-fade-in"
-          data-testid="portfolio-summary-card"
-        />
-
-        {/* Today's Top AI Signals - All Markets */}
-        <div className="bg-gray-800 rounded-xl p-6 animate-fade-in">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-white">Today's Top AI Signals</h3>
-            <button
-              onClick={() => setLocation('/markets')}
-              className="text-blue-600 hover:text-blue-500 transition-colors"
-            >
-              <ArrowRight className="h-5 w-5" />
-            </button>
+    <div className="page-container min-h-screen" style={{ background: "#0d1117" }}>
+      <div className="max-w-md mx-auto px-4 pt-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <div className="text-xs font-medium" style={{ color: "#64748b" }}>Good morning,</div>
+            <div className="text-xl font-bold">{user?.name?.split(" ")[0]} 👋</div>
           </div>
-          
-          <div className="space-y-4">
-            {topAISignals.map((signal, index) => (
-              <div 
-                key={signal.market}
-                className="border border-gray-700 rounded-lg p-4 hover:bg-gray-700/50 transition-all cursor-pointer"
-                onClick={handleAISignalClick}
-                data-testid={`ai-signal-${signal.market}`}
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="text-2xl">{signal.logo}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className={`text-lg font-bold ${signal.color}`} data-testid={`signal-symbol-${signal.market}`}>
-                        {signal.symbol}
-                      </span>
-                      <span className="text-xs text-gray-400">•</span>
-                      <span className="text-xs text-gray-400 capitalize">{signal.market}</span>
-                      <span className="text-xs text-gray-400">•</span>
-                      <span className="text-xs text-gray-400" data-testid={`signal-company-${signal.market}`}>
-                        {signal.companyName}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-300 mb-2" data-testid={`signal-reason-${signal.market}`}>
-                      {signal.reason}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">AI Confidence</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-12 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              signal.market === 'stocks' ? 'bg-blue-600' :
-                              signal.market === 'commodities' ? 'bg-amber-500' :
-                              signal.market === 'crypto' ? 'bg-orange-500' :
-                              signal.market === 'options' ? 'bg-purple-500' :
-                              'bg-green-500'
-                            }`}
-                            style={{ width: `${signal.confidence}%` }}
-                          />
-                        </div>
-                        <span className={`text-xs font-semibold ${signal.color}`} data-testid={`signal-confidence-${signal.market}`}>
-                          {signal.confidence}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <button
+            onClick={() => setLocation("/account")}
+            className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white"
+            style={{ background: "#3b82f6" }}>
+            {user?.name?.[0]?.toUpperCase()}
+          </button>
+        </div>
+
+        {/* Balance Card */}
+        <div className="rounded-2xl p-5 mb-4" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+          <div className="text-xs font-semibold mb-1 tracking-wider" style={{ color: "#64748b" }}>PAPER BALANCE</div>
+          <div className="text-4xl font-black mb-1">
+            ${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold" style={{ color: todayPnL >= 0 ? "#22c55e" : "#ef4444" }}>
+              {todayPnL >= 0 ? "+" : ""}${Math.abs(todayPnL).toFixed(2)} ({todayPnL >= 0 ? "+" : ""}{todayPnLPct}%)
+            </span>
+            <span className="text-xs" style={{ color: "#64748b" }}>all time</span>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="rounded-2xl p-4 mb-4" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+          <div className="flex gap-1 mb-3 justify-end">
+            {periods.map((p) => (
+              <button key={p} onClick={() => setPeriod(p)}
+                className="text-xs px-2.5 py-1 rounded-lg font-medium transition-all"
+                style={{
+                  background: period === p ? "#3b82f620" : "transparent",
+                  color: period === p ? "#60a5fa" : "#64748b",
+                }}>
+                {p}
+              </button>
             ))}
           </div>
+          <ResponsiveContainer width="100%" height={120}>
+            <LineChart data={chartData} margin={{ left: -24, right: 4 }}>
+              <XAxis dataKey="t" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+              <YAxis domain={["auto", "auto"]} tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false}
+                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+              <Tooltip
+                contentStyle={{ background: "#1a2332", border: "1px solid #243044", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: any) => [`$${parseFloat(v).toLocaleString()}`, "Balance"]}
+              />
+              <ReferenceLine y={startBal} stroke="#243044" strokeDasharray="4 4" />
+              <Line type="monotone" dataKey="v" stroke={chartColor} strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Watchlist Card */}
-        <div className="bg-gray-800 rounded-xl p-6 animate-fade-in" data-testid="watchlist-card">
-          <h3 className="text-lg font-semibold text-white mb-4">Watchlist</h3>
-          <div className="space-y-3">
-            {watchlistData.map((stock) => {
-              const isPositive = stock.change >= 0;
-              return (
-                <div 
-                  key={stock.symbol}
-                  className="flex items-center justify-between py-2 hover:bg-gray-700 rounded-lg px-2 transition-colors"
-                  data-testid={`watchlist-${stock.symbol.toLowerCase()}`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="text-2xl">{stock.logo}</div>
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-semibold text-white">{stock.symbol}</span>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-sm text-gray-400 truncate max-w-24">
-                          {stock.name.split(' ')[0]}
-                        </span>
-                      </div>
+        {/* AI Signals carousel */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-bold text-sm">🤖 Top AI Signals</div>
+            <button onClick={() => setLocation("/ai-signal")} className="text-xs font-medium" style={{ color: "#3b82f6" }}>
+              See all →
+            </button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
+            {signalsLoading
+              ? Array(4).fill(0).map((_, i) => (
+                  <div key={i} className="skeleton rounded-2xl flex-shrink-0" style={{ width: 190, height: 150 }} />
+                ))
+              : (signals ?? []).slice(0, 6).map((opp) => (
+                  <div key={opp.id} className="rounded-2xl p-4 flex-shrink-0 trade-card cursor-pointer"
+                    style={{ background: "#1a2332", border: "1px solid #243044", width: 190 }}>
+                    <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                      <MarketBadge market={opp.market} />
+                      <SignalBadge type={opp.signalType} />
                     </div>
+                    <div className="text-lg font-black">{opp.ticker}</div>
+                    <div className="text-xs mb-1 truncate" style={{ color: "#64748b" }}>{opp.name}</div>
+                    <ConfBar val={opp.confidence} />
+                    <div className="text-xs mt-2 leading-tight line-clamp-2" style={{ color: "#94a3b8" }}>
+                      {opp.rationale.slice(0, 65)}…
+                    </div>
+                    <button
+                      onClick={() => tradeMutation.mutate(opp)}
+                      disabled={tradeMutation.isPending}
+                      className="mt-3 w-full py-1.5 rounded-xl text-xs font-bold text-white"
+                      style={{ background: "#3b82f6" }}>
+                      Trade This ($1)
+                    </button>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-white" data-testid={`${stock.symbol.toLowerCase()}-price`}>
-                      ${stock.price}
-                    </div>
-                    <div 
-                      className={`text-sm font-medium ${
-                        isPositive ? 'text-emerald-500' : 'text-rose-500'
-                      }`}
-                      data-testid={`${stock.symbol.toLowerCase()}-change`}
-                    >
-                      {isPositive ? '+' : ''}{stock.change.toFixed(2)} ({isPositive ? '+' : ''}{stock.changePercent.toFixed(2)}%)
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                ))}
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4">
-          <button 
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center space-x-2"
-            data-testid="quick-trade-button"
-            onClick={() => setLocation('/ai-suggestion')}
-          >
-            <TrendingUp className="h-5 w-5" />
-            <span>Quick Trade</span>
+        {/* Watchlist */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-bold text-sm">👀 Watchlist</div>
+            <button onClick={() => setLocation("/markets")} className="text-xs font-medium" style={{ color: "#3b82f6" }}>
+              + Add
+            </button>
+          </div>
+          {!watchlistItems || watchlistItems.length === 0 ? (
+            <div className="rounded-2xl p-5 text-center" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+              <div className="text-2xl mb-1">👀</div>
+              <div className="text-sm mb-2" style={{ color: "#64748b" }}>No tickers yet</div>
+              <button onClick={() => setLocation("/markets")} className="text-xs font-semibold" style={{ color: "#3b82f6" }}>
+                Browse markets →
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {watchlistItems.map((item: any) => {
+                const ch = parseFloat((Math.random() * 4 - 1.5).toFixed(2));
+                return (
+                  <div key={item.id} className="flex items-center justify-between rounded-xl px-4 py-3"
+                    style={{ background: "#1a2332", border: "1px solid #243044" }}>
+                    <div>
+                      <div className="font-bold text-sm">{item.ticker}</div>
+                      <div className="text-xs capitalize" style={{ color: "#64748b" }}>{item.market}</div>
+                    </div>
+                    <span className="text-sm font-semibold" style={{ color: ch >= 0 ? "#22c55e" : "#ef4444" }}>
+                      {ch >= 0 ? "+" : ""}{ch}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Quick actions */}
+        <div className="flex gap-3 mb-6">
+          <button onClick={() => setLocation("/markets")}
+            className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white"
+            style={{ background: "#3b82f6" }}>
+            ⚡ Quick Trade
           </button>
-          <button 
-            className="bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center space-x-2 border border-gray-700"
-            data-testid="profile-button"
-            onClick={() => setLocation('/profile')}
-          >
-            <User className="h-5 w-5" />
-            <span>Account</span>
+          <button onClick={() => setLocation("/account")}
+            className="flex-1 py-3 rounded-2xl font-semibold text-sm"
+            style={{ background: "#1a2332", border: "1px solid #243044" }}>
+            👤 Account
           </button>
         </div>
       </div>

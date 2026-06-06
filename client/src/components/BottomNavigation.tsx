@@ -1,60 +1,30 @@
-import { Home, Zap, TrendingUp, Newspaper, GraduationCap } from "lucide-react";
 import { useLocation } from "wouter";
 
-interface NavigationItem {
-  id: string;
-  label: string;
-  icon: any;
-  path: string;
-}
+const TABS = [
+  { path: "/",          label: "Home",      icon: "🏠" },
+  { path: "/ai-signal", label: "AI Signal", icon: "⚡" },
+  { path: "/markets",   label: "Markets",   icon: "📊" },
+  { path: "/news",      label: "News",      icon: "📰" },
+  { path: "/learn",     label: "Learn",     icon: "🎓" },
+];
 
-interface BottomNavigationProps {
-  onNavigate?: (path: string) => void;
-  className?: string;
-}
-
-export default function BottomNavigation({ onNavigate, className = "" }: BottomNavigationProps) {
+export default function BottomNavigation() {
   const [location, setLocation] = useLocation();
-
-  const navigationItems: NavigationItem[] = [
-    { id: "home", label: "Home", icon: Home, path: "/" },
-    { id: "ai-signal", label: "AI Signal", icon: Zap, path: "/ai-suggestion" },
-    { id: "markets", label: "Markets", icon: TrendingUp, path: "/markets" },
-    { id: "news", label: "News", icon: Newspaper, path: "/news" },
-    { id: "learn", label: "Learn", icon: GraduationCap, path: "/learn-options" }
-  ];
-
-  const handleNavigate = (path: string) => {
-    setLocation(path);
-    onNavigate?.(path);
-  };
-
   return (
-    <div className={`fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 ${className}`} data-testid="bottom-navigation">
-      <div className="max-w-md mx-auto">
-        <div className="flex items-center justify-around py-2">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location === item.path;
-            
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavigate(item.path)}
-                className={`flex flex-col items-center px-3 py-2 rounded-lg transition-colors ${
-                  isActive 
-                    ? 'text-blue-600' 
-                    : 'text-gray-400 hover:text-white'
-                }`}
-                data-testid={`nav-${item.id}`}
-              >
-                <Icon className={`h-6 w-6 mb-1 ${isActive ? 'text-blue-600' : ''}`} />
-                <span className="text-xs font-medium">{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
+    <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around"
+      style={{ background: "#111827", borderTop: "1px solid #1f2937", paddingBottom: "env(safe-area-inset-bottom, 0px)", height: 64 }}>
+      {TABS.map(tab => {
+        const active = location === tab.path || (tab.path !== "/" && location.startsWith(tab.path));
+        return (
+          <button key={tab.path} onClick={() => setLocation(tab.path)}
+            className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all"
+            style={{ color: active ? "#3b82f6" : "#4b5563" }}>
+            <span className="text-xl leading-none">{tab.icon}</span>
+            <span className="text-[10px] font-semibold">{tab.label}</span>
+            {active && <div className="absolute bottom-0 w-1 h-1 rounded-full" style={{ background: "#3b82f6" }} />}
+          </button>
+        );
+      })}
+    </nav>
   );
 }
