@@ -117,7 +117,14 @@ export default function AISignalPage() {
       if (!res.ok) { const d = await res.json(); throw new Error(d.message); }
       return res.json();
     },
-    onSuccess: (data) => { updateBalance(data.newBalance); toast({ title: "✅ Paper trade opened!" }); setSelected(null); queryClient.invalidateQueries({ queryKey: ["/api/trades"] }); },
+    onSuccess: (data, opp) => {
+      updateBalance(data.newBalance);
+      const p = opp.entryPrice;
+      const fmt = p < 1 ? p.toFixed(4) : p.toFixed(2);
+      toast({ title: "⚡ Trade Executed", description: `Trade executed at $${fmt} (market price at time of order) · Balance: $${parseFloat(data.newBalance).toFixed(2)}` });
+      setSelected(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
+    },
     onError: (e: any) => toast({ title: "Trade failed", description: e.message, variant: "destructive" }),
   });
 

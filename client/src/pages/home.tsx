@@ -105,9 +105,11 @@ export default function HomePage() {
       if (!res.ok) { const d = await res.json(); throw new Error(d.message); }
       return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data, opp) => {
       updateBalance(data.newBalance);
-      toast({ title: "✅ Paper trade opened!" });
+      const p = opp.entryPrice;
+      const fmt = p < 1 ? p.toFixed(4) : p.toFixed(2);
+      toast({ title: "⚡ Trade Executed", description: `Trade executed at $${fmt} (market price at time of order) · Balance: $${parseFloat(data.newBalance).toFixed(2)}` });
       queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/snapshots"] });
     },
