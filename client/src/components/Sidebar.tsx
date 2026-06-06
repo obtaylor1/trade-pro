@@ -35,9 +35,10 @@ export default function Sidebar() {
               onClick={() => setLocation(tab.path)}
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold w-full text-left transition-all"
               style={{
-                background: active ? "rgba(59,130,246,0.12)" : "transparent",
+                background: active ? "rgba(59,130,246,0.15)" : "transparent",
                 color: active ? "#3b82f6" : "#64748b",
-                borderLeft: `3px solid ${active ? "#3b82f6" : "transparent"}`,
+                fontWeight: active ? 600 : undefined,
+                border: active ? "1px solid rgba(59,130,246,0.35)" : "1px solid transparent",
               }}
             >
               <span className="text-base leading-none">{tab.icon}</span>

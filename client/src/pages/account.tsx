@@ -181,7 +181,7 @@ export default function AccountPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-bold">{trade.ticker}</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full capitalize" style={{ background: "rgba(59,130,246,0.15)", color: "#60a5fa" }}>{trade.market}</span>
-                        <span className="text-[10px] font-bold" style={{ color: trade.action === "BUY" ? "#22c55e" : "#ef4444" }}>{trade.action}</span>
+                        <span className={`text-[10px] px-2 py-0.5 ${trade.action === "BUY" ? "badge-buy" : trade.action === "SELL" ? "badge-sell" : "badge-hold"}`}>{trade.action}</span>
                       </div>
                       <div className="text-xs mt-0.5" style={{ color: "#64748b" }}>
                         {parseFloat(trade.units).toFixed(4)} units @ ${parseFloat(trade.entryPrice).toFixed(2)} · inv: ${parseFloat(trade.investedAmount).toFixed(2)}
@@ -213,7 +213,7 @@ export default function AccountPage() {
                     <tr key={trade.id} style={{ borderBottom: idx < openTrades.length - 1 ? "1px solid #1a2332" : "none" }}>
                       <td className="px-4 py-3 font-bold">{trade.ticker}</td>
                       <td className="px-4 py-3 text-xs capitalize" style={{ color: "#60a5fa" }}>{trade.market}</td>
-                      <td className="px-4 py-3 text-xs font-bold" style={{ color: trade.action === "BUY" ? "#22c55e" : "#ef4444" }}>{trade.action}</td>
+                      <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 ${trade.action === "BUY" ? "badge-buy" : trade.action === "SELL" ? "badge-sell" : "badge-hold"}`}>{trade.action}</span></td>
                       <td className="px-4 py-3 font-mono text-xs">${parseFloat(trade.entryPrice).toFixed(2)}</td>
                       <td className="px-4 py-3 font-mono text-xs">{parseFloat(trade.units).toFixed(4)}</td>
                       <td className="px-4 py-3 font-mono text-xs">${parseFloat(trade.investedAmount).toFixed(2)}</td>
@@ -298,7 +298,7 @@ export default function AccountPage() {
                         <tr key={trade.id} style={{ borderBottom: idx < closedTrades.length - 1 ? "1px solid #1a2332" : "none", background: idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
                           <td className="px-4 py-3 font-bold">{trade.ticker}</td>
                           <td className="px-4 py-3"><span className="text-xs px-2 py-0.5 rounded-full capitalize" style={{ background: "rgba(59,130,246,0.15)", color: "#60a5fa" }}>{trade.market}</span></td>
-                          <td className="px-4 py-3 text-xs font-bold" style={{ color: trade.action === "BUY" ? "#22c55e" : "#ef4444" }}>{trade.action}</td>
+                          <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 ${trade.action === "BUY" ? "badge-buy" : trade.action === "SELL" ? "badge-sell" : "badge-hold"}`}>{trade.action}</span></td>
                           <td className="px-4 py-3 font-mono text-xs">${parseFloat(trade.entryPrice).toFixed(2)}</td>
                           <td className="px-4 py-3 font-mono text-xs">{parseFloat(trade.units).toFixed(4)}</td>
                           <td className="px-4 py-3 font-mono text-xs">${parseFloat(trade.investedAmount).toFixed(2)}</td>

@@ -107,13 +107,8 @@ function SBadge({ type }: { type: string }) {
 }
 
 function ABadge({ action }: { action: string }) {
-  const c = action === "BUY" ? "#22c55e" : action === "SELL" ? "#ef4444" : "#64748b";
-  return (
-    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-      style={{ background: `${c}22`, color: c, border: `1px solid ${c}55` }}>
-      {action}
-    </span>
-  );
+  const cls = action === "BUY" ? "badge-buy" : action === "SELL" ? "badge-sell" : "badge-hold";
+  return <span className={`text-[10px] px-2 py-0.5 ${cls}`}>{action}</span>;
 }
 
 // ─── Standard Trade Card (Stocks / Crypto / Commodities) ─────────────────────
