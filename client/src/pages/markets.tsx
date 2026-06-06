@@ -37,10 +37,40 @@ function useLivePrices() {
   const { data } = useQuery<{ prices: Record<string, LivePrice>; marketOpen: boolean }>({
     queryKey: ["/api/live-prices"],
     queryFn: () => fetch("/api/live-prices").then(r => r.json()),
-    refetchInterval: 15_000,
-    staleTime: 10_000,
+    refetchInterval: 10_000,
+    staleTime: 5_000,
   });
   return { prices: data?.prices ?? {}, marketOpen: data?.marketOpen ?? false };
+}
+
+// Flash green when price ticks up, red when down
+function usePriceFlash(price: number): "up" | "down" | null {
+  const prevRef = useRef(price);
+  const [flash, setFlash] = useState<"up" | "down" | null>(null);
+  useEffect(() => {
+    if (prevRef.current > 0 && prevRef.current !== price) {
+      setFlash(price > prevRef.current ? "up" : "down");
+      const t = setTimeout(() => setFlash(null), 900);
+      prevRef.current = price;
+      return () => clearTimeout(t);
+    }
+    prevRef.current = price;
+  }, [price]);
+  return flash;
+}
+
+// Real options chain from yahoo-finance2 (5-min refresh)
+interface RealContract { strike: number; ask: number; bid: number; lastPrice: number; expiry: string; daysLeft: number; impliedVolatility: number; }
+interface OptionsChainData { calls: RealContract[]; puts: RealContract[]; underlyingPrice: number; expiry: string; daysLeft: number; }
+function useOptionsChain(symbol: string) {
+  const { data } = useQuery<OptionsChainData | null>({
+    queryKey: ["/api/options-chain", symbol],
+    queryFn: () => fetch(`/api/options-chain/${symbol}`).then(r => r.json()),
+    staleTime: 5 * 60_000,
+    refetchInterval: 5 * 60_000,
+    enabled: !!symbol,
+  });
+  return data ?? null;
 }
 
 // ─── Shared UI Components ─────────────────────────────────────────────────────
@@ -106,9 +136,13 @@ function TradeCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
   const pdisp = price.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
   const udisp = units < 0.001 ? units.toFixed(6) : units < 1 ? units.toFixed(4) : units.toFixed(2);
   const changeColor = (livePrice?.change24h ?? opp.change24h ?? 0) >= 0 ? "#22c55e" : "#ef4444";
+  const flash = usePriceFlash(price);
+  const flashBorder = flash === "up" ? "1px solid rgba(34,197,94,0.6)" : flash === "down" ? "1px solid rgba(239,68,68,0.6)" : "1px solid #243044";
+  const flashShadow = flash === "up" ? "0 0 12px rgba(34,197,94,0.2)" : flash === "down" ? "0 0 12px rgba(239,68,68,0.2)" : "none";
+  const priceColor = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#e2e8f0";
 
   return (
-    <div className="rounded-2xl p-4 trade-card" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+    <div className="rounded-2xl p-4 trade-card" style={{ background: "#1a2332", border: flashBorder, boxShadow: flashShadow, transition: "border-color 0.4s, box-shadow 0.4s" }}>
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -120,10 +154,11 @@ function TradeCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
           <LiveDot open={open} last={lastUp} />
         </div>
         <div className="text-right ml-3">
-          <div className="text-xl font-black">${pdisp}</div>
+          <div className="text-xl font-black" style={{ color: priceColor, transition: "color 0.4s" }}>${pdisp}</div>
           <div className="text-xs font-semibold" style={{ color: changeColor }}>
             {(livePrice?.change24h ?? opp.change24h ?? 0) >= 0 ? "+" : ""}{(livePrice?.change24h ?? opp.change24h ?? 0).toFixed(2)}%
           </div>
+          {!open && <div className="text-[9px] font-bold mt-0.5" style={{ color: "#475569" }}>MARKET CLOSED</div>}
         </div>
         <button onClick={() => onWatchlist(opp)} className="ml-2 text-xl">⭐</button>
       </div>
@@ -183,21 +218,36 @@ function WeeklyOptionsCard({ opp, budget, livePrice, onTrade, onWatchlist, tradi
 }) {
   const [expanded, setExpanded] = useState(false);
   const isCall = opp.optionType === "CALL";
-  const underlyingPrice = livePrice?.price ?? (opp.strikePrice ? opp.strikePrice * 0.96 : opp.entryPrice * 5);
-  const premium = opp.premium ?? opp.entryPrice;
+
+  // Pull real options chain when available
+  const chain = useOptionsChain(opp.ticker);
+  const realContracts = chain ? (isCall ? chain.calls : chain.puts) : null;
+  const bestContract = realContracts?.[0] ?? null;
+
+  const underlyingPrice = chain?.underlyingPrice ?? livePrice?.price ?? (opp.strikePrice ? opp.strikePrice * 0.96 : opp.entryPrice * 5);
+  const premium = bestContract?.ask ?? opp.premium ?? opp.entryPrice;
+  const strikePrice = bestContract?.strike ?? opp.strikePrice ?? 0;
+  const expiryLabel = bestContract?.expiry ?? chain?.expiry ?? opp.expiry ?? "—";
+  const daysLeft = bestContract?.daysLeft ?? chain?.daysLeft ?? opp.daysLeft ?? 5;
+  const iv = bestContract ? Math.round((bestContract.impliedVolatility ?? 0) * 100) : null;
+
   const units = budget / premium;
   const moveNeeded = isCall
-    ? (((opp.strikePrice ?? 0) - underlyingPrice) / underlyingPrice * 100).toFixed(1)
-    : ((underlyingPrice - (opp.strikePrice ?? 0)) / underlyingPrice * 100).toFixed(1);
+    ? (strikePrice > 0 ? ((strikePrice - underlyingPrice) / underlyingPrice * 100).toFixed(1) : "—")
+    : (strikePrice > 0 ? ((underlyingPrice - strikePrice) / underlyingPrice * 100).toFixed(1) : "—");
   const potGain = premium * (opp.targetPrice / opp.entryPrice - 1) * units + budget;
-  const daysLeft = opp.daysLeft ?? 5;
+
   const open = livePrice?.marketOpen ?? true;
   const lastUp = livePrice?.lastUpdated ?? "";
   const typeColor = isCall ? "#22c55e" : "#ef4444";
   const daysColor = daysLeft <= 2 ? "#ef4444" : daysLeft <= 3 ? "#f59e0b" : "#3b82f6";
+  const flash = usePriceFlash(premium);
+  const flashBorder = flash === "up" ? `1px solid rgba(34,197,94,0.6)` : flash === "down" ? `1px solid rgba(239,68,68,0.6)` : `1px solid ${isCall ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`;
+  const premiumColor = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#e2e8f0";
+  const isRealData = !!bestContract;
 
   return (
-    <div className="rounded-2xl p-4 trade-card" style={{ background: "#1a2332", border: `1px solid ${isCall ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}` }}>
+    <div className="rounded-2xl p-4 trade-card" style={{ background: "#1a2332", border: flashBorder, transition: "border-color 0.4s" }}>
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
@@ -221,14 +271,17 @@ function WeeklyOptionsCard({ opp, budget, livePrice, onTrade, onWatchlist, tradi
       {/* Key details */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="rounded-xl p-2.5 col-span-1" style={{ background: "#0d1117" }}>
-          <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Premium</div>
-          <div className="text-base font-black">${premium.toFixed(2)}</div>
-          <div className="text-[10px]" style={{ color: "#64748b" }}>per contract</div>
+          <div className="text-[10px] mb-0.5 flex items-center gap-1" style={{ color: "#64748b" }}>
+            Premium
+            {isRealData && <span className="text-[8px] font-bold px-1 rounded" style={{ background: "rgba(34,197,94,0.2)", color: "#4ade80" }}>LIVE</span>}
+          </div>
+          <div className="text-base font-black" style={{ color: premiumColor, transition: "color 0.4s" }}>${premium.toFixed(2)}</div>
+          <div className="text-[10px]" style={{ color: "#64748b" }}>per contract{iv !== null ? ` · IV ${iv}%` : ""}</div>
         </div>
         <div className="rounded-xl p-2.5 col-span-1" style={{ background: "#0d1117" }}>
           <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Strike</div>
-          <div className="text-base font-black">${opp.strikePrice?.toLocaleString()}</div>
-          <div className="text-[10px]" style={{ color: "#64748b" }}>expires {opp.expiry}</div>
+          <div className="text-base font-black">${strikePrice > 0 ? strikePrice.toLocaleString() : (opp.strikePrice?.toLocaleString() ?? "—")}</div>
+          <div className="text-[10px]" style={{ color: "#64748b" }}>exp {expiryLabel}</div>
         </div>
         <div className="rounded-xl p-2.5 col-span-1" style={{ background: "#0d1117" }}>
           <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Stock Now</div>
@@ -339,6 +392,7 @@ function ForexCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
   const spread = livePrice?.spread ?? opp.spread ?? "—";
   const bid = livePrice?.bid;
   const ask = livePrice?.ask;
+  const flash = usePriceFlash(price);
   const isYen = opp.ticker.includes("JPY");
   const isExotic = ["MXN","ZAR","NOK","CNH","SGD"].some(x => opp.ticker.includes(x));
 
@@ -357,8 +411,12 @@ function ForexCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
   const dp = isYen || isExotic ? 3 : 5;
   const pdisp = price.toFixed(dp);
 
+  const flashBorderFx = flash === "up" ? "1px solid rgba(34,197,94,0.6)" : flash === "down" ? "1px solid rgba(239,68,68,0.6)" : "1px solid #243044";
+  const flashShadowFx = flash === "up" ? "0 0 12px rgba(34,197,94,0.2)" : flash === "down" ? "0 0 12px rgba(239,68,68,0.2)" : "none";
+  const priceColorFx = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#e2e8f0";
+
   return (
-    <div className="rounded-2xl p-4 trade-card" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+    <div className="rounded-2xl p-4 trade-card" style={{ background: "#1a2332", border: flashBorderFx, boxShadow: flashShadowFx, transition: "border-color 0.4s, box-shadow 0.4s" }}>
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
@@ -378,7 +436,7 @@ function ForexCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
       <div className="rounded-xl p-3 mb-3" style={{ background: "#0d1117", border: "1px solid #243044" }}>
         <div className="flex items-center justify-between mb-1">
           <div>
-            <div className="text-xl font-black">{pdisp}</div>
+            <div className="text-xl font-black" style={{ color: priceColorFx, transition: "color 0.4s" }}>{pdisp}</div>
             <div className="text-[10px]" style={{ color: "#64748b" }}>Spread: {spread}</div>
           </div>
           {bid && ask && (

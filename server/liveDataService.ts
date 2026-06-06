@@ -1,7 +1,7 @@
 import YahooFinanceLib from "yahoo-finance2";
 
 // v3 default export is the class itself — must instantiate; suppress survey/notice spam
-const yf: any = new (YahooFinanceLib as any)({ suppressNotices: ["yahooSurvey", "ripHistoricalRows"] });
+const yf: any = new (YahooFinanceLib as any)({ suppressNotices: ["yahooSurvey", "ripHistorical"] });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,10 +58,14 @@ const FALLBACK_STOCKS: Record<string, { price: number; change24h: number; name: 
   "CL=F": { price: 61.20,   change24h: -1.2, name: "Crude Oil Futures" },
   "SI=F": { price: 38.40,   change24h: 0.7,  name: "Silver Futures" },
   "NG=F": { price: 3.82,    change24h: 2.1,  name: "Natural Gas Futures" },
+  "ZC=F": { price: 445.00,  change24h: -0.8, name: "Corn Futures" },
+  "HG=F": { price: 4.52,    change24h: 1.1,  name: "Copper Futures" },
+  "ZW=F": { price: 580.00,  change24h: -1.5, name: "Wheat Futures" },
 };
 
 const FALLBACK_CRYPTO: Record<string, number> = {
   BTC: 98450, ETH: 3820, SOL: 182.50, BNB: 634.20, ADA: 0.892, AVAX: 41.30,
+  MATIC: 0.85, DOT: 8.50,
 };
 
 // ─── Cache ────────────────────────────────────────────────────────────────────
@@ -125,7 +129,7 @@ function initCache() {
 // ─── Stocks + Commodities (yahoo-finance2) ────────────────────────────────────
 
 const STOCK_SYMBOLS = ["AAPL","MSFT","GOOGL","AMZN","NVDA","TSLA","AMD","META","JNJ","PG","SPY","QQQ"];
-const COMMODITY_SYMBOLS = ["GC=F","CL=F","SI=F","NG=F"];
+const COMMODITY_SYMBOLS = ["GC=F","CL=F","SI=F","NG=F","ZC=F","HG=F","ZW=F"];
 let equityErrLogged = false;
 
 async function refreshOneEquity(symbol: string, open: boolean, ts: string) {
@@ -162,6 +166,7 @@ async function refreshEquities(symbols: string[]) {
 const COIN_IDS: Record<string, string> = {
   BTC: "bitcoin", ETH: "ethereum", SOL: "solana",
   BNB: "binancecoin", ADA: "cardano", AVAX: "avalanche-2",
+  MATIC: "matic-network", DOT: "polkadot",
 };
 
 async function refreshCrypto() {
@@ -374,8 +379,8 @@ export function startLiveDataService() {
   // Schedule refreshes
   setInterval(() => refreshEquities(STOCK_SYMBOLS).catch(() => {}), 15_000);
   setInterval(() => refreshEquities(COMMODITY_SYMBOLS).catch(() => {}), 15_000);
-  setInterval(() => refreshCrypto().catch(() => {}), 30_000);
-  setInterval(() => refreshForex().catch(() => {}), 60_000);
+  setInterval(() => refreshCrypto().catch(() => {}), 10_000);    // Crypto 24/7: every 10s
+  setInterval(() => refreshForex().catch(() => {}), 30_000);     // Forex: every 30s
   setInterval(() => refreshAllOptionsChains().catch(() => {}), 5 * 60_000);
 
   console.log("[liveData] live data service started");

@@ -17,8 +17,8 @@ function useLivePrices() {
   const { data } = useQuery<{ prices: Record<string, LivePrice>; marketOpen: boolean }>({
     queryKey: ["/api/live-prices"],
     queryFn: () => fetch("/api/live-prices").then(r => r.json()),
-    refetchInterval: 15_000,
-    staleTime: 10_000,
+    refetchInterval: 10_000,
+    staleTime: 5_000,
   });
   return data?.prices ?? {};
 }
@@ -38,7 +38,7 @@ function LivePnL({ trade, livePrices }: { trade: any; livePrices: Record<string,
   // Map trade ticker to live price key
   const market = trade.market;
   const ticker = trade.ticker;
-  const commodityMap: Record<string, string> = { GOLD: "GC=F", OIL: "CL=F", SILVER: "SI=F", NATGAS: "NG=F" };
+  const commodityMap: Record<string, string> = { GOLD: "GC=F", OIL: "CL=F", SILVER: "SI=F", NATGAS: "NG=F", CORN: "ZC=F", COPPER: "HG=F", WHEAT: "ZW=F" };
   const priceKey = market === "commodities" ? (commodityMap[ticker] ?? ticker) : ticker;
 
   const liveData = livePrices[priceKey];

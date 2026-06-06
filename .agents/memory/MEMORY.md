@@ -1,0 +1,1 @@
+- [yahoo-finance2 v3 usage](yahoo-finance2-v3.md) — v3 needs `new (DefaultExport as any)()` not singleton call; suppressNotices values are `yahooSurvey`/`ripHistorical` only
