@@ -142,7 +142,7 @@ function TradeCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
   const priceColor = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#e2e8f0";
 
   return (
-    <div className="rounded-2xl p-4 trade-card" style={{ background: "#1a2332", border: flashBorder, boxShadow: flashShadow, transition: "border-color 0.4s, box-shadow 0.4s" }}>
+    <div className="rounded-2xl p-4 trade-card glass-card" style={{ border: flashBorder, boxShadow: flashShadow, transition: "border-color 0.4s, box-shadow 0.4s" }}>
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -247,7 +247,7 @@ function WeeklyOptionsCard({ opp, budget, livePrice, onTrade, onWatchlist, tradi
   const isRealData = !!bestContract;
 
   return (
-    <div className="rounded-2xl p-4 trade-card" style={{ background: "#1a2332", border: flashBorder, transition: "border-color 0.4s" }}>
+    <div className="rounded-2xl p-4 trade-card glass-card" style={{ border: flashBorder, transition: "border-color 0.4s" }}>
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
@@ -416,7 +416,7 @@ function ForexCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
   const priceColorFx = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#e2e8f0";
 
   return (
-    <div className="rounded-2xl p-4 trade-card" style={{ background: "#1a2332", border: flashBorderFx, boxShadow: flashShadowFx, transition: "border-color 0.4s, box-shadow 0.4s" }}>
+    <div className="rounded-2xl p-4 trade-card glass-card" style={{ border: flashBorderFx, boxShadow: flashShadowFx, transition: "border-color 0.4s, box-shadow 0.4s" }}>
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
@@ -587,7 +587,7 @@ export default function MarketsPage() {
   const isFetching = isLoading;
 
   return (
-    <div className="page-container lg:pb-8 min-h-screen" style={{ background: "#0d1117" }}>
+    <div className="page-container page-glow lg:pb-8 min-h-screen" style={{ background: "#0d1117" }}>
       <div className="px-4 lg:px-8 pt-6 max-w-none">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-black">Markets</h1>

@@ -41,8 +41,8 @@ function SignalModal({ opp, onClose, onTrade, trading }: { opp: TradingOpportuni
   const rr = opp.stopLoss > 0 ? ((opp.targetPrice - opp.entryPrice) / (opp.entryPrice - opp.stopLoss)).toFixed(1) : "N/A";
   return (
     <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center" style={{ background: "rgba(0,0,0,0.7)" }}>
-      <div className="w-full max-w-lg rounded-t-3xl lg:rounded-3xl p-6 animate-fade-in"
-        style={{ background: "#1a2332", border: "1px solid #243044", maxHeight: "90vh", overflowY: "auto" }}>
+      <div className="w-full max-w-lg rounded-t-3xl lg:rounded-3xl p-6 animate-fade-in glass-panel"
+        style={{ maxHeight: "90vh", overflowY: "auto" }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2"><MBadge market={opp.market} /><SBadge type={opp.signalType} /></div>
           <button onClick={onClose} className="text-xl" style={{ color: "#64748b" }}>✕</button>
@@ -130,8 +130,8 @@ export default function AISignalPage() {
   const lastUpdate = dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "--:--";
 
   return (
-    <div className="page-container lg:pb-8 min-h-screen" style={{ background: "#0d1117" }}>
-      <div className="px-4 lg:px-8 pt-6 max-w-none">
+    <div className="page-container page-glow lg:pb-8 min-h-screen" style={{ background: "#0d1117" }}>
+      <div className="px-4 lg:px-8 pt-6 max-w-none" style={{ position: "relative", zIndex: 1 }}>
         <div className="flex items-center justify-between mb-5">
           <div>
             <h1 className="text-xl font-black">🤖 AI Signal</h1>
@@ -140,7 +140,7 @@ export default function AISignalPage() {
         </div>
 
         {/* Filters */}
-        <div className="rounded-2xl p-4 mb-4" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+        <div className="rounded-2xl p-4 mb-4 glass-panel">
           <div className="lg:flex lg:gap-8">
             <div className="flex-1 mb-3 lg:mb-0">
               <div className="text-xs font-semibold mb-2" style={{ color: "#64748b" }}>MARKET</div>
@@ -191,7 +191,7 @@ export default function AISignalPage() {
             {filtered.map(opp => {
               const rr = opp.stopLoss > 0 ? ((opp.targetPrice - opp.entryPrice) / (opp.entryPrice - opp.stopLoss)).toFixed(1) : "N/A";
               return (
-                <div key={opp.id} className="rounded-2xl p-4 trade-card cursor-pointer" style={{ background: "#1a2332", border: "1px solid #243044" }}
+                <div key={opp.id} className="rounded-2xl p-4 trade-card glass-card cursor-pointer"
                   onClick={() => setSelected(opp)}>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2 flex-wrap">

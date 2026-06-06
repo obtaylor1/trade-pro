@@ -131,7 +131,7 @@ export default function AccountPage() {
   const initials = (user?.name ?? "U").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
-    <div className="page-container lg:pb-8 min-h-screen" style={{ background: "#0d1117" }}>
+    <div className="page-container page-glow lg:pb-8 min-h-screen" style={{ background: "#0d1117" }}>
       <div className="px-4 lg:px-8 pt-6 max-w-none">
 
         {/* Profile + Stats */}
@@ -157,7 +157,7 @@ export default function AccountPage() {
               { label: "Best Trade", val: `+$${bestTrade.toFixed(2)}`, color: "#22c55e" },
               { label: "Worst Trade", val: `$${worstTrade.toFixed(2)}`, color: "#ef4444" },
             ].map(item => (
-              <div key={item.label} className="rounded-2xl p-4" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+              <div key={item.label} className="rounded-2xl p-4 glass-card">
                 <div className="text-xs mb-1" style={{ color: "#64748b" }}>{item.label}</div>
                 <div className="text-xl font-black" style={{ color: item.color }}>{item.val}</div>
               </div>
@@ -175,7 +175,7 @@ export default function AccountPage() {
             </div>
             <div className="flex flex-col gap-2 lg:hidden">
               {openTrades.map((trade: any) => (
-                <div key={trade.id} className="rounded-xl p-3" style={{ background: "#1a2332", border: "1px solid rgba(34,197,94,0.2)" }}>
+                <div key={trade.id} className="rounded-xl p-3 glass-card" style={{ borderColor: "rgba(34,197,94,0.25)" }}>
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2">
@@ -199,7 +199,7 @@ export default function AccountPage() {
                 </div>
               ))}
             </div>
-            <div className="hidden lg:block rounded-2xl overflow-hidden" style={{ background: "#1a2332", border: "1px solid rgba(34,197,94,0.2)" }}>
+            <div className="hidden lg:block rounded-2xl overflow-hidden glass-panel" style={{ borderColor: "rgba(34,197,94,0.25)" }}>
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ borderBottom: "1px solid #243044" }}>
@@ -239,13 +239,13 @@ export default function AccountPage() {
           {isLoading ? (
             <div className="flex flex-col gap-2">{Array(3).fill(0).map((_, i) => <div key={i} className="skeleton rounded-xl" style={{ height: 80 }} />)}</div>
           ) : closedTrades.length === 0 && openTrades.length === 0 ? (
-            <div className="rounded-2xl p-6 text-center" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+            <div className="rounded-2xl p-6 text-center glass-card">
               <div className="text-3xl mb-2">📭</div>
               <div className="text-sm" style={{ color: "#64748b" }}>No trades yet</div>
               <button onClick={() => setLocation("/markets")} className="mt-2 text-xs font-semibold" style={{ color: "#3b82f6" }}>Make your first trade →</button>
             </div>
           ) : closedTrades.length === 0 ? (
-            <div className="rounded-2xl p-4 text-center text-sm" style={{ background: "#1a2332", border: "1px solid #243044", color: "#64748b" }}>
+            <div className="rounded-2xl p-4 text-center text-sm glass-card" style={{ color: "#64748b" }}>
               No closed trades yet — close a position to see it here.
             </div>
           ) : (
@@ -255,7 +255,7 @@ export default function AccountPage() {
                 {closedTrades.map((trade: any) => {
                   const pnl = parseFloat(trade.pnl ?? 0);
                   return (
-                    <div key={trade.id} className="rounded-xl p-3" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+                    <div key={trade.id} className="rounded-xl p-3 glass-card">
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="flex items-center gap-2">
@@ -282,7 +282,7 @@ export default function AccountPage() {
               </div>
 
               {/* Desktop table */}
-              <div className="hidden lg:block rounded-2xl overflow-hidden" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+              <div className="hidden lg:block rounded-2xl overflow-hidden glass-panel">
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ borderBottom: "1px solid #243044" }}>
@@ -321,13 +321,11 @@ export default function AccountPage() {
         {/* Actions */}
         <div className="flex flex-col lg:flex-row gap-3 mb-6">
           <button onClick={() => setShowReset(true)}
-            className="lg:flex-1 py-3 rounded-2xl font-semibold text-sm"
-            style={{ background: "#1a2332", border: "1px solid #ef444444", color: "#f87171" }}>
+            className="lg:flex-1 py-3 rounded-2xl font-semibold text-sm glass-card" style={{ borderColor: "rgba(239,68,68,0.25)", color: "#f87171" }}>
             🔄 Reset Portfolio
           </button>
           <button onClick={logout}
-            className="lg:flex-1 py-3 rounded-2xl font-semibold text-sm"
-            style={{ background: "#1a2332", border: "1px solid #243044", color: "#64748b" }}>
+            className="lg:flex-1 py-3 rounded-2xl font-semibold text-sm glass-card" style={{ color: "#64748b" }}>
             🚪 Sign Out
           </button>
         </div>
@@ -335,7 +333,7 @@ export default function AccountPage() {
 
       {showReset && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.7)" }}>
-          <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+          <div className="w-full max-w-sm rounded-2xl p-6 glass-panel">
             <div className="text-xl font-bold mb-2">Reset Portfolio?</div>
             <div className="text-sm mb-5" style={{ color: "#94a3b8" }}>This will reset your balance to $10,000 and close all open trades. This cannot be undone.</div>
             <div className="flex gap-3">

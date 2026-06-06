@@ -29,13 +29,13 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#0d1117" }}>
-      <div className="text-center mb-10">
+    <div className="page-glow min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#0d1117" }}>
+      <div className="text-center mb-10" style={{ position: "relative", zIndex: 1 }}>
         <div className="text-4xl font-black mb-2 gradient-text">Trade Pro</div>
         <div className="text-base" style={{ color: "#64748b" }}>Trade any market. Start with $0.25.</div>
       </div>
 
-      <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+      <div className="w-full max-w-sm rounded-2xl p-6 glass-panel" style={{ position: "relative", zIndex: 1 }}>
         <h1 className="text-xl font-bold mb-1 text-center">Create Account</h1>
         <p className="text-xs text-center mb-5" style={{ color: "#64748b" }}>Free forever. No credit card needed.</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

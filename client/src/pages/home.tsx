@@ -118,8 +118,8 @@ export default function HomePage() {
   const chartColor = balance >= startBal ? "#22c55e" : "#ef4444";
 
   return (
-    <div className="page-container lg:pb-8 min-h-screen" style={{ background: "#0d1117" }}>
-      <div className="px-4 lg:px-8 pt-6 max-w-none">
+    <div className="page-container page-glow lg:pb-8 min-h-screen" style={{ background: "#0d1117" }}>
+      <div className="px-4 lg:px-8 pt-6 max-w-none" style={{ position: "relative", zIndex: 1 }}>
 
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
@@ -136,7 +136,7 @@ export default function HomePage() {
         </div>
 
         {/* Balance + Chart — full width */}
-        <div className="rounded-2xl p-5 mb-4" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+        <div className="rounded-2xl p-5 mb-4 glass-card">
           <div className="text-xs font-semibold mb-1 tracking-wider" style={{ color: "#64748b" }}>PAPER BALANCE</div>
           <div className="text-4xl font-black mb-1">
             ${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
@@ -150,7 +150,7 @@ export default function HomePage() {
         </div>
 
         {/* Chart — full width */}
-        <div className="rounded-2xl p-4 mb-6" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+        <div className="rounded-2xl p-4 mb-6 glass-card">
           <div className="flex gap-1 mb-3 justify-end">
             {periods.map((p) => (
               <button key={p} onClick={() => setPeriod(p)}
@@ -219,7 +219,7 @@ export default function HomePage() {
               </button>
             </div>
             {!watchlistItems || watchlistItems.length === 0 ? (
-              <div className="rounded-2xl p-5 text-center" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+              <div className="rounded-2xl p-5 text-center glass-card">
                 <div className="text-2xl mb-1">👀</div>
                 <div className="text-sm mb-2" style={{ color: "#64748b" }}>No tickers yet</div>
                 <button onClick={() => setLocation("/markets")} className="text-xs font-semibold" style={{ color: "#3b82f6" }}>
@@ -231,8 +231,7 @@ export default function HomePage() {
                 {watchlistItems.map((item: any) => {
                   const ch = parseFloat((Math.random() * 4 - 1.5).toFixed(2));
                   return (
-                    <div key={item.id} className="flex items-center justify-between rounded-xl px-4 py-3"
-                      style={{ background: "#1a2332", border: "1px solid #243044" }}>
+                    <div key={item.id} className="flex items-center justify-between rounded-xl px-4 py-3 glass-card">
                       <div>
                         <div className="font-bold text-sm">{item.ticker}</div>
                         <div className="text-xs capitalize" style={{ color: "#64748b" }}>{item.market}</div>
@@ -256,8 +255,7 @@ export default function HomePage() {
             ⚡ Quick Trade
           </button>
           <button onClick={() => setLocation("/account")}
-            className="flex-1 py-3 rounded-2xl font-semibold text-sm"
-            style={{ background: "#1a2332", border: "1px solid #243044" }}>
+            className="flex-1 py-3 rounded-2xl font-semibold text-sm glass-card">
             👤 Account
           </button>
         </div>
@@ -275,7 +273,7 @@ function SignalCard({ opp, onTrade, trading }: { opp: TradingOpportunity; onTrad
   const cls: Record<string, string> = { BREAKOUT: "badge-breakout", REVERSAL: "badge-reversal", MOMENTUM: "badge-momentum", MEAN_REVERSION: "badge-mean" };
   const lbl: Record<string, string> = { MEAN_REVERSION: "MEAN REV" };
   return (
-    <div className="rounded-2xl p-4 trade-card" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+    <div className="rounded-2xl p-4 trade-card glass-card">
       <div className="flex items-center gap-1.5 mb-2 flex-wrap">
         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
           style={{ background: `${mc}22`, color: mc, border: `1px solid ${mc}44` }}>{opp.market}</span>
