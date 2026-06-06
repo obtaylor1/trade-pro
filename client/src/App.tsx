@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import BottomNavigation from "@/components/BottomNavigation";
+import Sidebar from "@/components/Sidebar";
 import LoginPage from "@/pages/login";
 import SignupPage from "@/pages/signup";
 import OnboardingPage from "@/pages/onboarding";
@@ -45,20 +46,23 @@ function AppRoutes() {
   }
 
   return (
-    <>
-      <Switch>
-        <Route path="/" component={HomePage} />
-        <Route path="/markets" component={MarketsPage} />
-        <Route path="/ai-signal" component={AISignalPage} />
-        <Route path="/news" component={NewsPage} />
-        <Route path="/learn" component={LearnPage} />
-        <Route path="/account" component={AccountPage} />
-        <Route path="/login"><Redirect to="/" /></Route>
-        <Route path="/signup"><Redirect to="/" /></Route>
-        <Route component={NotFound} />
-      </Switch>
+    <div className="flex min-h-screen" style={{ background: "#0d1117" }}>
+      <Sidebar />
+      <main className="flex-1 w-full lg:ml-[220px] min-h-screen">
+        <Switch>
+          <Route path="/" component={HomePage} />
+          <Route path="/markets" component={MarketsPage} />
+          <Route path="/ai-signal" component={AISignalPage} />
+          <Route path="/news" component={NewsPage} />
+          <Route path="/learn" component={LearnPage} />
+          <Route path="/account" component={AccountPage} />
+          <Route path="/login"><Redirect to="/" /></Route>
+          <Route path="/signup"><Redirect to="/" /></Route>
+          <Route component={NotFound} />
+        </Switch>
+      </main>
       <BottomNavigation />
-    </>
+    </div>
   );
 }
 

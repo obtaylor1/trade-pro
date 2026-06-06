@@ -118,8 +118,9 @@ export default function HomePage() {
   const chartColor = balance >= startBal ? "#22c55e" : "#ef4444";
 
   return (
-    <div className="page-container min-h-screen" style={{ background: "#0d1117" }}>
-      <div className="max-w-md mx-auto px-4 pt-6">
+    <div className="page-container lg:pb-8 min-h-screen" style={{ background: "#0d1117" }}>
+      <div className="px-4 lg:px-8 pt-6 max-w-none">
+
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
@@ -134,7 +135,7 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* Balance Card */}
+        {/* Balance + Chart — full width */}
         <div className="rounded-2xl p-5 mb-4" style={{ background: "#1a2332", border: "1px solid #243044" }}>
           <div className="text-xs font-semibold mb-1 tracking-wider" style={{ color: "#64748b" }}>PAPER BALANCE</div>
           <div className="text-4xl font-black mb-1">
@@ -148,8 +149,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Chart */}
-        <div className="rounded-2xl p-4 mb-4" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+        {/* Chart — full width */}
+        <div className="rounded-2xl p-4 mb-6" style={{ background: "#1a2332", border: "1px solid #243044" }}>
           <div className="flex gap-1 mb-3 justify-end">
             {periods.map((p) => (
               <button key={p} onClick={() => setPeriod(p)}
@@ -162,7 +163,7 @@ export default function HomePage() {
               </button>
             ))}
           </div>
-          <ResponsiveContainer width="100%" height={120}>
+          <ResponsiveContainer width="100%" height={160}>
             <LineChart data={chartData} margin={{ left: -24, right: 4 }}>
               <XAxis dataKey="t" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
               <YAxis domain={["auto", "auto"]} tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false}
@@ -177,79 +178,74 @@ export default function HomePage() {
           </ResponsiveContainer>
         </div>
 
-        {/* AI Signals carousel */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="font-bold text-sm">🤖 Top AI Signals</div>
-            <button onClick={() => setLocation("/ai-signal")} className="text-xs font-medium" style={{ color: "#3b82f6" }}>
-              See all →
-            </button>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
-            {signalsLoading
-              ? Array(4).fill(0).map((_, i) => (
-                  <div key={i} className="skeleton rounded-2xl flex-shrink-0" style={{ width: 190, height: 150 }} />
-                ))
-              : (signals ?? []).slice(0, 6).map((opp) => (
-                  <div key={opp.id} className="rounded-2xl p-4 flex-shrink-0 trade-card cursor-pointer"
-                    style={{ background: "#1a2332", border: "1px solid #243044", width: 190 }}>
-                    <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                      <MarketBadge market={opp.market} />
-                      <SignalBadge type={opp.signalType} />
-                    </div>
-                    <div className="text-lg font-black">{opp.ticker}</div>
-                    <div className="text-xs mb-1 truncate" style={{ color: "#64748b" }}>{opp.name}</div>
-                    <ConfBar val={opp.confidence} />
-                    <div className="text-xs mt-2 leading-tight line-clamp-2" style={{ color: "#94a3b8" }}>
-                      {opp.rationale.slice(0, 65)}…
-                    </div>
-                    <button
-                      onClick={() => tradeMutation.mutate(opp)}
-                      disabled={tradeMutation.isPending}
-                      className="mt-3 w-full py-1.5 rounded-xl text-xs font-bold text-white"
-                      style={{ background: "#3b82f6" }}>
-                      Trade This ($1)
-                    </button>
-                  </div>
-                ))}
-          </div>
-        </div>
+        {/* Signals + Watchlist — side by side on desktop */}
+        <div className="lg:flex lg:gap-6 mb-6">
 
-        {/* Watchlist */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="font-bold text-sm">👀 Watchlist</div>
-            <button onClick={() => setLocation("/markets")} className="text-xs font-medium" style={{ color: "#3b82f6" }}>
-              + Add
-            </button>
-          </div>
-          {!watchlistItems || watchlistItems.length === 0 ? (
-            <div className="rounded-2xl p-5 text-center" style={{ background: "#1a2332", border: "1px solid #243044" }}>
-              <div className="text-2xl mb-1">👀</div>
-              <div className="text-sm mb-2" style={{ color: "#64748b" }}>No tickers yet</div>
-              <button onClick={() => setLocation("/markets")} className="text-xs font-semibold" style={{ color: "#3b82f6" }}>
-                Browse markets →
+          {/* AI Signals — 60% on desktop */}
+          <div className="lg:flex-[3] mb-4 lg:mb-0">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-bold text-sm">🤖 Top AI Signals</div>
+              <button onClick={() => setLocation("/ai-signal")} className="text-xs font-medium" style={{ color: "#3b82f6" }}>
+                See all →
               </button>
             </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {watchlistItems.map((item: any) => {
-                const ch = parseFloat((Math.random() * 4 - 1.5).toFixed(2));
-                return (
-                  <div key={item.id} className="flex items-center justify-between rounded-xl px-4 py-3"
-                    style={{ background: "#1a2332", border: "1px solid #243044" }}>
-                    <div>
-                      <div className="font-bold text-sm">{item.ticker}</div>
-                      <div className="text-xs capitalize" style={{ color: "#64748b" }}>{item.market}</div>
-                    </div>
-                    <span className="text-sm font-semibold" style={{ color: ch >= 0 ? "#22c55e" : "#ef4444" }}>
-                      {ch >= 0 ? "+" : ""}{ch}%
-                    </span>
-                  </div>
-                );
-              })}
+            {/* Mobile: horizontal scroll. Desktop: 2-col grid */}
+            <div className="lg:hidden flex gap-3 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
+              {signalsLoading
+                ? Array(4).fill(0).map((_, i) => (
+                    <div key={i} className="skeleton rounded-2xl flex-shrink-0" style={{ width: 190, height: 150 }} />
+                  ))
+                : (signals ?? []).slice(0, 6).map((opp) => (
+                    <SignalCard key={opp.id} opp={opp} onTrade={() => tradeMutation.mutate(opp)} trading={tradeMutation.isPending} />
+                  ))}
             </div>
-          )}
+            <div className="hidden lg:grid lg:grid-cols-2 gap-3">
+              {signalsLoading
+                ? Array(4).fill(0).map((_, i) => (
+                    <div key={i} className="skeleton rounded-2xl" style={{ height: 170 }} />
+                  ))
+                : (signals ?? []).slice(0, 6).map((opp) => (
+                    <SignalCard key={opp.id} opp={opp} onTrade={() => tradeMutation.mutate(opp)} trading={tradeMutation.isPending} />
+                  ))}
+            </div>
+          </div>
+
+          {/* Watchlist — 40% on desktop */}
+          <div className="lg:flex-[2]">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-bold text-sm">👀 Watchlist</div>
+              <button onClick={() => setLocation("/markets")} className="text-xs font-medium" style={{ color: "#3b82f6" }}>
+                + Add
+              </button>
+            </div>
+            {!watchlistItems || watchlistItems.length === 0 ? (
+              <div className="rounded-2xl p-5 text-center" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+                <div className="text-2xl mb-1">👀</div>
+                <div className="text-sm mb-2" style={{ color: "#64748b" }}>No tickers yet</div>
+                <button onClick={() => setLocation("/markets")} className="text-xs font-semibold" style={{ color: "#3b82f6" }}>
+                  Browse markets →
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {watchlistItems.map((item: any) => {
+                  const ch = parseFloat((Math.random() * 4 - 1.5).toFixed(2));
+                  return (
+                    <div key={item.id} className="flex items-center justify-between rounded-xl px-4 py-3"
+                      style={{ background: "#1a2332", border: "1px solid #243044" }}>
+                      <div>
+                        <div className="font-bold text-sm">{item.ticker}</div>
+                        <div className="text-xs capitalize" style={{ color: "#64748b" }}>{item.market}</div>
+                      </div>
+                      <span className="text-sm font-semibold" style={{ color: ch >= 0 ? "#22c55e" : "#ef4444" }}>
+                        {ch >= 0 ? "+" : ""}{ch}%
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Quick actions */}
@@ -266,6 +262,43 @@ export default function HomePage() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SignalCard({ opp, onTrade, trading }: { opp: TradingOpportunity; onTrade: () => void; trading: boolean }) {
+  const colors: Record<string, string> = {
+    stocks: "#3b82f6", crypto: "#f59e0b", options: "#8b5cf6", forex: "#22c55e", commodities: "#ef4444",
+  };
+  const mc = colors[opp.market] ?? "#64748b";
+  const cc = opp.confidence >= 75 ? "#22c55e" : opp.confidence >= 60 ? "#f59e0b" : "#ef4444";
+  const cls: Record<string, string> = { BREAKOUT: "badge-breakout", REVERSAL: "badge-reversal", MOMENTUM: "badge-momentum", MEAN_REVERSION: "badge-mean" };
+  const lbl: Record<string, string> = { MEAN_REVERSION: "MEAN REV" };
+  return (
+    <div className="rounded-2xl p-4 trade-card" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+      <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
+          style={{ background: `${mc}22`, color: mc, border: `1px solid ${mc}44` }}>{opp.market}</span>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cls[opp.signalType] ?? "badge-breakout"}`}>
+          {lbl[opp.signalType] ?? opp.signalType}
+        </span>
+      </div>
+      <div className="text-lg font-black">{opp.ticker}</div>
+      <div className="text-xs mb-2 truncate" style={{ color: "#64748b" }}>{opp.name}</div>
+      <div className="flex items-center gap-2 mb-2">
+        <div className="flex-1 h-1.5 rounded-full" style={{ background: "#243044" }}>
+          <div className="h-1.5 rounded-full" style={{ width: `${opp.confidence}%`, background: cc }} />
+        </div>
+        <span className="text-xs font-semibold" style={{ color: cc }}>{opp.confidence}%</span>
+      </div>
+      <div className="text-xs leading-tight line-clamp-2 mb-3" style={{ color: "#94a3b8" }}>
+        {opp.rationale.slice(0, 65)}…
+      </div>
+      <button onClick={onTrade} disabled={trading}
+        className="w-full py-1.5 rounded-xl text-xs font-bold text-white"
+        style={{ background: "#3b82f6" }}>
+        Trade This ($1)
+      </button>
     </div>
   );
 }
