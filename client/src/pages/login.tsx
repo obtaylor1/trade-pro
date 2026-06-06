@@ -9,6 +9,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
 
@@ -16,7 +17,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       setLocation("/");
     } catch (err: any) {
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
@@ -39,7 +40,6 @@ export default function LoginPage() {
 
   return (
     <div className="page-glow min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#0d1117" }}>
-      {/* Logo */}
       <div className="text-center mb-8" style={{ position: "relative", zIndex: 1 }}>
         <div className="text-4xl font-black mb-2 gradient-text">Trade Pro</div>
         <div className="text-base" style={{ color: "#64748b" }}>Trade any market. Start with $0.25.</div>
@@ -57,21 +57,13 @@ export default function LoginPage() {
             opacity: demoLoading ? 0.7 : 1,
           }}
         >
-          {demoLoading ? (
-            <span>Loading demo...</span>
-          ) : (
-            <>
-              <span>⚡</span>
-              <span>Try Live Demo — No Sign Up</span>
-            </>
-          )}
+          {demoLoading ? "Loading demo..." : <><span>⚡</span><span>Try Live Demo — No Sign Up</span></>}
         </button>
         <p className="text-center text-xs mt-2" style={{ color: "#475569" }}>
           Instant access · $10,000 paper balance · all markets
         </p>
       </div>
 
-      {/* Divider */}
       <div className="w-full max-w-sm flex items-center gap-3 mb-4" style={{ position: "relative", zIndex: 1 }}>
         <div className="flex-1 h-px" style={{ background: "#1e2d42" }} />
         <span className="text-xs" style={{ color: "#475569" }}>or sign in</span>
@@ -99,6 +91,25 @@ export default function LoginPage() {
               style={{ background: "#0d1117", borderColor: "#243044", color: "#e2e8f0" }}
             />
           </div>
+
+          {/* Remember Me */}
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <div
+              onClick={() => setRememberMe(v => !v)}
+              className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all"
+              style={{
+                background: rememberMe ? "#3b82f6" : "transparent",
+                border: `2px solid ${rememberMe ? "#3b82f6" : "#334155"}`,
+              }}
+            >
+              {rememberMe && <span className="text-white text-xs font-bold">✓</span>}
+            </div>
+            <span className="text-sm" style={{ color: "#94a3b8" }}>
+              Remember me{" "}
+              <span className="text-xs" style={{ color: "#475569" }}>(stay signed in for 90 days)</span>
+            </span>
+          </label>
+
           <button
             type="submit" disabled={loading}
             className="btn-execute w-full py-3 text-white text-sm font-semibold mt-2"

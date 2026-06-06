@@ -10,24 +10,41 @@ import { z } from "zod";
 
 const JWT_SECRET = process.env.JWT_SECRET || "tradepro-secret-2026";
 
-function makeToken(userId: string) {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "7d" });
+function makeToken(userId: string, isAdmin: boolean, expiresIn: string | number = "30d") {
+  return jwt.sign({ userId, isAdmin }, JWT_SECRET, { expiresIn } as any);
 }
 
 function authMiddleware(req: any, res: any, next: any) {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer ")) return res.status(401).json({ message: "Unauthorized" });
   try {
-    const payload = jwt.verify(auth.slice(7), JWT_SECRET) as { userId: string };
+    const payload = jwt.verify(auth.slice(7), JWT_SECRET) as { userId: string; isAdmin?: boolean };
     req.userId = payload.userId;
+    req.isAdmin = payload.isAdmin ?? false;
     next();
   } catch {
     return res.status(401).json({ message: "Invalid token" });
   }
 }
 
+function requireAdmin(req: any, res: any, next: any) {
+  if (!req.isAdmin) return res.status(403).json({ message: "Forbidden" });
+  next();
+}
+
+function userPayload(user: any) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    paperBalance: user.paperBalance,
+    onboardingComplete: user.onboardingComplete,
+    marketInterests: user.marketInterests,
+    isAdmin: user.isAdmin === 1,
+  };
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Start live market data service (non-blocking background job)
   startLiveDataService();
 
   // ── Auth ────────────────────────────────────────────────────────────────────
@@ -46,10 +63,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         onboardingComplete: false,
         marketInterests: [],
       });
-      // Save initial snapshot
       await storage.saveSnapshot(user.id, 10000);
-      const token = makeToken(user.id);
-      res.json({ token, user: { id: user.id, name: user.name, email: user.email, paperBalance: user.paperBalance, onboardingComplete: user.onboardingComplete, marketInterests: user.marketInterests } });
+      await storage.updateLastLogin(user.id);
+      const token = makeToken(user.id, user.isAdmin === 1, "30d");
+      res.json({ token, user: userPayload(user) });
     } catch (e) {
       if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0].message });
       console.error(e);
@@ -60,19 +77,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const body = loginSchema.parse(req.body);
+      const rememberMe = req.body.rememberMe === true;
       const user = await storage.getUserByEmail(body.email);
       if (!user) return res.status(401).json({ message: "Invalid email or password" });
       const ok = await bcrypt.compare(body.password, user.passwordHash);
       if (!ok) return res.status(401).json({ message: "Invalid email or password" });
-      const token = makeToken(user.id);
-      res.json({ token, user: { id: user.id, name: user.name, email: user.email, paperBalance: user.paperBalance, onboardingComplete: user.onboardingComplete, marketInterests: user.marketInterests } });
+      await storage.updateLastLogin(user.id);
+      const expiry = rememberMe ? "90d" : "30d";
+      const token = makeToken(user.id, user.isAdmin === 1, expiry);
+      res.json({ token, user: userPayload(user) });
     } catch (e) {
       if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0].message });
       res.status(500).json({ message: "Login failed" });
     }
   });
 
-  // ── Demo Login ───────────────────────────────────────────────────────────────
+  app.post("/api/auth/refresh", authMiddleware, async (req: any, res) => {
+    try {
+      const user = await storage.getUserById(req.userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      const rememberMe = req.body?.rememberMe === true;
+      const expiry = rememberMe ? "90d" : "30d";
+      const token = makeToken(user.id, user.isAdmin === 1, expiry);
+      res.json({ token, user: userPayload(user) });
+    } catch (e) {
+      res.status(500).json({ message: "Refresh failed" });
+    }
+  });
+
   app.post("/api/auth/demo", async (req, res) => {
     try {
       const DEMO_EMAIL = "demo@tradepro.app";
@@ -89,8 +121,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         await storage.saveSnapshot(user.id, 10000);
       }
-      const token = makeToken(user.id);
-      res.json({ token, user: { id: user.id, name: user.name, email: user.email, paperBalance: user.paperBalance, onboardingComplete: user.onboardingComplete, marketInterests: user.marketInterests } });
+      await storage.updateLastLogin(user.id);
+      const token = makeToken(user.id, false, "30d");
+      res.json({ token, user: userPayload(user) });
     } catch (e) {
       console.error(e);
       res.status(500).json({ message: "Demo login failed" });
@@ -100,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/me", authMiddleware, async (req: any, res) => {
     const user = await storage.getUserById(req.userId);
     if (!user) return res.status(404).json({ message: "User not found" });
-    res.json({ id: user.id, name: user.name, email: user.email, paperBalance: user.paperBalance, onboardingComplete: user.onboardingComplete, marketInterests: user.marketInterests });
+    res.json(userPayload(user));
   });
 
   // ── Onboarding ──────────────────────────────────────────────────────────────
@@ -146,7 +179,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/trades/execute", authMiddleware, async (req: any, res) => {
     try {
       const body = executeTradeSchema.parse({ ...req.body, userId: req.userId });
-      // Deduct from balance
       const user = await storage.getUserById(req.userId);
       if (!user) return res.status(404).json({ message: "User not found" });
       const balance = parseFloat(String(user.paperBalance));
@@ -194,7 +226,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const invested = parseFloat(String(trade.investedAmount));
       const pnl = parseFloat(((exit - entry) / entry * invested).toFixed(2));
       await storage.closeTrade(tradeId, exit, pnl);
-      // Return invested amount + pnl to balance
       const user = await storage.getUserById(req.userId);
       if (user) {
         const newBal = parseFloat((parseFloat(String(user.paperBalance)) + invested + pnl).toFixed(2));
@@ -251,21 +282,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true, newBalance: 10000 });
   });
 
-  // ── Live Prices ──────────────────────────────────────────────────────────────
+  // ── Live Prices ─────────────────────────────────────────────────────────────
 
-  app.get("/api/live-prices", (_req, res) => {
+  app.get("/api/live-prices", (req, res) => {
     res.json(getLivePrices());
   });
 
   app.get("/api/options-chain/:symbol", (req, res) => {
-    const sym = req.params.symbol.toUpperCase();
-    const chain = getOptionsChain(sym);
-    if (!chain) return res.status(404).json({ message: "No chain data yet" });
+    const chain = getOptionsChain(req.params.symbol.toUpperCase());
+    if (!chain) return res.status(404).json({ message: "No options chain for symbol" });
     res.json(chain);
   });
 
-  app.get("/api/options-chains", (_req, res) => {
+  app.get("/api/options-chains", (req, res) => {
     res.json(getAllOptionsChains());
+  });
+
+  // ── Admin ────────────────────────────────────────────────────────────────────
+
+  app.get("/api/admin/stats", authMiddleware, requireAdmin, async (req: any, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const allTrades = await storage.getAllTrades();
+
+      const totalUsers = allUsers.length;
+      const totalTrades = allTrades.length;
+
+      // New users today (UTC)
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const newUsersToday = allUsers.filter(u => new Date(u.createdAt) >= todayStart).length;
+
+      // Avg win rate
+      const closedTrades = allTrades.filter(t => t.status === "CLOSED");
+      const winningTrades = closedTrades.filter(t => parseFloat(String(t.pnl ?? 0)) > 0);
+      const avgWinRate = closedTrades.length > 0
+        ? Math.round((winningTrades.length / closedTrades.length) * 100)
+        : 0;
+
+      // Top assets by trade count
+      const assetCounts: Record<string, number> = {};
+      for (const t of allTrades) {
+        assetCounts[t.ticker] = (assetCounts[t.ticker] || 0) + 1;
+      }
+      const topAssets = Object.entries(assetCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([ticker, count]) => ({ ticker, count }));
+
+      res.json({ totalUsers, totalTrades, newUsersToday, avgWinRate, topAssets });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ message: "Failed to load stats" });
+    }
+  });
+
+  app.get("/api/admin/users", authMiddleware, requireAdmin, async (req: any, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const allTrades = await storage.getAllTrades();
+
+      const result = allUsers.map(u => {
+        const userTrades = allTrades.filter(t => t.userId === u.id);
+        const closed = userTrades.filter(t => t.status === "CLOSED");
+        const wins = closed.filter(t => parseFloat(String(t.pnl ?? 0)) > 0);
+        const totalPnl = closed.reduce((sum, t) => sum + parseFloat(String(t.pnl ?? 0)), 0);
+        const winRate = closed.length > 0 ? Math.round((wins.length / closed.length) * 100) : 0;
+        return {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          createdAt: u.createdAt,
+          lastLogin: u.lastLogin,
+          paperBalance: u.paperBalance,
+          totalPnl: parseFloat(totalPnl.toFixed(2)),
+          tradeCount: userTrades.length,
+          winRate,
+          isAdmin: u.isAdmin === 1,
+        };
+      });
+
+      res.json(result);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ message: "Failed to load users" });
+    }
+  });
+
+  app.get("/api/admin/users/:id", authMiddleware, requireAdmin, async (req: any, res) => {
+    try {
+      const user = await storage.getUserById(req.params.id);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      const userTrades = await storage.getUserTrades(req.params.id);
+      const closed = userTrades.filter(t => t.status === "CLOSED");
+      const wins = closed.filter(t => parseFloat(String(t.pnl ?? 0)) > 0);
+      const totalPnl = closed.reduce((sum, t) => sum + parseFloat(String(t.pnl ?? 0)), 0);
+      const winRate = closed.length > 0 ? Math.round((wins.length / closed.length) * 100) : 0;
+      res.json({
+        ...userPayload(user),
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin,
+        totalPnl: parseFloat(totalPnl.toFixed(2)),
+        tradeCount: userTrades.length,
+        winRate,
+        trades: userTrades,
+      });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ message: "Failed to load user" });
+    }
   });
 
   const httpServer = createServer(app);

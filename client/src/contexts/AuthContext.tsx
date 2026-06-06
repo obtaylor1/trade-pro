@@ -8,13 +8,14 @@ interface AuthUser {
   paperBalance: string;
   onboardingComplete: boolean;
   marketInterests: string[];
+  isAdmin: boolean;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   loginDemo: () => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -24,28 +25,64 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+function decodeExp(token: string): number | null {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(() => localStorage.getItem("tp_token"));
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (token) {
-      fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => { if (data) setUser(data); else { setToken(null); localStorage.removeItem("tp_token"); } })
-        .catch(() => { setToken(null); localStorage.removeItem("tp_token"); })
-        .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
-    }
+    if (!token) { setIsLoading(false); return; }
+
+    // Auto-refresh if less than 7 days remain
+    const exp = decodeExp(token);
+    const sevenDays = 7 * 24 * 3600;
+    const shouldRefresh = exp !== null && (exp - Date.now() / 1000) < sevenDays;
+
+    const fetchMe = (t: string) =>
+      fetch("/api/auth/me", { headers: { Authorization: `Bearer ${t}` } })
+        .then(r => r.ok ? r.json() : null);
+
+    const init = async () => {
+      try {
+        let activeToken = token;
+        if (shouldRefresh) {
+          try {
+            const rr = await fetch("/api/auth/refresh", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            });
+            if (rr.ok) {
+              const { token: newToken } = await rr.json();
+              localStorage.setItem("tp_token", newToken);
+              setToken(newToken);
+              activeToken = newToken;
+            }
+          } catch { /* keep old token */ }
+        }
+        const data = await fetchMe(activeToken);
+        if (data) setUser(data);
+        else { setToken(null); localStorage.removeItem("tp_token"); }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    init();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, rememberMe = false) => {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, rememberMe }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Login failed");

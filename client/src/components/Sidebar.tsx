@@ -1,4 +1,5 @@
 import { useLocation } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NAV = [
   { path: "/",          label: "Home",      icon: "🏠" },
@@ -6,11 +7,18 @@ const NAV = [
   { path: "/ai-signal", label: "AI Signal", icon: "⚡" },
   { path: "/news",      label: "News",      icon: "📰" },
   { path: "/learn",     label: "Learn",     icon: "🎓" },
-  { path: "/account",   label: "Account",   icon: "👤" },
 ];
 
 export default function Sidebar() {
   const [location, setLocation] = useLocation();
+  const { user } = useAuth();
+
+  const allNav = [
+    ...NAV,
+    ...(user?.isAdmin ? [{ path: "/admin", label: "Admin", icon: "🛡️" }] : []),
+    { path: "/account", label: "Account", icon: "👤" },
+  ];
+
   return (
     <aside
       className="fixed left-0 top-0 h-screen w-[220px] hidden lg:flex flex-col z-40"
@@ -24,7 +32,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 flex flex-col gap-1 overflow-y-auto">
-        {NAV.map(tab => {
+        {allNav.map(tab => {
           const active =
             tab.path === "/"
               ? location === "/"
@@ -43,6 +51,11 @@ export default function Sidebar() {
             >
               <span className="text-base leading-none">{tab.icon}</span>
               <span>{tab.label}</span>
+              {tab.path === "/admin" && (
+                <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}>
+                  ADMIN
+                </span>
+              )}
             </button>
           );
         })}

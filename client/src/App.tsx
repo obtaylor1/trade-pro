@@ -15,6 +15,7 @@ import AISignalPage from "@/pages/ai-signal";
 import NewsPage from "@/pages/news";
 import LearnPage from "@/pages/learn";
 import AccountPage from "@/pages/account";
+import AdminPage from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 function AppRoutes() {
@@ -56,6 +57,9 @@ function AppRoutes() {
           <Route path="/news" component={NewsPage} />
           <Route path="/learn" component={LearnPage} />
           <Route path="/account" component={AccountPage} />
+          <Route path="/admin">
+            {user.isAdmin ? <AdminPage /> : <Redirect to="/" />}
+          </Route>
           <Route path="/login"><Redirect to="/" /></Route>
           <Route path="/signup"><Redirect to="/" /></Route>
           <Route component={NotFound} />

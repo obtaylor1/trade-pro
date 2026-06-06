@@ -13,6 +13,8 @@ export const users = pgTable("users_v2", {
   onboardingComplete: boolean("onboarding_complete").default(false).notNull(),
   marketInterests: json("market_interests").$type<string[]>().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  isAdmin: integer("is_admin").default(0).notNull(),
+  lastLogin: text("last_login"),
 });
 
 export const trades = pgTable("trades_v2", {

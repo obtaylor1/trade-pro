@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { db } from "./db";
 import { users, trades, watchlist, learnProgress, portfolioSnapshots } from "@shared/schema";
 import type { User, InsertUser, Trade, InsertTrade, LearnProgress, PortfolioSnapshot } from "@shared/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -11,6 +11,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | null>;
   updateUserBalance(userId: string, newBalance: number): Promise<void>;
   updateUserOnboarding(userId: string, marketInterests: string[], paperBalance: number): Promise<void>;
+  updateLastLogin(userId: string): Promise<void>;
 
   // Trades
   createTrade(data: Omit<InsertTrade, "id">): Promise<Trade>;
@@ -32,6 +33,10 @@ export interface IStorage {
 
   // Reset
   resetPortfolio(userId: string): Promise<void>;
+
+  // Admin
+  getAllUsers(): Promise<User[]>;
+  getAllTrades(): Promise<Trade[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -60,6 +65,10 @@ export class DbStorage implements IStorage {
       paperBalance: String(paperBalance),
       onboardingComplete: true,
     }).where(eq(users.id, userId));
+  }
+
+  async updateLastLogin(userId: string): Promise<void> {
+    await db.update(users).set({ lastLogin: new Date().toISOString() }).where(eq(users.id, userId));
   }
 
   async createTrade(data: Omit<InsertTrade, "id">): Promise<Trade> {
@@ -123,6 +132,14 @@ export class DbStorage implements IStorage {
   async resetPortfolio(userId: string): Promise<void> {
     await db.update(users).set({ paperBalance: "10000" }).where(eq(users.id, userId));
     await db.update(trades).set({ status: "CLOSED", pnl: "0" }).where(eq(trades.userId, userId));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async getAllTrades(): Promise<Trade[]> {
+    return db.select().from(trades).orderBy(desc(trades.entryAt));
   }
 }
 
