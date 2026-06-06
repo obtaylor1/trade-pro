@@ -14,7 +14,7 @@ function ConfBar({ val }: { val: number }) {
   return (
     <div className="flex items-center gap-2 mt-1">
       <div className="flex-1 h-1.5 rounded-full" style={{ background: "#243044" }}>
-        <div className="h-1.5 rounded-full transition-all" style={{ width: `${val}%`, background: color }} />
+        <div className="h-1.5 rounded-full conf-bar-fill" style={{ width: `${val}%` }} />
       </div>
       <span className="text-xs font-semibold" style={{ color }}>{val}%</span>
     </div>
@@ -285,7 +285,7 @@ function SignalCard({ opp, onTrade, trading }: { opp: TradingOpportunity; onTrad
       <div className="text-xs mb-2 truncate" style={{ color: "#64748b" }}>{opp.name}</div>
       <div className="flex items-center gap-2 mb-2">
         <div className="flex-1 h-1.5 rounded-full" style={{ background: "#243044" }}>
-          <div className="h-1.5 rounded-full" style={{ width: `${opp.confidence}%`, background: cc }} />
+          <div className="h-1.5 rounded-full conf-bar-fill" style={{ width: `${opp.confidence}%` }} />
         </div>
         <span className="text-xs font-semibold" style={{ color: cc }}>{opp.confidence}%</span>
       </div>

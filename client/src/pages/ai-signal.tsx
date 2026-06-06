@@ -10,7 +10,7 @@ function ConfBar({ val }: { val: number }) {
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-2 rounded-full" style={{ background: "#243044" }}>
-        <div className="h-2 rounded-full transition-all" style={{ width: `${val}%`, background: c }} />
+        <div className="h-2 rounded-full conf-bar-fill" style={{ width: `${val}%` }} />
       </div>
       <span className="text-sm font-bold" style={{ color: c }}>{val}%</span>
     </div>
