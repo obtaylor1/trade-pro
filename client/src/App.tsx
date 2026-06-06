@@ -48,7 +48,7 @@ function AppRoutes() {
   return (
     <div className="flex min-h-screen" style={{ background: "#0d1117" }}>
       <Sidebar />
-      <main className="flex-1 w-full lg:ml-[220px] min-h-screen">
+      <main className="flex-1 w-full lg:ml-[220px] min-h-screen page-dot-grid">
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/markets" component={MarketsPage} />

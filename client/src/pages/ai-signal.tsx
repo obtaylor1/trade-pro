@@ -83,7 +83,7 @@ function SignalModal({ opp, onClose, onTrade, trading }: { opp: TradingOpportuni
         <div className="rounded-xl p-3 mb-4" style={{ background: "#0d1117" }}>
           <div className="text-xs" style={{ color: "#64748b" }}>Expected timeline: <span className="text-white font-medium">1–5 trading days</span></div>
         </div>
-        <button onClick={onTrade} disabled={trading} className="w-full py-3 rounded-xl font-bold text-white text-base" style={{ background: trading ? "#2563eb80" : "#3b82f6" }}>
+        <button onClick={onTrade} disabled={trading} className="btn-execute w-full py-3 text-base">
           {trading ? "Executing..." : "⚡ Execute Paper Trade ($1.00)"}
         </button>
       </div>
@@ -217,7 +217,7 @@ export default function AISignalPage() {
                   </div>
                   <div className="mt-3 flex gap-2">
                     <button onClick={e => { e.stopPropagation(); tradeMutation.mutate(opp); }} disabled={tradeMutation.isPending}
-                      className="flex-1 py-2 rounded-xl text-xs font-bold text-white" style={{ background: "#3b82f6" }}>
+                      className="btn-execute flex-1 py-2 text-xs">
                       ⚡ Paper Trade
                     </button>
                     <button onClick={e => { e.stopPropagation(); setSelected(opp); }} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ background: "#243044", color: "#94a3b8" }}>

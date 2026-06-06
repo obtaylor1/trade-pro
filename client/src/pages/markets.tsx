@@ -199,8 +199,7 @@ function TradeCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
       {expanded && <div className="rounded-xl p-3 mb-3 text-xs leading-relaxed animate-fade-in" style={{ background: "#0d1117", color: "#94a3b8" }}>{opp.rationale}</div>}
 
       <button onClick={() => onTrade(opp, budget, price)} disabled={trading}
-        className="w-full py-3 rounded-xl font-bold text-white text-sm"
-        style={{ background: trading ? "#2563eb80" : "#3b82f6" }}>
+        className="btn-execute w-full py-3 text-sm">
         {trading ? "Executing..." : `⚡ Paper Trade $${budget.toFixed(2)}`}
       </button>
     </div>
@@ -335,8 +334,7 @@ function WeeklyOptionsCard({ opp, budget, livePrice, onTrade, onWatchlist, tradi
       )}
 
       <button onClick={() => onTrade(opp, budget, premium)} disabled={trading}
-        className="w-full py-3 rounded-xl font-bold text-white text-sm"
-        style={{ background: trading ? "#7c3aed80" : "#7c3aed" }}>
+        className="btn-execute w-full py-3 text-sm">
         {trading ? "Executing..." : `⚡ Paper Trade ${isCall ? "Call" : "Put"} · $${budget.toFixed(2)}`}
       </button>
     </div>
@@ -497,8 +495,7 @@ function ForexCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
       {expanded && <div className="rounded-xl p-3 mb-3 text-xs leading-relaxed animate-fade-in" style={{ background: "#0d1117", color: "#94a3b8" }}>{opp.rationale}</div>}
 
       <button onClick={() => onTrade(opp, budget, price)} disabled={trading}
-        className="w-full py-3 rounded-xl font-bold text-white text-sm"
-        style={{ background: trading ? "#16a34a80" : "#16a34a" }}>
+        className="btn-execute w-full py-3 text-sm">
         {trading ? "Executing..." : `⚡ Paper Trade ${opp.action} ${opp.ticker.replace("-","/")} · $${budget.toFixed(2)}`}
       </button>
     </div>

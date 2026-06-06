@@ -250,8 +250,7 @@ export default function HomePage() {
         {/* Quick actions */}
         <div className="flex gap-3 mb-6">
           <button onClick={() => setLocation("/markets")}
-            className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white"
-            style={{ background: "#3b82f6" }}>
+            className="btn-execute flex-1 py-3 text-sm">
             ⚡ Quick Trade
           </button>
           <button onClick={() => setLocation("/account")}
