@@ -174,10 +174,21 @@ async function refreshCrypto() {
   const ids = Object.values(COIN_IDS).join(",");
   const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`;
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) throw new Error(`CoinGecko ${res.status}`);
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(10000),
+      headers: {
+        "Accept": "application/json",
+        "User-Agent": "TradePro/1.0 paper-trading-simulator",
+      },
+    });
+    if (res.status === 429) {
+      console.log("[liveData] CoinGecko rate limited (429), backing off");
+      return;
+    }
+    if (!res.ok) throw new Error(`CoinGecko HTTP ${res.status}`);
     const data = await res.json() as Record<string, { usd: number; usd_24h_change: number }>;
     const ts = etTimeString();
+    let updated = 0;
     for (const [sym, id] of Object.entries(COIN_IDS)) {
       const entry = data[id];
       if (entry?.usd) {
@@ -188,10 +199,12 @@ async function refreshCrypto() {
           lastUpdated: ts,
           source: "live",
         };
+        updated++;
       }
     }
-  } catch {
-    console.log("[liveData] CoinGecko refresh failed, using cache");
+    if (updated > 0) console.log(`[liveData] CoinGecko updated ${updated} crypto prices`);
+  } catch (err: any) {
+    console.log(`[liveData] CoinGecko refresh failed: ${err?.message ?? err}, using cache`);
   }
 }
 
@@ -380,7 +393,7 @@ export function startLiveDataService() {
   // Schedule refreshes
   setInterval(() => refreshEquities(STOCK_SYMBOLS).catch(() => {}), 15_000);
   setInterval(() => refreshEquities(COMMODITY_SYMBOLS).catch(() => {}), 15_000);
-  setInterval(() => refreshCrypto().catch(() => {}), 10_000);    // Crypto 24/7: every 10s
+  setInterval(() => refreshCrypto().catch(() => {}), 60_000);    // Crypto: every 60s (CoinGecko free tier limit)
   setInterval(() => refreshForex().catch(() => {}), 30_000);     // Forex: every 30s
   setInterval(() => refreshAllOptionsChains().catch(() => {}), 5 * 60_000);
 
