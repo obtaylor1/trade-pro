@@ -61,6 +61,7 @@ const FALLBACK_STOCKS: Record<string, { price: number; change24h: number; name: 
   "ZC=F": { price: 445.00,  change24h: -0.8, name: "Corn Futures" },
   "HG=F": { price: 4.52,    change24h: 1.1,  name: "Copper Futures" },
   "ZW=F": { price: 580.00,  change24h: -1.5, name: "Wheat Futures" },
+  "KC=F": { price: 242.00,  change24h: 0.6,  name: "Coffee Futures" },
 };
 
 const FALLBACK_CRYPTO: Record<string, number> = {
@@ -129,7 +130,7 @@ function initCache() {
 // ─── Stocks + Commodities (yahoo-finance2) ────────────────────────────────────
 
 const STOCK_SYMBOLS = ["AAPL","MSFT","GOOGL","AMZN","NVDA","TSLA","AMD","META","JNJ","PG","SPY","QQQ"];
-const COMMODITY_SYMBOLS = ["GC=F","CL=F","SI=F","NG=F","ZC=F","HG=F","ZW=F"];
+const COMMODITY_SYMBOLS = ["GC=F","CL=F","SI=F","NG=F","ZC=F","HG=F","ZW=F","KC=F"];
 let equityErrLogged = false;
 
 async function refreshOneEquity(symbol: string, open: boolean, ts: string) {
