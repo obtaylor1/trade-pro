@@ -96,7 +96,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!["stocks","commodities","crypto","options","forex"].includes(market)) {
       return res.status(400).json({ message: "Invalid market" });
     }
-    const data = marketDataService.generateOpportunities(market);
+    const style = req.query.style as string | undefined;
+    const data = marketDataService.generateOpportunities(market, style);
     res.json(data);
   });
 

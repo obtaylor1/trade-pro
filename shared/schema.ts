@@ -21,11 +21,11 @@ export const trades = pgTable("trades_v2", {
   market: text("market").notNull(),
   ticker: text("ticker").notNull(),
   tickerName: text("ticker_name").notNull(),
-  action: text("action").notNull(), // BUY | SELL
+  action: text("action").notNull(),
   entryPrice: numeric("entry_price").notNull(),
   units: numeric("units").notNull(),
   investedAmount: numeric("invested_amount").notNull(),
-  status: text("status").default("OPEN").notNull(), // OPEN | CLOSED
+  status: text("status").default("OPEN").notNull(),
   entryAt: timestamp("entry_at").defaultNow().notNull(),
   exitPrice: numeric("exit_price"),
   exitAt: timestamp("exit_at"),
@@ -101,11 +101,21 @@ export const tradingOpportunitySchema = z.object({
   macd: z.string().optional(),
   volume: z.string().optional(),
   change24h: z.number().optional(),
-  // Options specific
+  // Options-specific
   optionType: z.enum(["CALL", "PUT"]).optional(),
   strikePrice: z.number().optional(),
   premium: z.number().optional(),
   expiry: z.string().optional(),
+  daysLeft: z.number().optional(),
+  weeklyRationale: z.string().optional(),
+  // Forex-specific
+  forexStyle: z.enum(["SCALP", "SWING", "POSITION"]).optional(),
+  pipTarget: z.number().optional(),
+  stopPips: z.number().optional(),
+  spread: z.string().optional(),
+  bestTime: z.string().optional(),
+  timeframes: z.string().optional(),
+  fullName: z.string().optional(),
 });
 
 export const executeTradeSchema = z.object({
