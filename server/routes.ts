@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { storage } from "./storage";
 import { marketDataService } from "./marketDataService";
+import { startLiveDataService, getLivePrices, getOptionsChain, getAllOptionsChains } from "./liveDataService";
 import { signupSchema, loginSchema, onboardingSchema, executeTradeSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -26,6 +27,8 @@ function authMiddleware(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Start live market data service (non-blocking background job)
+  startLiveDataService();
 
   // ── Auth ────────────────────────────────────────────────────────────────────
 
@@ -221,6 +224,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await storage.resetPortfolio(req.userId);
     await storage.saveSnapshot(req.userId, 10000);
     res.json({ success: true, newBalance: 10000 });
+  });
+
+  // ── Live Prices ──────────────────────────────────────────────────────────────
+
+  app.get("/api/live-prices", (_req, res) => {
+    res.json(getLivePrices());
+  });
+
+  app.get("/api/options-chain/:symbol", (req, res) => {
+    const sym = req.params.symbol.toUpperCase();
+    const chain = getOptionsChain(sym);
+    if (!chain) return res.status(404).json({ message: "No chain data yet" });
+    res.json(chain);
+  });
+
+  app.get("/api/options-chains", (_req, res) => {
+    res.json(getAllOptionsChains());
   });
 
   const httpServer = createServer(app);
