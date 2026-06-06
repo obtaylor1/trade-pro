@@ -5,11 +5,12 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
-  const { login } = useAuth();
+  const { login, loginDemo } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,12 +25,57 @@ export default function LoginPage() {
     }
   };
 
+  const handleDemo = async () => {
+    setDemoLoading(true);
+    try {
+      await loginDemo();
+      setLocation("/");
+    } catch (err: any) {
+      toast({ title: "Demo failed", description: err.message, variant: "destructive" });
+    } finally {
+      setDemoLoading(false);
+    }
+  };
+
   return (
     <div className="page-glow min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#0d1117" }}>
       {/* Logo */}
-      <div className="text-center mb-10" style={{ position: "relative", zIndex: 1 }}>
+      <div className="text-center mb-8" style={{ position: "relative", zIndex: 1 }}>
         <div className="text-4xl font-black mb-2 gradient-text">Trade Pro</div>
         <div className="text-base" style={{ color: "#64748b" }}>Trade any market. Start with $0.25.</div>
+      </div>
+
+      {/* Demo CTA */}
+      <div className="w-full max-w-sm mb-4" style={{ position: "relative", zIndex: 1 }}>
+        <button
+          onClick={handleDemo}
+          disabled={demoLoading}
+          className="w-full py-3.5 rounded-xl font-bold text-white text-sm transition-all flex items-center justify-center gap-2"
+          style={{
+            background: "linear-gradient(135deg, #16a34a, #22c55e)",
+            boxShadow: "0 4px 16px rgba(34,197,94,0.35)",
+            opacity: demoLoading ? 0.7 : 1,
+          }}
+        >
+          {demoLoading ? (
+            <span>Loading demo...</span>
+          ) : (
+            <>
+              <span>⚡</span>
+              <span>Try Live Demo — No Sign Up</span>
+            </>
+          )}
+        </button>
+        <p className="text-center text-xs mt-2" style={{ color: "#475569" }}>
+          Instant access · $10,000 paper balance · all markets
+        </p>
+      </div>
+
+      {/* Divider */}
+      <div className="w-full max-w-sm flex items-center gap-3 mb-4" style={{ position: "relative", zIndex: 1 }}>
+        <div className="flex-1 h-px" style={{ background: "#1e2d42" }} />
+        <span className="text-xs" style={{ color: "#475569" }}>or sign in</span>
+        <div className="flex-1 h-px" style={{ background: "#1e2d42" }} />
       </div>
 
       <div className="w-full max-w-sm rounded-2xl p-6 glass-panel" style={{ position: "relative", zIndex: 1 }}>
@@ -55,8 +101,7 @@ export default function LoginPage() {
           </div>
           <button
             type="submit" disabled={loading}
-            className="w-full py-3 rounded-xl font-semibold text-white text-sm mt-2 transition-opacity"
-            style={{ background: loading ? "#2563eb80" : "#3b82f6" }}
+            className="btn-execute w-full py-3 text-white text-sm font-semibold mt-2"
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>

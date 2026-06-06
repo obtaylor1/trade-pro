@@ -72,6 +72,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ── Demo Login ───────────────────────────────────────────────────────────────
+  app.post("/api/auth/demo", async (req, res) => {
+    try {
+      const DEMO_EMAIL = "demo@tradepro.app";
+      let user = await storage.getUserByEmail(DEMO_EMAIL);
+      if (!user) {
+        const passwordHash = await bcrypt.hash("demo-tradepro-2026", 10);
+        user = await storage.createUser({
+          name: "Demo Trader",
+          email: DEMO_EMAIL,
+          passwordHash,
+          paperBalance: "10000",
+          onboardingComplete: true,
+          marketInterests: ["stocks", "crypto", "forex", "commodities", "options"],
+        });
+        await storage.saveSnapshot(user.id, 10000);
+      }
+      const token = makeToken(user.id);
+      res.json({ token, user: { id: user.id, name: user.name, email: user.email, paperBalance: user.paperBalance, onboardingComplete: user.onboardingComplete, marketInterests: user.marketInterests } });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ message: "Demo login failed" });
+    }
+  });
+
   app.get("/api/auth/me", authMiddleware, async (req: any, res) => {
     const user = await storage.getUserById(req.userId);
     if (!user) return res.status(404).json({ message: "User not found" });
