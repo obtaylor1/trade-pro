@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { storage } from "./storage";
 import { marketDataService } from "./marketDataService";
 import { startLiveDataService, getLivePrices, getOptionsChain, getAllOptionsChains } from "./liveDataService";
+import { startNewsService, getNews } from "./newsService";
 import { signupSchema, loginSchema, onboardingSchema, executeTradeSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -46,6 +47,7 @@ function userPayload(user: any) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   startLiveDataService();
+  startNewsService();
 
   // ── Auth ────────────────────────────────────────────────────────────────────
 
@@ -280,6 +282,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await storage.resetPortfolio(req.userId);
     await storage.saveSnapshot(req.userId, 10000);
     res.json({ success: true, newBalance: 10000 });
+  });
+
+  // ── News ────────────────────────────────────────────────────────────────────
+
+  app.get("/api/news", (req, res) => {
+    const category = (req.query.category as string) || "all";
+    const valid = ["all", "stocks", "crypto", "forex", "commodities", "options"];
+    if (!valid.includes(category)) return res.status(400).json({ message: "Invalid category" });
+    res.json(getNews(category));
   });
 
   // ── Live Prices ─────────────────────────────────────────────────────────────
