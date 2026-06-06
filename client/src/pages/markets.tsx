@@ -109,8 +109,8 @@ export default function MarketsPage() {
   const {token,updateBalance}=useAuth();
   const {toast}=useToast();
   const [activeMarket,setActiveMarket]=useState<Market>("stocks");
-  const [budget,setBudget]=useState(1.00);
-  const [budgetInput,setBudgetInput]=useState("1.00");
+  const [budget,setBudget]=useState(0.25);
+  const [budgetInput,setBudgetInput]=useState("0.25");
   const currentTab=TABS.find(t=>t.id===activeMarket)!;
 
   const {data:opps,isLoading}=useQuery<TradingOpportunity[]>({
@@ -163,7 +163,7 @@ export default function MarketsPage() {
               <div className="text-xs whitespace-nowrap" style={{color:"#64748b"}}>Min: ${currentTab.min.toFixed(2)}</div>
             </div>
             <div className="flex gap-2">
-              {[0.25,1,5,10,25].filter(v=>v>=currentTab.min).slice(0,5).map(v=>(
+              {[0.25,1,5,10,25].map(v=>(
                 <button key={v} onClick={()=>{setBudget(v);setBudgetInput(String(v));}} className="flex-1 py-1 rounded-lg text-xs font-semibold border transition-all"
                   style={{background:budget===v?"rgba(59,130,246,0.15)":"transparent",borderColor:budget===v?"#3b82f6":"#243044",color:budget===v?"#60a5fa":"#64748b"}}>
                   ${v}
