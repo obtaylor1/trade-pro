@@ -153,8 +153,8 @@ function TradeCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
           <div className="text-xs font-semibold" style={{ color: changeColor }}>
             {(livePrice?.change24h ?? opp.change24h ?? 0) >= 0 ? "+" : ""}{(livePrice?.change24h ?? opp.change24h ?? 0).toFixed(2)}%
           </div>
-          {lastUp && <div className="text-[9px] mt-0.5" style={{ color: "#475569" }}>Last updated: {lastUp}</div>}
-          {!open && <div className="text-[9px] font-bold mt-0.5" style={{ color: "#475569" }}>MARKET CLOSED</div>}
+          {lastUp && <div className="label-secondary mt-0.5">Last updated: {lastUp}</div>}
+          {!open && <div className="label-secondary mt-0.5 font-bold">MARKET CLOSED</div>}
         </div>
         <button onClick={() => onWatchlist(opp)} className="ml-2 text-xl">⭐</button>
       </div>
@@ -272,7 +272,7 @@ function WeeklyOptionsCard({ opp, budget, livePrice, onTrade, onWatchlist, tradi
           </div>
           <div className="text-base font-black" style={{ color: premiumColor, transition: "color 0.4s" }}>${premium.toFixed(2)}</div>
           <div className="text-[10px]" style={{ color: "#64748b" }}>per contract{iv !== null ? ` · IV ${iv}%` : ""}</div>
-          {lastUp && <div className="text-[9px] mt-0.5" style={{ color: "#475569" }}>Last updated: {lastUp}</div>}
+          {lastUp && <div className="label-secondary mt-0.5">Last updated: {lastUp}</div>}
         </div>
         <div className="rounded-xl p-2.5 col-span-1" style={{ background: "#0d1117" }}>
           <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Strike</div>
@@ -433,7 +433,7 @@ function ForexCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
           <div>
             <div className="text-xl font-black" style={{ color: priceColorFx, transition: "color 0.4s" }}>{pdisp}</div>
             <div className="text-[10px]" style={{ color: "#64748b" }}>Spread: {spread}</div>
-            {livePrice?.lastUpdated && <div className="text-[9px] mt-0.5" style={{ color: "#475569" }}>Last updated: {livePrice.lastUpdated}</div>}
+            {livePrice?.lastUpdated && <div className="label-secondary mt-0.5">Last updated: {livePrice.lastUpdated}</div>}
           </div>
           {bid && ask && (
             <div className="text-right">
