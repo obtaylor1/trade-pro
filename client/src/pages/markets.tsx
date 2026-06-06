@@ -78,9 +78,9 @@ function useOptionsChain(symbol: string) {
 function LiveDot({ open, last }: { open: boolean; last: string }) {
   return (
     <span className="inline-flex items-center gap-1 text-[10px] font-semibold" style={{ color: open ? "#22c55e" : "#64748b" }}>
-      <span className={`inline-block w-1.5 h-1.5 rounded-full ${open ? "animate-pulse" : ""}`}
-        style={{ background: open ? "#22c55e" : "#64748b" }} />
-      {open ? "LIVE" : "CLOSED"} · {last}
+      <span className={open ? "live-dot" : "live-dot-closed"} />
+      {open ? "LIVE" : "CLOSED"}
+      {last && <span className="ml-1" style={{ color: "#475569" }}>· Updated {last}</span>}
     </span>
   );
 }
@@ -134,7 +134,7 @@ function TradeCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
   const flash = usePriceFlash(price);
   const flashBorder = flash === "up" ? "1px solid rgba(34,197,94,0.6)" : flash === "down" ? "1px solid rgba(239,68,68,0.6)" : "1px solid #243044";
   const flashShadow = flash === "up" ? "0 0 12px rgba(34,197,94,0.2)" : flash === "down" ? "0 0 12px rgba(239,68,68,0.2)" : "none";
-  const priceColor = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#e2e8f0";
+  const priceColor = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#ffffff";
 
   return (
     <div className="rounded-2xl p-4 trade-card glass-card" style={{ border: flashBorder, boxShadow: flashShadow, transition: "border-color 0.4s, box-shadow 0.4s" }}>
@@ -153,6 +153,7 @@ function TradeCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
           <div className="text-xs font-semibold" style={{ color: changeColor }}>
             {(livePrice?.change24h ?? opp.change24h ?? 0) >= 0 ? "+" : ""}{(livePrice?.change24h ?? opp.change24h ?? 0).toFixed(2)}%
           </div>
+          {lastUp && <div className="text-[9px] mt-0.5" style={{ color: "#475569" }}>Last updated: {lastUp}</div>}
           {!open && <div className="text-[9px] font-bold mt-0.5" style={{ color: "#475569" }}>MARKET CLOSED</div>}
         </div>
         <button onClick={() => onWatchlist(opp)} className="ml-2 text-xl">⭐</button>
@@ -237,7 +238,7 @@ function WeeklyOptionsCard({ opp, budget, livePrice, onTrade, onWatchlist, tradi
   const daysColor = daysLeft <= 2 ? "#ef4444" : daysLeft <= 3 ? "#f59e0b" : "#3b82f6";
   const flash = usePriceFlash(premium);
   const flashBorder = flash === "up" ? `1px solid rgba(34,197,94,0.6)` : flash === "down" ? `1px solid rgba(239,68,68,0.6)` : `1px solid ${isCall ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`;
-  const premiumColor = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#e2e8f0";
+  const premiumColor = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#ffffff";
   const isRealData = !!bestContract;
 
   return (
@@ -271,6 +272,7 @@ function WeeklyOptionsCard({ opp, budget, livePrice, onTrade, onWatchlist, tradi
           </div>
           <div className="text-base font-black" style={{ color: premiumColor, transition: "color 0.4s" }}>${premium.toFixed(2)}</div>
           <div className="text-[10px]" style={{ color: "#64748b" }}>per contract{iv !== null ? ` · IV ${iv}%` : ""}</div>
+          {lastUp && <div className="text-[9px] mt-0.5" style={{ color: "#475569" }}>Last updated: {lastUp}</div>}
         </div>
         <div className="rounded-xl p-2.5 col-span-1" style={{ background: "#0d1117" }}>
           <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Strike</div>
@@ -406,7 +408,7 @@ function ForexCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
 
   const flashBorderFx = flash === "up" ? "1px solid rgba(34,197,94,0.6)" : flash === "down" ? "1px solid rgba(239,68,68,0.6)" : "1px solid #243044";
   const flashShadowFx = flash === "up" ? "0 0 12px rgba(34,197,94,0.2)" : flash === "down" ? "0 0 12px rgba(239,68,68,0.2)" : "none";
-  const priceColorFx = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#e2e8f0";
+  const priceColorFx = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#ffffff";
 
   return (
     <div className="rounded-2xl p-4 trade-card glass-card" style={{ border: flashBorderFx, boxShadow: flashShadowFx, transition: "border-color 0.4s, box-shadow 0.4s" }}>
@@ -431,6 +433,7 @@ function ForexCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
           <div>
             <div className="text-xl font-black" style={{ color: priceColorFx, transition: "color 0.4s" }}>{pdisp}</div>
             <div className="text-[10px]" style={{ color: "#64748b" }}>Spread: {spread}</div>
+            {livePrice?.lastUpdated && <div className="text-[9px] mt-0.5" style={{ color: "#475569" }}>Last updated: {livePrice.lastUpdated}</div>}
           </div>
           {bid && ask && (
             <div className="text-right">
