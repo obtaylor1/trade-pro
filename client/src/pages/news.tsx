@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const MOCK_NEWS = [
   { id: 1, category: "stocks", source: "Reuters", headline: "NVIDIA Surges 8% After Record Data Center Revenue Beats Estimates by $2B", summary: "Blackwell GPU demand from hyperscalers drove quarterly revenue to $26B, far exceeding analyst expectations.", affect: "NVDA position holders see strong short-term upside. Consider adding to existing longs on any pullback toward $130.", image: "📈", time: "2h ago" },
@@ -15,6 +15,99 @@ const MOCK_NEWS = [
 
 const TABS = ["all", "stocks", "crypto", "forex", "commodities", "options"];
 
+function useETTime() {
+  const [etInfo, setEtInfo] = useState({ time: "", isOpen: false });
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      const etStr = now.toLocaleString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+      const etDate = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+      const day = etDate.getDay(); // 0=Sun 6=Sat
+      const h = etDate.getHours();
+      const m = etDate.getMinutes();
+      const totalMins = h * 60 + m;
+      const isWeekday = day >= 1 && day <= 5;
+      const isOpen = isWeekday && totalMins >= 9 * 60 + 30 && totalMins < 16 * 60;
+      setEtInfo({ time: etStr + " ET", isOpen });
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return etInfo;
+}
+
+function LiveVideoSection() {
+  const [hidden, setHidden] = useState(() => localStorage.getItem("news-video-hidden") === "true");
+  const { time, isOpen } = useETTime();
+
+  const toggle = () => {
+    const next = !hidden;
+    setHidden(next);
+    localStorage.setItem("news-video-hidden", String(next));
+  };
+
+  return (
+    <div className="mb-6 rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(239,68,68,0.25)", background: "#1a2332" }}>
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: hidden ? "none" : "1px solid rgba(239,68,68,0.15)", background: "rgba(239,68,68,0.05)" }}>
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="font-bold text-sm" style={{ color: "#e2e8f0" }}>📺 Yahoo Finance Live — 24/7 Market Coverage</span>
+
+          {/* LIVE badge */}
+          <span className="flex items-center gap-1.5 text-[10px] font-black px-2 py-0.5 rounded-full"
+            style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.4)" }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
+            LIVE
+          </span>
+
+          {/* Market status chip */}
+          {time && (
+            <span className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-0.5 rounded-full"
+              style={{
+                background: isOpen ? "rgba(34,197,94,0.12)" : "rgba(100,116,139,0.12)",
+                color: isOpen ? "#22c55e" : "#94a3b8",
+                border: `1px solid ${isOpen ? "rgba(34,197,94,0.3)" : "rgba(100,116,139,0.2)"}`,
+              }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: isOpen ? "#22c55e" : "#64748b" }} />
+              US Markets {isOpen ? "Open" : "Closed"}
+            </span>
+          )}
+
+          {/* ET time */}
+          {time && (
+            <span className="text-[10px] font-mono" style={{ color: "#64748b" }}>{time}</span>
+          )}
+        </div>
+
+        {/* Toggle button */}
+        <button
+          onClick={toggle}
+          className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ml-2"
+          style={{ background: "rgba(59,130,246,0.12)", color: "#60a5fa", border: "1px solid rgba(59,130,246,0.25)" }}
+        >
+          {hidden ? "▶ Show Video" : "▼ Hide Video"}
+        </button>
+      </div>
+
+      {/* Video embed */}
+      {!hidden && (
+        <div style={{ position: "relative", paddingBottom: 0 }}>
+          <iframe
+            src="https://www.youtube.com/embed/KQp-e_XQnDE?autoplay=1&mute=1"
+            title="Yahoo Finance Live 24/7"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowFullScreen
+            style={{ width: "100%", height: 400, display: "block", border: "none" }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function NewsPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
@@ -28,11 +121,18 @@ export default function NewsPage() {
     <div className="page-container lg:pb-8 min-h-screen" style={{ background: "#0d1117" }}>
       <div className="px-4 lg:px-8 pt-6 max-w-none">
         <h1 className="text-xl font-black mb-4">📰 Market News</h1>
+
+        {/* Live Video Section */}
+        <LiveVideoSection />
+
+        {/* Search */}
         <div className="mb-4">
           <input type="text" placeholder="Search news..." value={search} onChange={e => setSearch(e.target.value)}
             className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
             style={{ background: "#1a2332", border: "1px solid #243044", color: "#e2e8f0" }} />
         </div>
+
+        {/* Category tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-4 px-4 lg:mx-0 lg:px-0" style={{ scrollbarWidth: "none" }}>
           {TABS.map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
@@ -42,6 +142,8 @@ export default function NewsPage() {
             </button>
           ))}
         </div>
+
+        {/* Articles */}
         {filtered.length === 0 ? (
           <div className="text-center py-12"><div className="text-4xl mb-3">📭</div><div className="font-semibold" style={{ color: "#64748b" }}>No articles found</div></div>
         ) : (
