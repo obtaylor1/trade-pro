@@ -40,18 +40,16 @@ const AFFECTS: Record<string, string> = {
 };
 
 const FEED_CONFIG: { url: string; source: string; category: string }[] = [
-  { url: "https://www.cnbc.com/id/10001147/device/rss/rss.html", source: "CNBC", category: "stocks" },
-  { url: "https://feeds.content.dowjones.io/public/rss/mw_topstories", source: "MarketWatch", category: "stocks" },
-  { url: "https://finance.yahoo.com/rss/topfinstories", source: "Yahoo Finance", category: "stocks" },
-  { url: "https://www.coindesk.com/arc/outboundfeeds/rss/", source: "CoinDesk", category: "crypto" },
+  { url: "https://finance.yahoo.com/news/rssindex", source: "Yahoo Finance", category: "stocks" },
+  { url: "https://www.investing.com/rss/news_25.rss", source: "Investing.com", category: "stocks" },
   { url: "https://cointelegraph.com/rss", source: "CoinTelegraph", category: "crypto" },
-  { url: "https://cryptonews.com/news/feed/", source: "CryptoNews", category: "crypto" },
-  { url: "https://finance.yahoo.com/rss/2.0/headline?s=eurusd=x&region=US&lang=en-US", source: "Yahoo Finance FX", category: "forex" },
-  { url: "https://www.investing.com/rss/news_25.rss", source: "Investing.com FX", category: "forex" },
+  { url: "https://decrypt.co/feed", source: "Decrypt", category: "crypto" },
+  { url: "https://www.investing.com/rss/news_301.rss", source: "Investing.com FX", category: "forex" },
+  { url: "https://www.forexlive.com/feed/news", source: "ForexLive", category: "forex" },
   { url: "https://oilprice.com/rss/main", source: "OilPrice", category: "commodities" },
-  { url: "https://finance.yahoo.com/rss/2.0/headline?s=gc=f&region=US&lang=en-US", source: "Yahoo Gold", category: "commodities" },
-  { url: "https://feeds.a.dj.com/rss/RSSMarketsMain.xml", source: "WSJ Markets", category: "options" },
-  { url: "https://www.cnbc.com/id/100003114/device/rss/rss.html", source: "CNBC Options", category: "options" },
+  { url: "https://www.investing.com/rss/news_11.rss", source: "Investing.com", category: "commodities" },
+  { url: "https://feeds.reuters.com/reuters/businessNews", source: "Reuters", category: "options" },
+  { url: "https://www.investing.com/rss/news.rss", source: "Investing.com", category: "options" },
 ];
 
 function getDomain(url: string): string {
