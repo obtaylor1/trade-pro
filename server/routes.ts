@@ -189,22 +189,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const newBalance = parseFloat((balance - body.investedAmount).toFixed(2));
       await storage.updateUserBalance(req.userId, newBalance);
+      const potGain = body.potentialGain != null && isFinite(body.potentialGain) ? body.potentialGain : null;
       const trade = await storage.createTrade({
         userId: req.userId,
         market: body.market,
         ticker: body.ticker,
-        tickerName: body.tickerName,
+        tickerName: body.tickerName ?? body.ticker,
         action: body.action,
         entryPrice: String(body.entryPrice),
         units: String(body.units),
         investedAmount: String(body.investedAmount),
-        potentialGain: body.potentialGain ? String(body.potentialGain) : null,
+        potentialGain: potGain !== null ? String(potGain) : null,
         status: "OPEN",
       });
       await storage.saveSnapshot(req.userId, newBalance);
       res.json({ trade, newBalance });
     } catch (e) {
-      if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0].message });
+      if (e instanceof z.ZodError) {
+        const fields = e.errors.map(err => `${err.path.join(".")}: ${err.message}`).join(", ");
+        console.error("[trade] Validation failed:", fields, "| body:", JSON.stringify(req.body));
+        return res.status(400).json({ message: e.errors[0].message, fields });
+      }
       console.error(e);
       res.status(500).json({ message: "Trade failed" });
     }

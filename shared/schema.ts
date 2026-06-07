@@ -125,14 +125,14 @@ export const executeTradeSchema = z.object({
   opportunityId: z.string().optional(),
   market: z.string(),
   ticker: z.string(),
-  tickerName: z.string(),
+  tickerName: z.string().optional(),
   action: z.string(),
-  entryPrice: z.number(),
-  units: z.number(),
-  investedAmount: z.number().positive(),
-  potentialGain: z.number().optional(),
-  targetPrice: z.number().optional(),
-  stopLoss: z.number().optional(),
+  entryPrice: z.coerce.number(),
+  units: z.coerce.number(),
+  investedAmount: z.coerce.number().positive(),
+  potentialGain: z.coerce.number().optional().nullable(),
+  targetPrice: z.coerce.number().optional(),
+  stopLoss: z.coerce.number().optional(),
 });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
