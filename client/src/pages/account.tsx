@@ -130,9 +130,10 @@ export default function AccountPage() {
     isLive: false,
   }));
 
-  // Append live orders if user is in Live Mode
-  orders.forEach((o: any) => {
-    // Prevent duplicates by checking if symbol matches
+  // Append live-mode orders only: paper orders are already mirrored into the
+  // trades table by the paper broker, so including them here would duplicate
+  // every practice position (and the duplicate can't be closed via /api/trades).
+  orders.filter((o: any) => o.mode === "live").forEach((o: any) => {
     if (!allMergedTrades.some(t => t.id === o.id)) {
       allMergedTrades.push({
         id: o.id,
@@ -365,7 +366,7 @@ export default function AccountPage() {
         {/* Open Trades Content */}
         {openTrades.length === 0 ? (
           <div className="rounded-2xl border p-8 text-center text-slate-500 mb-6 bg-[#0b1626] flex flex-col items-center" style={{ borderColor: "var(--color-border-strong)" }}>
-            <EmptyStateArt name="open_trades" fallbackIcon="fas fa-chart-line" size={84} className="mb-2.5" />
+            <EmptyStateArt name="open_trades" fallbackIcon="fas fa-chart-line" size={140} className="mb-2.5" />
             <div className="text-xs font-black text-slate-400">No open trades at the moment</div>
             <Link href="/markets" className="text-[10px] font-extrabold text-blue-400 hover:text-blue-300 block mt-2 cursor-pointer">
               Go to Choose a Trade page to find opportunities →
@@ -525,7 +526,7 @@ export default function AccountPage() {
         {closedTrades.length === 0 ? (
           /* Educational Empty State Card */
           <div className="trade-history-empty">
-            <EmptyStateArt name="trade_history" fallbackIcon="fas fa-clipboard-list" size={96} />
+            <EmptyStateArt name="trade_history" fallbackIcon="fas fa-clipboard-list" size={120} />
             <div>
               <h4 className="text-base font-black text-white">No completed trades yet</h4>
               <p className="text-[13px] text-slate-400 font-semibold mt-1 leading-relaxed">

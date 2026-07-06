@@ -48,7 +48,9 @@ export class PaperBrokerAdapter implements BrokerAdapter {
     const fees = 0; // Paper trades have no fees
     const total = cost + fees;
 
-    if (order.side === "buy" && total > buyingPower) {
+    // Both sides stake the notional amount in a paper account (a SELL is a
+    // short position, not a cash sale), so both need the balance to cover it.
+    if (total > buyingPower) {
       throw new Error(`Insufficient practice balance. Required: $${total.toFixed(2)}, Available: $${buyingPower.toFixed(2)}`);
     }
 
@@ -68,6 +70,16 @@ export class PaperBrokerAdapter implements BrokerAdapter {
 
   async placeOrder(userId: string, order: OrderRequest): Promise<any> {
     const preview = await this.previewOrder(userId, order);
+
+    // Stake the notional atomically before writing any rows. Both BUY and
+    // SELL debit the stake here; closing the trade credits stake + P&L back,
+    // matching the legacy /api/trades flow.
+    const newBal = await storage.debitBalance(userId, preview.estimatedTotal);
+    if (newBal === null) {
+      throw new Error("Insufficient practice balance.");
+    }
+    await storage.saveSnapshot(userId, newBal);
+
     const dbOrder = await storage.createOrder(userId, {
       tradingAccountId: null,
       mode: "paper",
@@ -106,16 +118,6 @@ export class PaperBrokerAdapter implements BrokerAdapter {
       pnl: "0",
       potentialGain: String(order.notionalAmount * 1.2),
     });
-
-    // Update user balance
-    const user = await storage.getUserById(userId);
-    if (user) {
-      const currentBal = parseFloat(user.paperBalance);
-      const modifier = order.side === "buy" ? -1 : 1;
-      const newBal = currentBal + (modifier * preview.estimatedTotal);
-      await storage.updateUserBalance(userId, newBal);
-      await storage.saveSnapshot(userId, newBal);
-    }
 
     // Log event in order_events
     await storage.createOrderEvent(
