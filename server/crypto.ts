@@ -1,12 +1,11 @@
 import crypto from "crypto";
+import { ENCRYPTION_KEY } from "./config";
 
 const ALGORITHM = "aes-256-cbc";
-const DEFAULT_KEY = "tradepro_super_secret_encryption_key_32bytes!!"; // 32-byte fallback key
 
 function getEncryptionKey(): Buffer {
-  const envKey = process.env.ENCRYPTION_KEY || DEFAULT_KEY;
   // Derive a 32-byte key using SHA-256 to ensure exact length compliance
-  return crypto.createHash("sha256").update(envKey).digest();
+  return crypto.createHash("sha256").update(ENCRYPTION_KEY).digest();
 }
 
 /**

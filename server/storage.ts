@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { db } from "./db";
+import { STARTING_BALANCE } from "./config";
 import { users, trades, watchlist, learnProgress, portfolioSnapshots, tradingAccounts, orders, orderEvents } from "@shared/schema";
 import type { User, InsertUser, Trade, InsertTrade, LearnProgress, PortfolioSnapshot, TradingAccount, InsertTradingAccount, Order, InsertOrder, OrderEvent, InsertOrderEvent } from "@shared/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -10,13 +11,18 @@ export interface IStorage {
   getUserById(id: string): Promise<User | null>;
   getUserByEmail(email: string): Promise<User | null>;
   updateUserBalance(userId: string, newBalance: number): Promise<void>;
+  /** Atomically deducts `amount` if the balance covers it. Returns the new balance, or null if insufficient. */
+  debitBalance(userId: string, amount: number): Promise<number | null>;
+  /** Atomically adds `amount` to the balance. Returns the new balance, or null if the user doesn't exist. */
+  creditBalance(userId: string, amount: number): Promise<number | null>;
   updateUserOnboarding(userId: string, marketInterests: string[], paperBalance: number): Promise<void>;
   updateLastLogin(userId: string): Promise<void>;
 
   // Trades
   createTrade(data: Omit<InsertTrade, "id">): Promise<Trade>;
   getUserTrades(userId: string): Promise<Trade[]>;
-  closeTrade(tradeId: string, exitPrice: number, pnl: number): Promise<void>;
+  /** Closes the trade only if it is still OPEN and owned by `userId`. Returns true if this call closed it. */
+  closeTrade(tradeId: string, userId: string, exitPrice: number, pnl: number): Promise<boolean>;
 
   // Watchlist
   addToWatchlist(userId: string, ticker: string, market: string): Promise<void>;
@@ -75,6 +81,22 @@ export class DbStorage implements IStorage {
     await db.update(users).set({ paperBalance: String(newBalance) }).where(eq(users.id, userId));
   }
 
+  async debitBalance(userId: string, amount: number): Promise<number | null> {
+    const [row] = await db.update(users)
+      .set({ paperBalance: sql`round(${users.paperBalance} - ${amount}::numeric, 2)` })
+      .where(and(eq(users.id, userId), sql`${users.paperBalance} >= ${amount}::numeric`))
+      .returning({ paperBalance: users.paperBalance });
+    return row ? parseFloat(String(row.paperBalance)) : null;
+  }
+
+  async creditBalance(userId: string, amount: number): Promise<number | null> {
+    const [row] = await db.update(users)
+      .set({ paperBalance: sql`round(${users.paperBalance} + ${amount}::numeric, 2)` })
+      .where(eq(users.id, userId))
+      .returning({ paperBalance: users.paperBalance });
+    return row ? parseFloat(String(row.paperBalance)) : null;
+  }
+
   async updateUserOnboarding(userId: string, marketInterests: string[], paperBalance: number): Promise<void> {
     await db.update(users).set({
       marketInterests,
@@ -96,13 +118,17 @@ export class DbStorage implements IStorage {
     return db.select().from(trades).where(eq(trades.userId, userId)).orderBy(desc(trades.entryAt));
   }
 
-  async closeTrade(tradeId: string, exitPrice: number, pnl: number): Promise<void> {
-    await db.update(trades).set({
+  async closeTrade(tradeId: string, userId: string, exitPrice: number, pnl: number): Promise<boolean> {
+    // The status guard makes concurrent close requests idempotent: only one
+    // call transitions OPEN → CLOSED, so the balance is credited exactly once.
+    const closed = await db.update(trades).set({
       status: "CLOSED",
       exitPrice: String(exitPrice),
       exitAt: new Date(),
       pnl: String(pnl),
-    }).where(eq(trades.id, tradeId));
+    }).where(and(eq(trades.id, tradeId), eq(trades.userId, userId), eq(trades.status, "OPEN")))
+      .returning({ id: trades.id });
+    return closed.length > 0;
   }
 
   async addToWatchlist(userId: string, ticker: string, market: string): Promise<void> {
@@ -146,7 +172,7 @@ export class DbStorage implements IStorage {
   }
 
   async resetPortfolio(userId: string): Promise<void> {
-    await db.update(users).set({ paperBalance: "10000" }).where(eq(users.id, userId));
+    await db.update(users).set({ paperBalance: String(STARTING_BALANCE) }).where(eq(users.id, userId));
     await db.update(trades).set({ status: "CLOSED", pnl: "0" }).where(eq(trades.userId, userId));
   }
 

@@ -1,12 +1,13 @@
 import { useState } from "react";
 import AdvancedDetails from "./AdvancedDetails";
 import { useTradingMode } from "@/contexts/TradingModeContext";
+import type { TradeIdea } from "@/lib/types";
 
 interface SmallTradeCardProps {
-  trade: any;
+  trade: TradeIdea;
   rank: number;
   amount: number;
-  onTrade: (opp: any, amount: number, liveP: number) => void;
+  onTrade: (opp: TradeIdea, amount: number, liveP: number) => void;
   trading: boolean;
 }
 
@@ -15,19 +16,7 @@ export default function SmallTradeCard({ trade, rank, amount, onTrade, trading }
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showWhy, setShowWhy] = useState(false);
 
-  // Fallbacks
-  const pair = trade.pair || trade.ticker || "GBP/USD";
-  const desc = trade.description || trade.name || "British Pound / US Dollar";
-  const action = trade.direction || trade.action || "SELL";
-  const status = trade.status || "Open";
-  const riskLevel = trade.riskLevel || "Medium";
-  const openTime = trade.openTime || "3:00 AM ET";
-  const closeTime = trade.closeTime || "8:00 AM ET";
-  const bestTime = trade.bestTime || "3:00 AM - 8:00 AM ET";
-  const whyThisTrade = trade.whyThisTrade || "Short-term downward trend developing.";
-
-  const profitRate = trade.profitRate || 1.52;
-  const lossRate = trade.lossRate || 0.8;
+  const { pair, description: desc, direction: action, status, riskLevel, openTime, closeTime, bestTime, whyThisTrade, profitRate, lossRate } = trade;
 
   // Dynamic profit/loss based on amount
   const projectedProfit = amount * profitRate;

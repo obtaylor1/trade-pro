@@ -15,392 +15,9 @@ import ProtectionNotice from "@/components/trade/ProtectionNotice";
 import BestMatchTradeCard from "@/components/trade/BestMatchTradeCard";
 import SmallTradeCard from "@/components/trade/SmallTradeCard";
 import PracticeFooter from "@/components/trade/PracticeFooter";
-
-// ─── Live Prices Hook ─────────────────────────────────────────────────────────
-
-interface LivePrice {
-  price: number;
-  change24h: number;
-  marketOpen: boolean;
-  lastUpdated: string;
-  bid?: number;
-  ask?: number;
-  spread?: string;
-  source: "live" | "cache";
-}
-
-function useLivePrices() {
-  const { data } = useQuery<{ prices: Record<string, LivePrice>; marketOpen: boolean }>({
-    queryKey: ["/api/live-prices"],
-    queryFn: () => fetch("/api/live-prices").then(r => r.json()),
-    refetchInterval: 10_000,
-    staleTime: 5_000,
-  });
-  return { prices: data?.prices ?? {}, marketOpen: data?.marketOpen ?? false };
-}
-
-// ─── Fallback Simulated Dataset ───────────────────────────────────────────────
-
-const DEFAULT_IDEAS: Record<string, any[]> = {
-  forex: [
-    {
-      id: "eur-usd",
-      pair: "EUR/USD",
-      description: "Euro / US Dollar",
-      market: "forex",
-      direction: "SELL",
-      duration: "quick",
-      score: 75,
-      riskLevel: "Low",
-      status: "Open",
-      openTime: "Today, 8:05 AM ET",
-      closeTime: "Today, 11:45 AM ET",
-      tradeLength: "About 3 hr 40 min",
-      bestTime: "8:00 AM - 12:00 PM ET",
-      sessionName: "London / New York Overlap",
-      whyThisTrade: "Price is moving down, the trend is strong, and this trade has a small safety stop.",
-      profitRate: 1.20,
-      lossRate: 0.60,
-      entryPrice: 1.0845,
-      profitGoal: "+0.0050 (+50 pips)",
-      safetyStop: "-0.0025 (-25 pips)",
-      tradeSize: "0.01 Micro Lots",
-      timeframe: "5 Minute (M5)",
-      signalType: "Momentum Breakdown"
-    },
-    {
-      id: "gbp-usd",
-      pair: "GBP/USD",
-      description: "British Pound / US Dollar",
-      market: "forex",
-      direction: "SELL",
-      duration: "shortTerm",
-      score: 72,
-      riskLevel: "Medium",
-      status: "Open",
-      openTime: "3:00 AM ET",
-      closeTime: "8:00 AM ET",
-      tradeLength: "About 5 hr",
-      bestTime: "3:00 AM - 8:00 AM ET",
-      sessionName: "London Open",
-      whyThisTrade: "Short-term down move possible.",
-      profitRate: 1.52,
-      lossRate: 0.80,
-      entryPrice: 1.2645,
-      profitGoal: "+0.0060 (+60 pips)",
-      safetyStop: "-0.0030 (-30 pips)",
-      tradeSize: "0.01 Micro Lots",
-      timeframe: "15 Minute (M15)",
-      signalType: "Breakout Pullback"
-    },
-    {
-      id: "usd-jpy",
-      pair: "USD/JPY",
-      description: "US Dollar / Japanese Yen",
-      market: "forex",
-      direction: "SELL",
-      duration: "quick",
-      score: 77,
-      riskLevel: "Medium",
-      status: "Win",
-      openTime: "3:00 AM ET",
-      closeTime: "5:00 AM ET",
-      tradeLength: "About 2 hr",
-      bestTime: "3:00 AM - 5:00 AM ET",
-      sessionName: "Tokyo / London overlap",
-      whyThisTrade: "Strong down signal, higher movement.",
-      profitRate: 1.00,
-      lossRate: 0.52,
-      entryPrice: 154.20,
-      profitGoal: "+0.30 (+30 pips)",
-      safetyStop: "-0.15 (-15 pips)",
-      tradeSize: "0.01 Micro Lots",
-      timeframe: "5 Minute (M5)",
-      signalType: "Reversal Pattern"
-    },
-    {
-      id: "aud-usd",
-      pair: "AUD/USD",
-      description: "Australian Dollar / US Dollar",
-      market: "forex",
-      direction: "SELL",
-      duration: "longTerm",
-      score: 66,
-      riskLevel: "Low",
-      status: "Loss",
-      openTime: "9:00 PM ET",
-      closeTime: "10:00 AM ET",
-      tradeLength: "About 13 hr",
-      bestTime: "9:00 PM - 10:00 AM ET",
-      sessionName: "Asia / London session",
-      whyThisTrade: "Possible short-term pullback.",
-      profitRate: 0.72,
-      lossRate: 0.40,
-      entryPrice: 0.6545,
-      profitGoal: "+0.0040 (+40 pips)",
-      safetyStop: "-0.0020 (-20 pips)",
-      tradeSize: "0.01 Micro Lots",
-      timeframe: "1 Hour (H1)",
-      signalType: "Mean Reversion"
-    },
-    {
-      id: "usd-cad",
-      pair: "USD/CAD",
-      description: "US Dollar / Canadian Dollar",
-      market: "forex",
-      direction: "BUY",
-      duration: "shortTerm",
-      score: 68,
-      riskLevel: "Low",
-      status: "Open",
-      openTime: "7:00 AM ET",
-      closeTime: "11:00 AM ET",
-      tradeLength: "About 4 hr",
-      bestTime: "7:00 AM - 11:00 AM ET",
-      sessionName: "New York session",
-      whyThisTrade: "Possible upward movement with low risk.",
-      profitRate: 1.12,
-      lossRate: 0.52,
-      entryPrice: 1.3620,
-      profitGoal: "+0.0045 (+45 pips)",
-      safetyStop: "-0.0020 (-20 pips)",
-      tradeSize: "0.01 Micro Lots",
-      timeframe: "15 Minute (M15)",
-      signalType: "Support Bounce"
-    }
-  ],
-  stocks: [
-    {
-      id: "aapl",
-      pair: "AAPL/USD",
-      description: "Apple Inc.",
-      market: "stocks",
-      direction: "BUY",
-      duration: "shortTerm",
-      score: 88,
-      riskLevel: "Low",
-      status: "Open",
-      openTime: "Today, 9:30 AM ET",
-      closeTime: "Tomorrow, 4:00 PM ET",
-      tradeLength: "About 1 day",
-      bestTime: "9:30 AM - 4:00 PM ET",
-      sessionName: "US Market Hours",
-      whyThisTrade: "Strong demand for new device models, bouncing off the 50-day moving average support.",
-      profitRate: 0.85,
-      lossRate: 0.35,
-      entryPrice: 185.50,
-      profitGoal: "+$15.00 Target",
-      safetyStop: "-$6.00 Stop Loss",
-      tradeSize: "1 Share Equivalent",
-      timeframe: "Daily (1D)",
-      signalType: "Support Bounce"
-    },
-    {
-      id: "tsla",
-      pair: "TSLA/USD",
-      description: "Tesla Inc.",
-      market: "stocks",
-      direction: "BUY",
-      duration: "quick",
-      score: 72,
-      riskLevel: "High",
-      status: "Open",
-      openTime: "Today, 9:30 AM ET",
-      closeTime: "Today, 11:30 AM ET",
-      tradeLength: "About 2 hr",
-      bestTime: "9:30 AM - 10:30 AM ET",
-      sessionName: "US Market Open",
-      whyThisTrade: "High volatility breakout pattern. High potential return with wider safety stop.",
-      profitRate: 2.10,
-      lossRate: 1.20,
-      entryPrice: 175.20,
-      profitGoal: "+$8.00 Target",
-      safetyStop: "-$4.50 Stop Loss",
-      tradeSize: "1 Share Equivalent",
-      timeframe: "5 Minute (M5)",
-      signalType: "Momentum Breakout"
-    },
-    {
-      id: "msft",
-      pair: "MSFT/USD",
-      description: "Microsoft Corp.",
-      market: "stocks",
-      direction: "BUY",
-      duration: "longTerm",
-      score: 85,
-      riskLevel: "Low",
-      status: "Open",
-      openTime: "Monday, 9:30 AM ET",
-      closeTime: "Friday, 4:00 PM ET",
-      tradeLength: "About 5 days",
-      bestTime: "9:30 AM - 4:00 PM ET",
-      sessionName: "US Market Hours",
-      whyThisTrade: "Strong Enterprise Cloud and AI adoption metrics, positive multi-month breakout.",
-      profitRate: 1.10,
-      lossRate: 0.40,
-      entryPrice: 420.00,
-      profitGoal: "+$35.00 Target",
-      safetyStop: "-$12.00 Stop Loss",
-      tradeSize: "1 Share Equivalent",
-      timeframe: "Daily (1D)",
-      signalType: "Momentum Breakout"
-    }
-  ],
-  crypto: [
-    {
-      id: "btc-usd",
-      pair: "BTC/USD",
-      description: "Bitcoin / US Dollar",
-      market: "crypto",
-      direction: "BUY",
-      duration: "quick",
-      score: 84,
-      riskLevel: "Medium",
-      status: "Open",
-      openTime: "Today, 2:00 PM ET",
-      closeTime: "Today, 6:00 PM ET",
-      tradeLength: "About 4 hr",
-      bestTime: "24/7 (Best during US trading)",
-      sessionName: "Global Crypto Session",
-      whyThisTrade: "Bouncing off weekly support with high volume inflows.",
-      profitRate: 1.45,
-      lossRate: 0.70,
-      entryPrice: 96500.00,
-      profitGoal: "+$2,000 Target",
-      safetyStop: "-$1,000 Stop Loss",
-      tradeSize: "0.001 BTC equivalent",
-      timeframe: "15 Minute (M15)",
-      signalType: "Support Bounce"
-    },
-    {
-      id: "eth-usd",
-      pair: "ETH/USD",
-      description: "Ethereum / US Dollar",
-      market: "crypto",
-      direction: "BUY",
-      duration: "shortTerm",
-      score: 79,
-      riskLevel: "Medium",
-      status: "Open",
-      openTime: "Today, 8:00 AM ET",
-      closeTime: "Tomorrow, 8:00 AM ET",
-      tradeLength: "About 24 hr",
-      bestTime: "24/7 Global",
-      sessionName: "Global Crypto Session",
-      whyThisTrade: "Moving above 200-hour moving average, volume increasing.",
-      profitRate: 1.25,
-      lossRate: 0.55,
-      entryPrice: 3500.00,
-      profitGoal: "+$120.00 Target",
-      safetyStop: "-$50.00 Stop Loss",
-      tradeSize: "0.01 ETH equivalent",
-      timeframe: "1 Hour (H1)",
-      signalType: "Momentum Breakout"
-    },
-    {
-      id: "sol-usd",
-      pair: "SOL/USD",
-      description: "Solana / US Dollar",
-      market: "crypto",
-      direction: "BUY",
-      duration: "longTerm",
-      score: 81,
-      riskLevel: "High",
-      status: "Open",
-      openTime: "Monday, 8:00 AM ET",
-      closeTime: "Sunday, 8:00 AM ET",
-      tradeLength: "About 7 days",
-      bestTime: "24/7 Global",
-      sessionName: "Global Crypto Session",
-      whyThisTrade: "Key support holding strong with network activity breaking highs.",
-      profitRate: 1.65,
-      lossRate: 0.85,
-      entryPrice: 145.00,
-      profitGoal: "+$18.00 Target",
-      safetyStop: "-$9.00 Stop Loss",
-      tradeSize: "0.1 SOL equivalent",
-      timeframe: "Daily (1D)",
-      signalType: "Support Bounce"
-    }
-  ],
-  commodities: [
-    {
-      id: "gold",
-      pair: "GOLD/USD",
-      description: "Gold Futures",
-      market: "commodities",
-      direction: "BUY",
-      duration: "longTerm",
-      score: 91,
-      riskLevel: "Low",
-      status: "Open",
-      openTime: "Monday, 8:00 AM ET",
-      closeTime: "Friday, 5:00 PM ET",
-      tradeLength: "About 5 days",
-      bestTime: "8:00 AM - 5:00 PM ET",
-      sessionName: "US/London overlap",
-      whyThisTrade: "Global safe haven demand continues to rise, pushing gold above previous resistance.",
-      profitRate: 1.30,
-      lossRate: 0.50,
-      entryPrice: 2350.00,
-      profitGoal: "+$60.00 Target",
-      safetyStop: "-$25.00 Stop Loss",
-      tradeSize: "0.1 Contract equivalent",
-      timeframe: "Daily (1D)",
-      signalType: "Momentum Breakout"
-    },
-    {
-      id: "oil",
-      pair: "OIL/USD",
-      description: "Crude Oil Futures",
-      market: "commodities",
-      direction: "SELL",
-      duration: "shortTerm",
-      score: 74,
-      riskLevel: "Medium",
-      status: "Open",
-      openTime: "Today, 9:00 AM ET",
-      closeTime: "Tomorrow, 4:00 PM ET",
-      tradeLength: "About 1 day",
-      bestTime: "9:00 AM - 4:00 PM ET",
-      sessionName: "US Session",
-      whyThisTrade: "Global supply increases driving crude prices down off key resistance.",
-      profitRate: 1.15,
-      lossRate: 0.60,
-      entryPrice: 78.50,
-      profitGoal: "+$3.20 Target",
-      safetyStop: "-$1.60 Stop Loss",
-      tradeSize: "10 Barrels equivalent",
-      timeframe: "4 Hour (H4)",
-      signalType: "Mean Reversion"
-    },
-    {
-      id: "silver",
-      pair: "SILVER/USD",
-      description: "Silver Spot",
-      market: "commodities",
-      direction: "BUY",
-      duration: "quick",
-      score: 70,
-      riskLevel: "Medium",
-      status: "Open",
-      openTime: "Today, 8:00 AM ET",
-      closeTime: "Today, 12:00 PM ET",
-      tradeLength: "About 4 hr",
-      bestTime: "8:00 AM - 12:00 PM ET",
-      sessionName: "London / New York Open",
-      whyThisTrade: "Strong industrial demands driving short-term momentum.",
-      profitRate: 1.05,
-      lossRate: 0.50,
-      entryPrice: 28.20,
-      profitGoal: "+$0.80 Target",
-      safetyStop: "-$0.40 Stop Loss",
-      tradeSize: "50 Ounces equivalent",
-      timeframe: "15 Minute (M15)",
-      signalType: "Momentum Breakout"
-    }
-  ]
-};
+import { useLivePrices } from "@/hooks/useLivePrices";
+import { DEFAULT_IDEAS } from "@/lib/defaultIdeas";
+import type { TradeIdea, LiveOrderPreview } from "@/lib/types";
 
 // ─── Markets Page ─────────────────────────────────────────────────────────────
 
@@ -415,7 +32,7 @@ export default function MarketsPage() {
   const [selectedDuration, setSelectedDuration] = useState<string>("quick");
   const [selectedAmount, setSelectedAmount] = useState<number>(0.25);
   const [customActive, setCustomActive] = useState<boolean>(false);
-  const [activeLivePreview, setActiveLivePreview] = useState<any | null>(null);
+  const [activeLivePreview, setActiveLivePreview] = useState<LiveOrderPreview | null>(null);
 
   const { prices: livePrices, marketOpen } = useLivePrices();
 
@@ -442,9 +59,9 @@ export default function MarketsPage() {
 
   // ─── Order Preview Mutation ───
   const previewMutation = useMutation({
-    mutationFn: async ({ opp, amount, liveP }: { opp: any; amount: number; liveP: number }) => {
-      const ticker = opp.pair ? opp.pair.replace("/", "-") : (opp.ticker || "EUR-USD");
-      const side = opp.direction?.toLowerCase() === "sell" || opp.action?.toLowerCase() === "sell" ? "sell" : "buy";
+    mutationFn: async ({ opp, amount, liveP }: { opp: TradeIdea; amount: number; liveP: number }) => {
+      const ticker = opp.pair.replace("/", "-");
+      const side = opp.direction.toLowerCase() === "sell" ? "sell" : "buy";
       const quantity = amount / liveP;
 
       const res = await fetch("/api/trading/orders/preview", {
@@ -459,8 +76,8 @@ export default function MarketsPage() {
           notionalAmount: amount,
           estimatedPrice: liveP,
           tradeScore: opp.score || 85,
-          riskLevel: opp.risk || "Low",
-          reason: opp.reason || opp.rationale || "Signal convergence match.",
+          riskLevel: opp.riskLevel || "Low",
+          reason: opp.whyThisTrade || "Signal convergence match.",
         })
       });
       if (!res.ok) {
@@ -475,9 +92,9 @@ export default function MarketsPage() {
       } else {
         setActiveLivePreview({
           previewId: data.previewId,
-          symbol: vars.opp.pair || vars.opp.ticker || "EUR/USD",
+          symbol: vars.opp.pair,
           assetClass: vars.opp.market || "forex",
-          side: vars.opp.direction?.toLowerCase() === "sell" || vars.opp.action?.toLowerCase() === "sell" ? "sell" : "buy",
+          side: vars.opp.direction.toLowerCase() === "sell" ? "sell" : "buy",
           orderType: "market",
           quantity: data.quantity,
           notionalAmount: vars.amount,
@@ -486,8 +103,8 @@ export default function MarketsPage() {
           estimatedFees: data.estimatedFees,
           estimatedTotal: data.estimatedTotal,
           tradeScore: vars.opp.score || 85,
-          riskLevel: vars.opp.risk || "Low",
-          reason: vars.opp.reason || vars.opp.rationale || "Signal convergence match.",
+          riskLevel: vars.opp.riskLevel || "Low",
+          reason: vars.opp.whyThisTrade || "Signal convergence match.",
         });
       }
     },
@@ -538,8 +155,8 @@ export default function MarketsPage() {
   };
 
   // Harmonize backend live signals with UI components and default simulated dataset
-  const getMappedIdeas = () => {
-    const list: any[] = [];
+  const getMappedIdeas = (): TradeIdea[] => {
+    const list: TradeIdea[] = [];
 
     // 1. Process actual live opportunities from backend
     if (opps && opps.length > 0) {
@@ -601,7 +218,7 @@ export default function MarketsPage() {
           profitGoal: `+$${Math.abs(target - entry).toFixed(2)} Target`,
           safetyStop: `-$${Math.abs(entry - stop).toFixed(2)} Stop Loss`,
           tradeSize: "0.01 Micro Lots equivalent",
-          timeframe: opp.timeframes,
+          timeframe: opp.timeframes || "5 Minute (M5)",
           signalType: opp.signalType,
         });
       });
@@ -740,7 +357,7 @@ export default function MarketsPage() {
                   <SmallTradeCard
                     key={trade.id}
                     trade={trade}
-                    rank={trade.rank}
+                    rank={trade.rank ?? 0}
                     amount={selectedAmount}
                     onTrade={(opp, amt, lp) => previewMutation.mutate({ opp, amount: amt, liveP: lp })}
                     trading={previewMutation.isPending || placePaperMutation.isPending}

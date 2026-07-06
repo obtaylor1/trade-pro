@@ -216,11 +216,11 @@ export default function AccountCenterPage() {
 
                 <div className="flex items-center gap-5 mt-4 mb-3 select-none">
                   <div className="profile-avatar border border-blue-500/30 shadow-[0_0_12px_rgba(59,130,246,0.3)]">
-                    OT
+                    {(user?.name ?? "TP").split(" ").map(part => part[0]).slice(0, 2).join("").toUpperCase()}
                   </div>
                   <div className="text-left">
-                    <h3 className="text-xl font-black text-white leading-tight">Obie Taylor</h3>
-                    <p className="text-xs text-slate-400 font-semibold mt-1">obtaylor@gmail.com</p>
+                    <h3 className="text-xl font-black text-white leading-tight">{user?.name ?? "Trader"}</h3>
+                    <p className="text-xs text-slate-400 font-semibold mt-1">{user?.email ?? ""}</p>
                     
                     <div className="flex items-center gap-2 mt-3">
                       <span className="px-2.5 py-0.5 rounded text-[9px] font-black uppercase bg-[#2563eb]/10 text-[#bfdbfe] border border-[#2563eb]/40">

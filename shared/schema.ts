@@ -70,10 +70,17 @@ export const insertPortfolioSnapshotSchema = createInsertSchema(portfolioSnapsho
 // ─── Auth Schemas ─────────────────────────────────────────────────────────────
 
 export const signupSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters").max(80, "Name is too long"),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(128, "Password is too long"),
 });
+
+// ─── Shared Field Validators ─────────────────────────────────────────────────
+
+export const marketEnum = z.enum(["stocks", "commodities", "crypto", "options", "forex"]);
+export const tickerSchema = z.string()
+  .regex(/^[A-Za-z0-9][A-Za-z0-9\/\-\.=]{0,19}$/, "Invalid ticker symbol")
+  .transform(t => t.toUpperCase());
 
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -123,10 +130,10 @@ export const tradingOpportunitySchema = z.object({
 export const executeTradeSchema = z.object({
   userId: z.string().optional(),
   opportunityId: z.string().optional(),
-  market: z.string(),
-  ticker: z.string(),
-  tickerName: z.string().optional(),
-  action: z.string(),
+  market: marketEnum,
+  ticker: tickerSchema,
+  tickerName: z.string().max(120).optional(),
+  action: z.enum(["BUY", "SELL"]),
   entryPrice: z.coerce.number(),
   units: z.coerce.number(),
   investedAmount: z.coerce.number().positive(),

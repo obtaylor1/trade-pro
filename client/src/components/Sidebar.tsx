@@ -7,7 +7,6 @@ const NAV = [
   { path: "/markets",   label: "Choose a Trade",  icon: "fas fa-chart-line" },
   { path: "/connect-broker", label: "Connect Broker", icon: "fas fa-link" },
   { path: "/my-trades", label: "My Trades",       icon: "fas fa-briefcase" },
-  { path: "/",          label: "Watchlist",       icon: "fas fa-star" },
   { path: "/learn",     label: "Learning Center", icon: "fas fa-graduation-cap" },
   { path: "/news",      label: "News",            icon: "fas fa-newspaper" },
   { path: "/account",   label: "Account",         icon: "fas fa-user" },

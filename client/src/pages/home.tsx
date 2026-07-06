@@ -8,15 +8,22 @@ import type { TradingOpportunity } from "@shared/schema";
 
 type Period = "1D" | "1W" | "1M" | "3M" | "1Y";
 
-function buildChartData(snapshots: any[], balance: number) {
+interface SnapshotPoint {
+  snapshotAt: string;
+  balance: string;
+}
+
+function buildChartData(snapshots: SnapshotPoint[], balance: number) {
   if (!snapshots || snapshots.length < 2) {
+    // Not enough history yet — render a flat line at the current balance so
+    // the chart is stable across renders instead of random noise.
     const now = Date.now();
     return Array.from({ length: 7 }, (_, i) => ({
       t: new Date(now - (6 - i) * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      v: parseFloat((balance * (0.994 + Math.random() * 0.012)).toFixed(2)),
+      v: balance,
     }));
   }
-  return snapshots.map((s: any) => ({
+  return snapshots.map(s => ({
     t: new Date(s.snapshotAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
     v: parseFloat(s.balance),
   }));
@@ -30,9 +37,7 @@ export default function HomePage() {
   const [period, setPeriod] = useState<Period>("1W");
   const periods: Period[] = ["1D", "1W", "1M", "3M", "1Y"];
 
-  const balance = parseFloat(user?.paperBalance ?? "998.50");
-  const startingBalance = 1000;
-  const practicePnL = balance - startingBalance;
+  const balance = parseFloat(user?.paperBalance ?? "0");
   
   // Dialog state for "Why this trade" modal details
   const [activeReasoning, setActiveReasoning] = useState<string | null>(null);
@@ -107,7 +112,15 @@ export default function HomePage() {
   });
 
   const chartData = buildChartData(snapshots ?? [], balance);
+  // Derive the true starting balance from the earliest snapshot (set at signup/onboarding).
+  const startingBalance = snapshots?.length ? parseFloat(snapshots[0].balance) : balance;
+  const practicePnL = balance - startingBalance;
   const chartColor = balance >= startingBalance ? "#22c55e" : "#ef4444";
+
+  // Best/worst single-day balance change derived from snapshot history.
+  const dayChanges = chartData.slice(1).map((p, i) => p.v - chartData[i].v);
+  const bestDay = dayChanges.length ? Math.max(...dayChanges, 0) : 0;
+  const worstDay = dayChanges.length ? Math.min(...dayChanges, 0) : 0;
 
   // Starter watchlist item defaults
   const starters = [
@@ -268,7 +281,7 @@ export default function HomePage() {
 
             {/* Subtitle helper description */}
             <div className="text-xs text-slate-400 font-semibold text-left mb-4 bg-slate-950/45 p-3 rounded-xl border border-slate-900">
-              📊 Your practice account started at <strong className="text-white">$1,000.00</strong> and is now <strong className={practicePnL >= 0 ? "text-green-500" : "text-red-400"}>${balance.toFixed(2)}</strong>.
+              📊 Your practice account started at <strong className="text-white">${startingBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}</strong> and is now <strong className={practicePnL >= 0 ? "text-green-500" : "text-red-400"}>${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}</strong>.
             </div>
 
             {/* Inner Grid layout: Chart on left, statistics on right */}
@@ -283,7 +296,7 @@ export default function HomePage() {
                       contentStyle={{ background: "#1a2332", border: "1px solid #243044", borderRadius: 8, fontSize: 12 }}
                       formatter={(v: any) => [`$${parseFloat(v).toLocaleString()}`, "Balance"]}
                     />
-                    <ReferenceLine y={1000} stroke="#3b82f6" strokeDasharray="3 3" />
+                    <ReferenceLine y={startingBalance} stroke="#3b82f6" strokeDasharray="3 3" />
                     <Line type="monotone" dataKey="v" stroke={chartColor} strokeWidth={2.5} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -303,11 +316,11 @@ export default function HomePage() {
                 </div>
                 <div className="flex justify-between pb-1.5 border-b border-slate-900/60">
                   <span className="text-slate-500">Best Day:</span>
-                  <span className="text-green-500 font-mono">+$0.02</span>
+                  <span className="text-green-500 font-mono">+${bestDay.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Worst Day:</span>
-                  <span className="text-red-400 font-mono">-$1.50</span>
+                  <span className="text-red-400 font-mono">{worstDay < 0 ? "-" : ""}${Math.abs(worstDay).toFixed(2)}</span>
                 </div>
               </div>
             </div>

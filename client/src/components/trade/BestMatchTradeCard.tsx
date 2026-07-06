@@ -4,11 +4,12 @@ import TradeTimeline from "./TradeTimeline";
 import TradeScoreGauge from "./TradeScoreGauge";
 import AdvancedDetails from "./AdvancedDetails";
 import { useTradingMode } from "@/contexts/TradingModeContext";
+import type { TradeIdea } from "@/lib/types";
 
 interface BestMatchTradeCardProps {
-  trade: any;
+  trade: TradeIdea;
   amount: number;
-  onTrade: (opp: any, amount: number, liveP: number) => void;
+  onTrade: (opp: TradeIdea, amount: number, liveP: number) => void;
   trading: boolean;
 }
 
@@ -16,22 +17,10 @@ export default function BestMatchTradeCard({ trade, amount, onTrade, trading }: 
   const { tradingMode } = useTradingMode();
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Fallbacks
-  const pair = trade.pair || trade.ticker || "EUR/USD";
-  const desc = trade.description || trade.name || "Euro / US Dollar";
-  const action = trade.direction || trade.action || "BUY";
-  const score = trade.score || trade.confidence || 75;
-  const status = trade.status || "Open";
-  const whyThisTrade = trade.whyThisTrade || "Price is moving down, the trend is strong, and this trade has a small safety stop.";
-  const openTime = trade.openTime || "Today, 8:05 AM ET";
-  const closeTime = trade.closeTime || "Today, 11:45 AM ET";
-  const tradeLength = trade.tradeLength || "About 3 hr 40 min";
-  const bestTime = trade.bestTime || "8:00 AM - 12:00 PM ET";
-  const sessionName = trade.sessionName || "London / New York Overlap";
-
-  // Calculate profit/loss rates
-  const profitRate = trade.profitRate || 1.2;
-  const lossRate = trade.lossRate || 0.6;
+  const {
+    pair, description: desc, direction: action, score, status, whyThisTrade,
+    openTime, closeTime, tradeLength, bestTime, sessionName, profitRate, lossRate,
+  } = trade;
 
   // Outcome status color
   const statusColors: Record<string, string> = {

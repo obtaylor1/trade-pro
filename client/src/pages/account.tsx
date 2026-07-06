@@ -4,24 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTradingMode } from "@/contexts/TradingModeContext";
 import { useToast } from "@/hooks/use-toast";
-
-interface LivePrice {
-  price: number;
-  change24h: number;
-  marketOpen: boolean;
-  lastUpdated: string;
-  source: "live" | "cache";
-}
-
-function useLivePrices() {
-  const { data } = useQuery<{ prices: Record<string, LivePrice>; marketOpen: boolean }>({
-    queryKey: ["/api/live-prices"],
-    queryFn: () => fetch("/api/live-prices").then(r => r.json()),
-    refetchInterval: 10_000,
-    staleTime: 5_000,
-  });
-  return data?.prices ?? {};
-}
+import { useLivePrices } from "@/hooks/useLivePrices";
+import type { LivePrice } from "@/lib/types";
+import type { Trade } from "@shared/schema";
 
 // Flag mapping helper
 const flagMap: Record<string, string> = {
@@ -39,17 +24,16 @@ const flagMap: Record<string, string> = {
 };
 
 // Legacy trade logic mapping helper
-function calculateLivePnL(trade: any, livePrices: Record<string, LivePrice>): number {
-  if (trade.status !== "OPEN") return parseFloat(trade.pnl ?? 0);
+function calculateLivePnL(trade: Trade, livePrices: Record<string, LivePrice>): number {
+  if (trade.status !== "OPEN") return parseFloat(String(trade.pnl ?? 0));
   const market = trade.market;
   const ticker = trade.ticker;
   const commodityMap: Record<string, string> = { GOLD: "GC=F", OIL: "CL=F", SILVER: "SI=F", NATGAS: "NG=F", CORN: "ZC=F", COPPER: "HG=F", WHEAT: "ZW=F" };
   const priceKey = market === "commodities" ? (commodityMap[ticker] ?? ticker) : ticker;
   const livePrice = livePrices[priceKey]?.price;
   if (!livePrice || livePrice <= 0) return 0;
-  const units = parseFloat(trade.units);
-  const entry = parseFloat(trade.entryPrice);
-  const invested = parseFloat(trade.investedAmount);
+  const units = parseFloat(String(trade.units));
+  const entry = parseFloat(String(trade.entryPrice));
   if (trade.action === "SELL") {
     return parseFloat((units * (entry - livePrice)).toFixed(2));
   } else {
@@ -65,15 +49,15 @@ export default function AccountPage() {
   const queryClient = useQueryClient();
 
   const [viewType, setViewType] = useState<"beginner" | "advanced">("beginner");
-  const [selectedTrade, setSelectedTrade] = useState<any | null>(null);
-  const [tradeToClose, setTradeToClose] = useState<any | null>(null);
+  const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
+  const [tradeToClose, setTradeToClose] = useState<Trade | null>(null);
   const [closeCheckbox, setCloseCheckbox] = useState(false);
   const [showReset, setShowReset] = useState(false);
 
-  const livePrices = useLivePrices();
+  const { prices: livePrices } = useLivePrices();
 
   // Query trades
-  const { data: trades = [], isLoading } = useQuery<any[]>({
+  const { data: trades = [], isLoading } = useQuery<Trade[]>({
     queryKey: ["/api/trades"],
     queryFn: () => fetch("/api/trades", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
     enabled: !!token,
@@ -146,7 +130,8 @@ export default function AccountPage() {
   const currentMode = tradingMode; // 'paper' or 'live'
   
   // Merge orders & legacy trades for unified display
-  const allMergedTrades = [...trades].map(t => ({
+  type DisplayTrade = Trade & { isLive: boolean };
+  const allMergedTrades: DisplayTrade[] = trades.map(t => ({
     ...t,
     isLive: false,
   }));
@@ -157,7 +142,9 @@ export default function AccountPage() {
     if (!allMergedTrades.some(t => t.id === o.id)) {
       allMergedTrades.push({
         id: o.id,
+        userId: o.userId,
         ticker: o.symbol,
+        tickerName: o.symbol,
         market: o.assetClass,
         action: o.side.toUpperCase(),
         entryPrice: o.estimatedPrice,
@@ -165,6 +152,9 @@ export default function AccountPage() {
         investedAmount: o.notionalAmount,
         status: o.status === "filled" ? "OPEN" : "CLOSED",
         entryAt: o.createdAt,
+        exitPrice: null,
+        exitAt: null,
+        potentialGain: null,
         pnl: String(parseFloat(o.estimatedCost) * 0.1), // Mock live history PnL
         isLive: o.mode === "live",
       });
@@ -182,12 +172,13 @@ export default function AccountPage() {
   const liveBalanceVal = connectedLiveAccount?.buyingPower ? parseFloat(connectedLiveAccount.buyingPower) : 25000;
   const balance = currentMode === "live" ? liveBalanceVal : paperBalanceVal;
 
-  const totalPnL = closedTrades.reduce((s, t) => s + parseFloat(t.pnl ?? 0), 0);
+  const pnlOf = (t: DisplayTrade) => parseFloat(String(t.pnl ?? 0));
+  const totalPnL = closedTrades.reduce((s, t) => s + pnlOf(t), 0);
   const winRate = closedTrades.length > 0
-    ? Math.round(closedTrades.filter(t => parseFloat(t.pnl ?? 0) > 0).length / closedTrades.length * 100)
+    ? Math.round(closedTrades.filter(t => pnlOf(t) > 0).length / closedTrades.length * 100)
     : 0;
-  const bestTrade = closedTrades.length > 0 ? Math.max(...closedTrades.map(t => parseFloat(t.pnl ?? 0))) : 0;
-  const worstTrade = closedTrades.length > 0 ? Math.min(...closedTrades.map(t => parseFloat(t.pnl ?? 0))) : 0;
+  const bestTrade = closedTrades.length > 0 ? Math.max(...closedTrades.map(pnlOf)) : 0;
+  const worstTrade = closedTrades.length > 0 ? Math.min(...closedTrades.map(pnlOf)) : 0;
 
   // Derive "What's Happening Now" metrics
   const winningTradesCount = openTrades.filter(t => calculateLivePnL(t, livePrices) > 0).length;

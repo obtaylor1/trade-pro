@@ -383,19 +383,23 @@ export function startLiveDataService() {
   console.log("[liveData] starting live data service...");
   initCache();
 
+  const logFetchError = (source: string) => (err: unknown) => {
+    console.warn(`[liveData] ${source} refresh failed; serving cached/fallback prices:`, err instanceof Error ? err.message : err);
+  };
+
   // Initial fetches (non-blocking)
-  refreshEquities(STOCK_SYMBOLS).catch(() => {});
-  refreshEquities(COMMODITY_SYMBOLS).catch(() => {});
-  refreshCrypto().catch(() => {});
-  refreshForex().catch(() => {});
-  refreshAllOptionsChains().catch(() => {});
+  refreshEquities(STOCK_SYMBOLS).catch(logFetchError("stocks"));
+  refreshEquities(COMMODITY_SYMBOLS).catch(logFetchError("commodities"));
+  refreshCrypto().catch(logFetchError("crypto"));
+  refreshForex().catch(logFetchError("forex"));
+  refreshAllOptionsChains().catch(logFetchError("options"));
 
   // Schedule refreshes
-  setInterval(() => refreshEquities(STOCK_SYMBOLS).catch(() => {}), 15_000);
-  setInterval(() => refreshEquities(COMMODITY_SYMBOLS).catch(() => {}), 15_000);
-  setInterval(() => refreshCrypto().catch(() => {}), 60_000);    // Crypto: every 60s (CoinGecko free tier limit)
-  setInterval(() => refreshForex().catch(() => {}), 30_000);     // Forex: every 30s
-  setInterval(() => refreshAllOptionsChains().catch(() => {}), 5 * 60_000);
+  setInterval(() => refreshEquities(STOCK_SYMBOLS).catch(logFetchError("stocks")), 15_000);
+  setInterval(() => refreshEquities(COMMODITY_SYMBOLS).catch(logFetchError("commodities")), 15_000);
+  setInterval(() => refreshCrypto().catch(logFetchError("crypto")), 60_000);    // Crypto: every 60s (CoinGecko free tier limit)
+  setInterval(() => refreshForex().catch(logFetchError("forex")), 30_000);      // Forex: every 30s
+  setInterval(() => refreshAllOptionsChains().catch(logFetchError("options")), 5 * 60_000);
 
   console.log("[liveData] live data service started");
 }
