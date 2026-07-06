@@ -37,7 +37,12 @@ export default function Sidebar() {
       {/* Brand Header */}
       <div className="px-6 pt-7 pb-6">
         <div className="flex items-center gap-2">
-          <img src="/trade_pro_logo.jpg" alt="Trade Pro Logo" className="w-6 h-6 rounded-full object-cover border border-blue-500/30 shadow-[0_0_8px_rgba(59,130,246,0.3)]" />
+          <img
+            src="/trade_pro_logo.png"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/trade_pro_logo.jpg"; }}
+            alt="Trade Pro Logo"
+            className="w-6 h-6 rounded-lg object-cover border border-blue-500/30 shadow-[0_0_8px_rgba(59,130,246,0.3)]"
+          />
           <span className="sidebar-logo-title text-white">Trade Pro</span>
         </div>
         <div className="sidebar-logo-subtitle mt-1.5 font-medium leading-relaxed">

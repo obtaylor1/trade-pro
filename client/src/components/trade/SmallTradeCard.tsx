@@ -2,6 +2,7 @@ import { useState } from "react";
 import AdvancedDetails from "./AdvancedDetails";
 import { useTradingMode } from "@/contexts/TradingModeContext";
 import type { TradeIdea } from "@/lib/types";
+import FlagIcon from "@/components/shared/FlagIcon";
 
 interface SmallTradeCardProps {
   trade: TradeIdea;
@@ -49,53 +50,11 @@ export default function SmallTradeCard({ trade, rank, amount, onTrade, trading }
 
   // Overlapping flags helper
   const renderFlags = () => {
-    const parts = pair.split("/");
-    const first = parts[0] || "USD";
-    const second = parts[1] || "JPY";
-
-    const flagMap: Record<string, string> = {
-      EUR: "/eu_flag.jpg",
-      USD: "/us_flag.jpg",
-      GBP: "/uk_flag.jpg",
-      JPY: "/jp_flag.jpg",
-      AUD: "/au_flag.jpg",
-      CAD: "/ca_flag.jpg",
-    };
-
-    const firstFlag = flagMap[first];
-    const secondFlag = flagMap[second];
-
-    if (firstFlag && secondFlag) {
-      return (
-        <div className="flex items-center relative w-12 h-8 select-none">
-          <img src={firstFlag} alt={first} className="w-7 h-7 rounded-full object-cover border border-[#1e3555] absolute left-0 z-10 shadow-sm" />
-          <img src={secondFlag} alt={second} className="w-7 h-7 rounded-full object-cover border border-[#1e3555] absolute left-4 shadow-sm" />
-        </div>
-      );
-    }
-
-    const symbolMap: Record<string, string> = {
-      EUR: "€",
-      USD: "$",
-      GBP: "£",
-      JPY: "¥",
-      AUD: "A$",
-      CAD: "C$",
-      GOLD: "Au",
-      OIL: "Ol",
-    };
-
-    const firstSymbol = symbolMap[first] || first.slice(0, 2);
-    const secondSymbol = symbolMap[second] || second.slice(0, 2);
-
+    const [first = "USD", second = "JPY"] = pair.split("/");
     return (
-      <div className="flex items-center relative w-12 h-8">
-        <div className="w-7 h-7 rounded-full bg-blue-900 border border-blue-700 text-[10px] font-black text-blue-200 flex items-center justify-center absolute left-0 z-10 shadow-sm">
-          {firstSymbol}
-        </div>
-        <div className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-black text-slate-300 flex items-center justify-center absolute left-4 shadow-sm">
-          {secondSymbol}
-        </div>
+      <div className="flex items-center relative w-12 h-8 select-none">
+        <FlagIcon code={first} size={28} className="absolute left-0 z-10 drop-shadow-sm" />
+        <FlagIcon code={second} size={28} className="absolute left-4 drop-shadow-sm" />
       </div>
     );
   };

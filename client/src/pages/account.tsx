@@ -6,23 +6,16 @@ import { useTradingMode } from "@/contexts/TradingModeContext";
 import { useToast } from "@/hooks/use-toast";
 import { useLivePrices } from "@/hooks/useLivePrices";
 import StatCard from "@/components/shared/StatCard";
+import FlagIcon from "@/components/shared/FlagIcon";
+import EmptyStateArt from "@/components/shared/EmptyStateArt";
 import type { LivePrice } from "@/lib/types";
 import type { Trade } from "@shared/schema";
 
 // Flag mapping helper
-const flagMap: Record<string, string> = {
-  "EUR-USD": "/eu_flag.jpg",
-  "GBP-USD": "/uk_flag.jpg",
-  "USD-JPY": "/jp_flag.jpg",
-  "AUD-USD": "/au_flag.jpg",
-  "USD-CAD": "/ca_flag.jpg",
-  "EUR/USD": "/eu_flag.jpg",
-  "GBP/USD": "/uk_flag.jpg",
-  "USD/JPY": "/jp_flag.jpg",
-  "AUD/USD": "/au_flag.jpg",
-  "USD/CAD": "/ca_flag.jpg",
-  "GOLD": "/gold_icon.jpg",
-};
+/** Extracts the leading currency/asset code from a ticker like "EUR-USD" or "GOLD". */
+function baseCode(ticker: string): string {
+  return ticker.split(/[-\/]/)[0];
+}
 
 // Legacy trade logic mapping helper
 function calculateLivePnL(trade: Trade, livePrices: Record<string, LivePrice>): number {
@@ -371,8 +364,8 @@ export default function AccountPage() {
 
         {/* Open Trades Content */}
         {openTrades.length === 0 ? (
-          <div className="rounded-2xl border p-8 text-center text-slate-500 mb-6 bg-[#0b1626]" style={{ borderColor: "var(--color-border-strong)" }}>
-            <i className="fas fa-chart-line text-2xl mb-2.5 text-slate-600"></i>
+          <div className="rounded-2xl border p-8 text-center text-slate-500 mb-6 bg-[#0b1626] flex flex-col items-center" style={{ borderColor: "var(--color-border-strong)" }}>
+            <EmptyStateArt name="open_trades" fallbackIcon="fas fa-chart-line" size={84} className="mb-2.5" />
             <div className="text-xs font-black text-slate-400">No open trades at the moment</div>
             <Link href="/markets" className="text-[10px] font-extrabold text-blue-400 hover:text-blue-300 block mt-2 cursor-pointer">
               Go to Choose a Trade page to find opportunities →
@@ -385,7 +378,6 @@ export default function AccountPage() {
               const livePnL = calculateLivePnL(trade, livePrices);
               const isWin = livePnL >= 0;
               const pct = parseFloat(trade.investedAmount) > 0 ? (livePnL / parseFloat(trade.investedAmount)) * 100 : 0;
-              const flag = flagMap[trade.ticker] || flagMap[trade.ticker.replace("-", "/")] || null;
 
               return (
                 <div key={trade.id} className="trade-card">
@@ -393,13 +385,7 @@ export default function AccountPage() {
                   {/* Top Block */}
                   <div className="trade-card-header">
                     <div className="trade-title-row">
-                      {flag ? (
-                        <img src={flag} alt={trade.ticker} className="asset-icon border border-slate-700/40 object-cover" />
-                      ) : (
-                        <div className="asset-icon bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-500">
-                          <i className="fas fa-coins text-lg"></i>
-                        </div>
-                      )}
+                      <FlagIcon code={baseCode(trade.ticker)} size={36} className="drop-shadow-sm" />
                       <div>
                         <h3 className="trade-symbol leading-tight">{trade.ticker}</h3>
                         <p className="trade-market capitalize mt-0.5">{trade.market}</p>
@@ -539,9 +525,7 @@ export default function AccountPage() {
         {closedTrades.length === 0 ? (
           /* Educational Empty State Card */
           <div className="trade-history-empty">
-            <div className="w-16 h-16 rounded-full border border-slate-700/40 flex items-center justify-center text-slate-500 bg-slate-900/30 flex-shrink-0">
-              <i className="fas fa-clipboard-list text-2xl"></i>
-            </div>
+            <EmptyStateArt name="trade_history" fallbackIcon="fas fa-clipboard-list" size={96} />
             <div>
               <h4 className="text-base font-black text-white">No completed trades yet</h4>
               <p className="text-[13px] text-slate-400 font-semibold mt-1 leading-relaxed">

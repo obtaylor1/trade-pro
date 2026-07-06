@@ -5,6 +5,7 @@ import TradeScoreGauge from "./TradeScoreGauge";
 import AdvancedDetails from "./AdvancedDetails";
 import { useTradingMode } from "@/contexts/TradingModeContext";
 import type { TradeIdea } from "@/lib/types";
+import FlagIcon from "@/components/shared/FlagIcon";
 
 interface BestMatchTradeCardProps {
   trade: TradeIdea;
@@ -39,31 +40,13 @@ export default function BestMatchTradeCard({ trade, amount, onTrade, trading }: 
     : `The app thinks the price of ${pair.split("/")[0]} may go down against the ${pair.split("/")[1]}.`;
 
   const renderLargeFlags = () => {
-    const parts = pair.split("/");
-    const first = parts[0] || "EUR";
-    const second = parts[1] || "USD";
-
-    const flagMap: Record<string, string> = {
-      EUR: "/eu_flag.jpg",
-      USD: "/us_flag.jpg",
-      GBP: "/uk_flag.jpg",
-      JPY: "/jp_flag.jpg",
-      AUD: "/au_flag.jpg",
-      CAD: "/ca_flag.jpg",
-    };
-
-    const firstFlag = flagMap[first];
-    const secondFlag = flagMap[second];
-
-    if (firstFlag && secondFlag) {
-      return (
-        <div className="flex items-center relative w-24 h-[56px] select-none my-3">
-          <img src={firstFlag} alt={first} className="w-[52px] h-[52px] rounded-full object-cover border-2 border-[#1e3555] absolute left-0 z-10 shadow-md" />
-          <img src={secondFlag} alt={second} className="w-[52px] h-[52px] rounded-full object-cover border-2 border-[#1e3555] absolute left-7 shadow-md" />
-        </div>
-      );
-    }
-    return null;
+    const [first = "EUR", second = "USD"] = pair.split("/");
+    return (
+      <div className="flex items-center relative w-24 h-[56px] select-none my-3">
+        <FlagIcon code={first} size={52} className="absolute left-0 z-10 drop-shadow-md" />
+        <FlagIcon code={second} size={52} className="absolute left-7 drop-shadow-md" />
+      </div>
+    );
   };
 
   return (
