@@ -1,68 +1,123 @@
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTradingMode } from "@/contexts/TradingModeContext";
 
 const NAV = [
-  { path: "/",          label: "Home",      icon: "🏠" },
-  { path: "/markets",   label: "Markets",   icon: "📊" },
-  { path: "/ai-signal", label: "AI Signal", icon: "⚡" },
-  { path: "/news",      label: "News",      icon: "📰" },
-  { path: "/learn",     label: "Learn",     icon: "🎓" },
+  { path: "/",          label: "Home",            icon: "fas fa-house" },
+  { path: "/markets",   label: "Choose a Trade",  icon: "fas fa-chart-line" },
+  { path: "/connect-broker", label: "Connect Broker", icon: "fas fa-link" },
+  { path: "/my-trades", label: "My Trades",       icon: "fas fa-briefcase" },
+  { path: "/",          label: "Watchlist",       icon: "fas fa-star" },
+  { path: "/learn",     label: "Learning Center", icon: "fas fa-graduation-cap" },
+  { path: "/news",      label: "News",            icon: "fas fa-newspaper" },
+  { path: "/account",   label: "Account",         icon: "fas fa-user" },
+  { path: "/settings",  label: "Settings",        icon: "fas fa-gear" },
 ];
 
 export default function Sidebar() {
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
+  const { tradingMode, connectedLiveAccount } = useTradingMode();
 
-  const allNav = [
-    ...NAV,
-    ...(user?.isAdmin ? [{ path: "/admin", label: "Admin", icon: "🛡️" }] : []),
-    { path: "/account", label: "Account", icon: "👤" },
-  ];
+  const formattedBalance = user?.paperBalance
+    ? parseFloat(user.paperBalance).toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+      })
+    : "$0.00";
+
+  const formattedLiveBalance = connectedLiveAccount?.buyingPower
+    ? parseFloat(connectedLiveAccount.buyingPower).toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+      })
+    : "$25,000.00";
 
   return (
-    <aside
-      className="fixed left-0 top-0 h-screen w-[220px] hidden lg:flex flex-col z-40"
-      style={{ background: "#0d1117", borderRight: "1px solid #1f2937" }}
-    >
+    <aside className="sidebar hidden lg:flex select-none pb-4">
+      {/* Brand Header */}
       <div className="px-6 pt-7 pb-6">
-        <div className="text-2xl font-black" style={{ color: "#3b82f6" }}>Trade Pro</div>
-        <div className="text-xs mt-1 leading-snug" style={{ color: "#64748b" }}>
-          Trade any market.<br />Start with $0.25.
+        <div className="flex items-center gap-2">
+          <img src="/trade_pro_logo.jpg" alt="Trade Pro Logo" className="w-6 h-6 rounded-full object-cover border border-blue-500/30 shadow-[0_0_8px_rgba(59,130,246,0.3)]" />
+          <span className="sidebar-logo-title text-white">Trade Pro</span>
+        </div>
+        <div className="sidebar-logo-subtitle mt-1.5 font-medium leading-relaxed">
+          Smart trades.<br />Better decisions.
         </div>
       </div>
 
-      <nav className="flex-1 px-3 flex flex-col gap-1 overflow-y-auto">
-        {allNav.map(tab => {
+      {/* Navigation */}
+      <nav className="flex-1 px-3 flex flex-col gap-1 overflow-y-auto custom-scrollbar">
+        {NAV.map(tab => {
           const active =
-            tab.path === "/"
+            tab.label === "Choose a Trade"
+              ? location === "/markets"
+              : tab.label === "Connect Broker"
+              ? location === "/connect-broker"
+              : tab.label === "Home"
               ? location === "/"
-              : location === tab.path || location.startsWith(tab.path + "/");
+              : tab.label === "My Trades"
+              ? location === "/my-trades"
+              : tab.label === "Account"
+              ? location === "/account"
+              : tab.label === "Settings"
+              ? location === "/settings"
+              : location === tab.path;
+
           return (
             <button
-              key={tab.path}
+              key={tab.label}
               onClick={() => setLocation(tab.path)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold w-full text-left transition-all"
-              style={{
-                background: active ? "rgba(59,130,246,0.15)" : "transparent",
-                color: active ? "#3b82f6" : "#64748b",
-                fontWeight: active ? 600 : undefined,
-                border: active ? "1px solid rgba(59,130,246,0.35)" : "1px solid transparent",
-              }}
+              className={`sidebar-item w-full text-left transition-all ${
+                active ? "active" : "text-slate-400 hover:text-slate-200"
+              }`}
             >
-              <span className="text-base leading-none">{tab.icon}</span>
+              <span className="text-sm opacity-80 flex items-center justify-center w-5 h-5"><i className={tab.icon}></i></span>
               <span>{tab.label}</span>
-              {tab.path === "/admin" && (
-                <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}>
-                  ADMIN
-                </span>
-              )}
             </button>
           );
         })}
       </nav>
 
-      <div className="px-6 pb-6 text-xs" style={{ color: "#374151" }}>
-        Paper trading only —<br />no real money at risk
+      {/* Bottom Widgets */}
+      <div className="px-4 flex flex-col gap-3">
+        {/* Account Balance Display */}
+        {tradingMode === "live" && connectedLiveAccount ? (
+          <div className="rounded-xl p-3" style={{ background: "#0b1624", border: "1px solid #d97706" }}>
+            <div className="text-[10px] uppercase tracking-wider font-bold text-amber-500">
+              Live Buying Power
+            </div>
+            <div className="text-lg font-black mt-1 text-white">
+              {formattedLiveBalance}
+            </div>
+            <div className="text-[9px] mt-1 text-slate-500 font-bold">
+              Broker: {connectedLiveAccount.brokerName} Live
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl p-3" style={{ background: "#0b1624", border: "1px solid #1e3555" }}>
+            <div className="text-[10px] uppercase tracking-wider font-extrabold" style={{ color: "#64748b" }}>
+              PRACTICE BALANCE
+            </div>
+            <div className="text-lg font-black mt-1" style={{ color: "#22c55e" }}>
+              {formattedBalance}
+            </div>
+            <div className="text-[9px] mt-1" style={{ color: "#64748b" }}>
+              This is practice money
+            </div>
+          </div>
+        )}
+
+        {/* Need Help Box */}
+        <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: "#0b1624", border: "1px solid #1e3555" }}>
+          <div className="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+            <i className="fas fa-headset text-xs"></i>
+          </div>
+          <div>
+            <div className="text-xs font-bold text-white">Need Help?</div>
+            <div className="text-[10px]" style={{ color: "#64748b" }}>We're here for you</div>
+          </div>
+        </div>
       </div>
     </aside>
   );

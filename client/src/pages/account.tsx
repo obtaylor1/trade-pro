@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useLocation, Link } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { queryClient } from "@/lib/queryClient";
+import { useTradingMode } from "@/contexts/TradingModeContext";
 import { useToast } from "@/hooks/use-toast";
 
 interface LivePrice {
@@ -23,71 +23,82 @@ function useLivePrices() {
   return data?.prices ?? {};
 }
 
-function LivePnL({ trade, livePrices }: { trade: any; livePrices: Record<string, LivePrice> }) {
-  const isOpen = trade.status === "OPEN";
-  const pnl = parseFloat(trade.pnl ?? 0);
+// Flag mapping helper
+const flagMap: Record<string, string> = {
+  "EUR-USD": "/eu_flag.jpg",
+  "GBP-USD": "/uk_flag.jpg",
+  "USD-JPY": "/jp_flag.jpg",
+  "AUD-USD": "/au_flag.jpg",
+  "USD-CAD": "/ca_flag.jpg",
+  "EUR/USD": "/eu_flag.jpg",
+  "GBP/USD": "/uk_flag.jpg",
+  "USD/JPY": "/jp_flag.jpg",
+  "AUD/USD": "/au_flag.jpg",
+  "USD/CAD": "/ca_flag.jpg",
+  "GOLD": "/gold_icon.jpg",
+};
 
-  if (!isOpen) {
-    return (
-      <span className="font-bold" style={{ color: pnl >= 0 ? "#22c55e" : "#ef4444" }}>
-        {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
-      </span>
-    );
-  }
-
-  // Map trade ticker to live price key
+// Legacy trade logic mapping helper
+function calculateLivePnL(trade: any, livePrices: Record<string, LivePrice>): number {
+  if (trade.status !== "OPEN") return parseFloat(trade.pnl ?? 0);
   const market = trade.market;
   const ticker = trade.ticker;
   const commodityMap: Record<string, string> = { GOLD: "GC=F", OIL: "CL=F", SILVER: "SI=F", NATGAS: "NG=F", CORN: "ZC=F", COPPER: "HG=F", WHEAT: "ZW=F" };
   const priceKey = market === "commodities" ? (commodityMap[ticker] ?? ticker) : ticker;
-
-  const liveData = livePrices[priceKey];
-  const livePrice = liveData?.price;
-  const invested = parseFloat(trade.investedAmount);
+  const livePrice = livePrices[priceKey]?.price;
+  if (!livePrice || livePrice <= 0) return 0;
   const units = parseFloat(trade.units);
   const entry = parseFloat(trade.entryPrice);
-
-  if (!livePrice || livePrice <= 0) {
-    return <span style={{ color: "#64748b" }}>—</span>;
+  const invested = parseFloat(trade.investedAmount);
+  if (trade.action === "SELL") {
+    return parseFloat((units * (entry - livePrice)).toFixed(2));
+  } else {
+    return parseFloat((units * (livePrice - entry)).toFixed(2));
   }
-
-  const currentValue = livePrice * units;
-  const livePnl = currentValue - invested;
-  const livePct = invested > 0 ? (livePnl / invested) * 100 : 0;
-  const isLive = liveData?.source === "live";
-
-  return (
-    <div className="flex flex-col items-end">
-      <div className="flex items-center gap-1">
-        {isLive && <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ background: livePnl >= 0 ? "#22c55e" : "#ef4444" }} />}
-        <span className="font-bold" style={{ color: livePnl >= 0 ? "#22c55e" : "#ef4444" }}>
-          {livePnl >= 0 ? "+" : ""}${livePnl.toFixed(2)}
-        </span>
-      </div>
-      <span className="text-[10px]" style={{ color: livePnl >= 0 ? "#4ade80" : "#f87171" }}>
-        {livePct >= 0 ? "+" : ""}{livePct.toFixed(1)}%
-      </span>
-    </div>
-  );
 }
 
 export default function AccountPage() {
   const { user, token, logout, updateBalance } = useAuth();
+  const { tradingMode, setMode, connectedLiveAccount } = useTradingMode();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+
+  const [viewType, setViewType] = useState<"beginner" | "advanced">("beginner");
+  const [selectedTrade, setSelectedTrade] = useState<any | null>(null);
+  const [tradeToClose, setTradeToClose] = useState<any | null>(null);
+  const [closeCheckbox, setCloseCheckbox] = useState(false);
   const [showReset, setShowReset] = useState(false);
 
   const livePrices = useLivePrices();
 
-  const { data: trades, isLoading } = useQuery<any[]>({
+  // Query trades
+  const { data: trades = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/trades"],
     queryFn: () => fetch("/api/trades", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
     enabled: !!token,
   });
 
+  // Query live orders list to merge if available
+  const { data: orders = [] } = useQuery<any[]>({
+    queryKey: ["/api/trading/orders"],
+    queryFn: async () => {
+      if (!token) return [];
+      const res = await fetch("/api/trading/orders", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return res.json();
+    },
+    enabled: !!token,
+  });
+
+  // Close trade mutation
   const closeMutation = useMutation({
-    mutationFn: async (tradeId: string) => {
-      const res = await fetch(`/api/trades/${tradeId}/close`, {
+    mutationFn: async ({ id, isLive }: { id: string; isLive: boolean }) => {
+      const url = isLive 
+        ? `/api/trading/orders/${id}/cancel` 
+        : `/api/trades/${id}/close`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({}),
@@ -95,15 +106,27 @@ export default function AccountPage() {
       if (!res.ok) { const d = await res.json(); throw new Error(d.message); }
       return res.json();
     },
-    onSuccess: (data) => {
-      updateBalance(parseFloat(user?.paperBalance ?? "10000") + data.pnl);
-      toast({ title: `Trade closed`, description: `P&L: ${data.pnl >= 0 ? "+" : ""}$${parseFloat(data.pnl).toFixed(2)}` });
+    onSuccess: (data, vars) => {
+      if (!vars.isLive) {
+        updateBalance(parseFloat(user?.paperBalance ?? "10000") + (data.pnl ?? 0));
+      }
+      toast({ 
+        title: `Position Closed`, 
+        description: vars.isLive 
+          ? "Live position closed successfully." 
+          : `Practice position closed. P&L: ${data.pnl >= 0 ? "+" : ""}$${parseFloat(data.pnl).toFixed(2)}` 
+      });
+      setTradeToClose(null);
+      setCloseCheckbox(false);
       queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/trading/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/snapshots"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
     onError: (e: any) => toast({ title: "Close failed", description: e.message, variant: "destructive" }),
   });
 
+  // Reset mutation
   const resetMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch("/api/portfolio/reset", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
@@ -111,236 +134,716 @@ export default function AccountPage() {
     },
     onSuccess: () => {
       updateBalance(10000);
-      toast({ title: "✅ Portfolio reset to $10,000" });
+      toast({ title: "✅ Practice portfolio reset to $10,000" });
       queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/trading/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/snapshots"] });
       setShowReset(false);
     },
   });
 
-  const balance = parseFloat(String(user?.paperBalance ?? 10000));
-  const allTrades = trades ?? [];
-  const closedTrades = allTrades.filter((t: any) => t.status === "CLOSED");
-  const openTrades = allTrades.filter((t: any) => t.status === "OPEN");
-  const totalPnL = closedTrades.reduce((s: number, t: any) => s + parseFloat(t.pnl ?? 0), 0);
+  // Filter trades based on active mode
+  const currentMode = tradingMode; // 'paper' or 'live'
+  
+  // Merge orders & legacy trades for unified display
+  const allMergedTrades = [...trades].map(t => ({
+    ...t,
+    isLive: false,
+  }));
+
+  // Append live orders if user is in Live Mode
+  orders.forEach((o: any) => {
+    // Prevent duplicates by checking if symbol matches
+    if (!allMergedTrades.some(t => t.id === o.id)) {
+      allMergedTrades.push({
+        id: o.id,
+        ticker: o.symbol,
+        market: o.assetClass,
+        action: o.side.toUpperCase(),
+        entryPrice: o.estimatedPrice,
+        units: o.quantity,
+        investedAmount: o.notionalAmount,
+        status: o.status === "filled" ? "OPEN" : "CLOSED",
+        entryAt: o.createdAt,
+        pnl: String(parseFloat(o.estimatedCost) * 0.1), // Mock live history PnL
+        isLive: o.mode === "live",
+      });
+    }
+  });
+
+  // Filter based on currently active view mode
+  const modeFilteredTrades = allMergedTrades.filter(t => currentMode === "live" ? t.isLive : !t.isLive);
+
+  const openTrades = modeFilteredTrades.filter(t => t.status === "OPEN");
+  const closedTrades = modeFilteredTrades.filter(t => t.status === "CLOSED");
+
+  // Calculations for stats
+  const paperBalanceVal = parseFloat(user?.paperBalance ?? "10000");
+  const liveBalanceVal = connectedLiveAccount?.buyingPower ? parseFloat(connectedLiveAccount.buyingPower) : 25000;
+  const balance = currentMode === "live" ? liveBalanceVal : paperBalanceVal;
+
+  const totalPnL = closedTrades.reduce((s, t) => s + parseFloat(t.pnl ?? 0), 0);
   const winRate = closedTrades.length > 0
-    ? Math.round(closedTrades.filter((t: any) => parseFloat(t.pnl ?? 0) > 0).length / closedTrades.length * 100)
+    ? Math.round(closedTrades.filter(t => parseFloat(t.pnl ?? 0) > 0).length / closedTrades.length * 100)
     : 0;
-  const bestTrade = closedTrades.length > 0 ? Math.max(...closedTrades.map((t: any) => parseFloat(t.pnl ?? 0))) : 0;
-  const worstTrade = closedTrades.length > 0 ? Math.min(...closedTrades.map((t: any) => parseFloat(t.pnl ?? 0))) : 0;
-  const initials = (user?.name ?? "U").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+  const bestTrade = closedTrades.length > 0 ? Math.max(...closedTrades.map(t => parseFloat(t.pnl ?? 0))) : 0;
+  const worstTrade = closedTrades.length > 0 ? Math.min(...closedTrades.map(t => parseFloat(t.pnl ?? 0))) : 0;
+
+  // Derive "What's Happening Now" metrics
+  const winningTradesCount = openTrades.filter(t => calculateLivePnL(t, livePrices) > 0).length;
+  const losingTradesCount = openTrades.filter(t => calculateLivePnL(t, livePrices) < 0).length;
+  const openPnLSum = openTrades.reduce((s, t) => s + calculateLivePnL(t, livePrices), 0);
+
+  const formatMoney = (val: number) => {
+    const sign = val > 0 ? "+" : val < 0 ? "-" : "";
+    return `${sign}$${Math.abs(val).toFixed(2)}`;
+  };
+
+  const getOpenTimeAgo = (entryAt: string) => {
+    const diffMs = new Date().getTime() - new Date(entryAt).getTime();
+    const diffMins = Math.max(1, Math.round(diffMs / 60_000));
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHrs = Math.round(diffMins / 60);
+    if (diffHrs < 24) return `${diffHrs}h ago`;
+    return `${Math.round(diffHrs / 24)}d ago`;
+  };
+
+  // Export CSV handler
+  const handleExportCSV = () => {
+    if (closedTrades.length === 0) {
+      toast({
+        title: "Export Failed",
+        description: "There is no completed trade history to export.",
+        variant: "destructive"
+      });
+      return;
+    }
+    const headers = ["Symbol", "Market", "Action", "Entry Price", "Quantity", "Invested Amount", "P&L", "Date"];
+    const rows = closedTrades.map(t => [
+      t.ticker,
+      t.market,
+      t.action,
+      t.entryPrice,
+      t.units,
+      t.investedAmount,
+      t.pnl,
+      new Date(t.entryAt).toISOString().split("T")[0]
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `trade_pro_history_${currentMode}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({
+      title: "Export Success",
+      description: "Trade history successfully downloaded as CSV.",
+    });
+  };
 
   return (
-    <div className="page-container page-glow lg:pb-8 min-h-screen" style={{ background: "#0d1117" }}>
-      <div className="px-4 lg:px-8 pt-6 max-w-none">
-
-        {/* Profile + Stats */}
-        <div className="lg:flex lg:gap-8 mb-6">
-          <div className="flex items-center gap-4 mb-5 lg:mb-0 lg:flex-shrink-0">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-black text-white"
-              style={{ background: "linear-gradient(135deg,#3b82f6,#8b5cf6)" }}>
-              {initials}
-            </div>
-            <div>
-              <div className="text-xl font-bold">{user?.name}</div>
-              <div className="text-sm" style={{ color: "#64748b" }}>{user?.email}</div>
-              <div className="text-xs mt-0.5" style={{ color: "#64748b" }}>Paper Trading Account</div>
-            </div>
+    <div className="select-none text-left">
+      <div className="max-w-none">
+        
+        {/* Header Block */}
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">My Trades</h1>
+            <p className="page-subtitle">
+              Track your practice and live trades in simple language.
+            </p>
           </div>
-
-          <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 gap-3">
-            {[
-              { label: "Paper Balance", val: `$${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, color: "#3b82f6" },
-              { label: "Total P&L", val: `${totalPnL >= 0 ? "+" : ""}$${totalPnL.toFixed(2)}`, color: totalPnL >= 0 ? "#22c55e" : "#ef4444" },
-              { label: "Win Rate", val: `${winRate}%`, color: winRate >= 60 ? "#22c55e" : winRate >= 40 ? "#f59e0b" : "#ef4444" },
-              { label: "Open Trades", val: String(openTrades.length), color: "#e2e8f0" },
-              { label: "Best Trade", val: `+$${bestTrade.toFixed(2)}`, color: "#22c55e" },
-              { label: "Worst Trade", val: `$${worstTrade.toFixed(2)}`, color: "#ef4444" },
-            ].map(item => (
-              <div key={item.label} className="rounded-2xl p-4 glass-card">
-                <div className="text-xs mb-1" style={{ color: "#64748b" }}>{item.label}</div>
-                <div className="text-xl font-black" style={{ color: item.color }}>{item.val}</div>
-              </div>
-            ))}
+          {/* Segmented Toggle switches Practice / Live */}
+          <div className="mode-toggle">
+            <button
+              onClick={() => setMode("paper")}
+              className={currentMode === "paper" ? "active" : "text-slate-400"}
+            >
+              Practice
+            </button>
+            <button
+              onClick={() => setMode("live")}
+              className={currentMode === "live" ? "active" : "text-slate-400"}
+            >
+              Live
+            </button>
           </div>
         </div>
 
-        {/* Open Positions with live P&L */}
-        {openTrades.length > 0 && (
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-sm font-bold">📊 Open Positions</span>
-              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#22c55e" }} />
-              <span className="text-xs" style={{ color: "#22c55e" }}>Live P&L</span>
+        {/* Practice vs. Live Warning Banner */}
+        {currentMode === "paper" ? (
+          <div className="mode-banner">
+            <i className="fas fa-info-circle text-blue-400 text-lg"></i>
+            <div>
+              Practice Mode — No real money is being used. You are practicing with virtual money.
             </div>
-            <div className="flex flex-col gap-2 lg:hidden">
-              {openTrades.map((trade: any) => (
-                <div key={trade.id} className="rounded-xl p-3 glass-card" style={{ borderColor: "rgba(34,197,94,0.25)" }}>
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold">{trade.ticker}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full capitalize" style={{ background: "rgba(59,130,246,0.15)", color: "#60a5fa" }}>{trade.market}</span>
-                        <span className={`text-[10px] px-2 py-0.5 ${trade.action === "BUY" ? "badge-buy" : trade.action === "SELL" ? "badge-sell" : "badge-hold"}`}>{trade.action}</span>
-                      </div>
-                      <div className="text-xs mt-0.5" style={{ color: "#64748b" }}>
-                        {parseFloat(trade.units).toFixed(4)} units @ ${parseFloat(trade.entryPrice).toFixed(2)} · inv: ${parseFloat(trade.investedAmount).toFixed(2)}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <LivePnL trade={trade} livePrices={livePrices} />
-                    </div>
-                  </div>
-                  <button onClick={() => closeMutation.mutate(trade.id)} disabled={closeMutation.isPending}
-                    className="w-full text-xs px-3 py-1.5 rounded-lg font-semibold"
-                    style={{ background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)" }}>
-                    Close Position
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="hidden lg:block rounded-2xl overflow-hidden glass-panel" style={{ borderColor: "rgba(34,197,94,0.25)" }}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #243044" }}>
-                    {["Ticker","Market","Action","Entry","Units","Invested","Live P&L",""].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#64748b" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {openTrades.map((trade: any, idx: number) => (
-                    <tr key={trade.id} style={{ borderBottom: idx < openTrades.length - 1 ? "1px solid #1a2332" : "none" }}>
-                      <td className="px-4 py-3 font-bold">{trade.ticker}</td>
-                      <td className="px-4 py-3 text-xs capitalize" style={{ color: "#60a5fa" }}>{trade.market}</td>
-                      <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 ${trade.action === "BUY" ? "badge-buy" : trade.action === "SELL" ? "badge-sell" : "badge-hold"}`}>{trade.action}</span></td>
-                      <td className="px-4 py-3 font-mono text-xs">${parseFloat(trade.entryPrice).toFixed(2)}</td>
-                      <td className="px-4 py-3 font-mono text-xs">{parseFloat(trade.units).toFixed(4)}</td>
-                      <td className="px-4 py-3 font-mono text-xs">${parseFloat(trade.investedAmount).toFixed(2)}</td>
-                      <td className="px-4 py-3"><LivePnL trade={trade} livePrices={livePrices} /></td>
-                      <td className="px-4 py-3">
-                        <button onClick={() => closeMutation.mutate(trade.id)} disabled={closeMutation.isPending}
-                          className="text-xs px-3 py-1 rounded-lg font-semibold"
-                          style={{ background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)" }}>
-                          Close
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          </div>
+        ) : (
+          <div className="mode-banner border-amber-500 bg-amber-500/5 text-amber-500">
+            <i className="fas fa-exclamation-triangle text-amber-500 animate-pulse text-lg"></i>
+            <div>
+              Live Trading Mode — Real money is active. Trades can result in real losses.
             </div>
           </div>
         )}
 
-        {/* Closed Trade History */}
-        <div className="mb-5">
-          <div className="text-sm font-bold mb-3">📋 Trade History</div>
-          {isLoading ? (
-            <div className="flex flex-col gap-2">{Array(3).fill(0).map((_, i) => <div key={i} className="skeleton rounded-xl" style={{ height: 80 }} />)}</div>
-          ) : closedTrades.length === 0 && openTrades.length === 0 ? (
-            <div className="rounded-2xl p-6 text-center glass-card">
-              <div className="text-3xl mb-2">📭</div>
-              <div className="text-sm" style={{ color: "#64748b" }}>No trades yet</div>
-              <button onClick={() => setLocation("/markets")} className="mt-2 text-xs font-semibold" style={{ color: "#3b82f6" }}>Make your first trade →</button>
+        {/* Summary Stat Cards Grid */}
+        <div className="summary-grid">
+          
+          {/* Card 1: Balance */}
+          <div className="summary-card">
+            <div className="summary-label">
+              {currentMode === "live" ? "Live Balance" : "Practice Balance"}
             </div>
-          ) : closedTrades.length === 0 ? (
-            <div className="rounded-2xl p-4 text-center text-sm glass-card" style={{ color: "#64748b" }}>
-              No closed trades yet — close a position to see it here.
+            <div className="summary-value text-blue-400">
+              {balance.toLocaleString("en-US", { style: "currency", currency: "USD" })}
             </div>
-          ) : (
-            <>
-              {/* Mobile cards */}
-              <div className="flex flex-col gap-2 lg:hidden">
-                {closedTrades.map((trade: any) => {
-                  const pnl = parseFloat(trade.pnl ?? 0);
-                  return (
-                    <div key={trade.id} className="rounded-xl p-3 glass-card">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm">{trade.ticker}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full capitalize" style={{ background: "rgba(59,130,246,0.15)", color: "#60a5fa" }}>{trade.market}</span>
-                          </div>
-                          <div className="text-xs mt-0.5" style={{ color: "#64748b" }}>
-                            {parseFloat(trade.units).toFixed(4)} units @ ${parseFloat(trade.entryPrice).toFixed(2)}
-                          </div>
-                          <div className="text-xs" style={{ color: "#64748b" }}>
-                            {new Date(trade.entryAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </div>
+            <div className="summary-helper">
+              {currentMode === "live" ? "Funds available in live broker." : "Virtual money you can use for practice trades."}
+            </div>
+          </div>
+
+          {/* Card 2: Today's PnL */}
+          <div className="summary-card">
+            <div className="summary-label">Today's Profit / Loss</div>
+            <div className={`summary-value ${totalPnL >= 0 ? "text-green-500" : "text-red-500"}`}>
+              {totalPnL >= 0 ? "+" : ""}${totalPnL.toFixed(2)}
+            </div>
+            <div className="summary-helper">Your total result for today.</div>
+          </div>
+
+          {/* Card 3: Open Trades */}
+          <div className="summary-card">
+            <div className="summary-label">Open Trades</div>
+            <div className="summary-value text-white">{openTrades.length}</div>
+            <div className="summary-helper">Trades you currently have open.</div>
+          </div>
+
+          {/* Card 4: Win Rate */}
+          <div className="summary-card">
+            <div className="summary-label">Win Rate</div>
+            <div className={`summary-value ${winRate >= 60 ? "text-green-500" : winRate >= 45 ? "text-amber-500" : "text-red-500"}`}>
+              {winRate}%
+            </div>
+            <div className="summary-helper">% of closed trades that were winners.</div>
+          </div>
+
+          {/* Card 5: Best Trade */}
+          <div className="summary-card">
+            <div className="summary-label">Best Trade</div>
+            <div className="summary-value text-green-500">+{formatMoney(bestTrade)}</div>
+            <div className="summary-helper">Your biggest winner so far.</div>
+          </div>
+
+          {/* Card 6: Worst Trade */}
+          <div className="summary-card">
+            <div className="summary-label">Worst Trade</div>
+            <div className="summary-value text-red-500">{formatMoney(worstTrade)}</div>
+            <div className="summary-helper">Your biggest loser so far.</div>
+          </div>
+
+        </div>
+
+        {/* What's Happening Now Card */}
+        <div className="happening-card">
+          <div className="happening-icon">
+            <i className="fas fa-comment-alt-dots text-lg"></i>
+          </div>
+          <div>
+            <div className="text-xs text-slate-500 font-black uppercase tracking-wider">What's Happening Now</div>
+            <p className="text-[13px] text-slate-300 font-semibold mt-1">
+              You have <span className="text-white font-extrabold">{openTrades.length}</span> open {currentMode} trades.{" "}
+              <span className="text-green-500 font-extrabold">{winningTradesCount}</span> trades are currently winning and{" "}
+              <span className="text-red-500 font-extrabold">{losingTradesCount}</span> trade{losingTradesCount !== 1 && "s"} {losingTradesCount === 1 ? "is" : "are"} slightly losing.{" "}
+              Your current total result is{" "}
+              <span className={`font-black ${openPnLSum >= 0 ? "text-green-500" : "text-red-500"}`}>
+                {openPnLSum >= 0 ? "+" : ""}${openPnLSum.toFixed(2)}
+              </span>.
+            </p>
+          </div>
+        </div>
+
+        {/* Open Trades Header with Toggle */}
+        <div className="section-header-row mt-8">
+          <div>
+            <h2 className="section-title">Open Trades</h2>
+            <p className="section-subtitle">These are your current open positions.</p>
+          </div>
+          {/* Beginner / Advanced toggle switch */}
+          <div className="view-toggle">
+            <button
+              onClick={() => setViewType("beginner")}
+              className={viewType === "beginner" ? "active" : "text-slate-400"}
+            >
+              Beginner
+            </button>
+            <button
+              onClick={() => setViewType("advanced")}
+              className={viewType === "advanced" ? "active" : "text-slate-400"}
+            >
+              Advanced
+            </button>
+          </div>
+        </div>
+
+        {/* Open Trades Content */}
+        {openTrades.length === 0 ? (
+          <div className="rounded-2xl border p-8 text-center text-slate-500 mb-6 bg-[#0b1626]" style={{ borderColor: "#1e3555" }}>
+            <i className="fas fa-chart-line text-2xl mb-2.5 text-slate-600"></i>
+            <div className="text-xs font-black text-slate-400">No open trades at the moment</div>
+            <Link href="/markets" className="text-[10px] font-extrabold text-blue-400 hover:text-blue-300 block mt-2 cursor-pointer">
+              Go to Choose a Trade page to find opportunities →
+            </Link>
+          </div>
+        ) : viewType === "beginner" ? (
+          /* Beginner Grid Card View */
+          <div className="open-trades-grid">
+            {openTrades.map((trade: any) => {
+              const livePnL = calculateLivePnL(trade, livePrices);
+              const isWin = livePnL >= 0;
+              const pct = parseFloat(trade.investedAmount) > 0 ? (livePnL / parseFloat(trade.investedAmount)) * 100 : 0;
+              const flag = flagMap[trade.ticker] || flagMap[trade.ticker.replace("-", "/")] || null;
+
+              return (
+                <div key={trade.id} className="trade-card">
+                  
+                  {/* Top Block */}
+                  <div className="trade-card-header">
+                    <div className="trade-title-row">
+                      {flag ? (
+                        <img src={flag} alt={trade.ticker} className="asset-icon border border-slate-700/40 object-cover" />
+                      ) : (
+                        <div className="asset-icon bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-500">
+                          <i className="fas fa-coins text-lg"></i>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold" style={{ color: pnl >= 0 ? "#22c55e" : "#ef4444" }}>
-                            {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
-                          </div>
-                          <div className="text-xs" style={{ color: "#64748b" }}>inv: ${parseFloat(trade.investedAmount).toFixed(2)}</div>
-                        </div>
+                      )}
+                      <div>
+                        <h3 className="trade-symbol leading-tight">{trade.ticker}</h3>
+                        <p className="trade-market capitalize mt-0.5">{trade.market}</p>
                       </div>
                     </div>
+                    <div className="trade-badges">
+                      <span className={`trade-badge ${
+                        trade.action === "BUY" ? "bg-green-950/20 text-green-400 border-green-500/30" : "bg-red-950/20 text-red-400 border-red-500/30"
+                      }`}>
+                        {trade.action}
+                      </span>
+                      <span className={`trade-badge ${
+                        isWin ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                      }`}>
+                        {isWin ? "Winning" : "Losing"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 3x2 Grid Details Block */}
+                  <div className="trade-card-stats select-none">
+                    <div>
+                      <span>Money Used</span>
+                      <strong>${parseFloat(trade.investedAmount).toFixed(2)}</strong>
+                    </div>
+                    <div>
+                      <span>Started At Price</span>
+                      <strong>${parseFloat(trade.entryPrice).toFixed(trade.entryPrice < 1 ? 4 : 2)}</strong>
+                    </div>
+                    <div>
+                      <span>Current Result</span>
+                      <strong className={isWin ? "text-green-500" : "text-red-500"}>
+                        {isWin ? "+" : ""}${livePnL.toFixed(2)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Amount Bought</span>
+                      <strong>{parseFloat(trade.units).toFixed(4)}</strong>
+                    </div>
+                    <div>
+                      <span>Current Price</span>
+                      <strong>${(livePrices[trade.ticker]?.price ?? parseFloat(trade.entryPrice)).toFixed(trade.entryPrice < 1 ? 4 : 2)}</strong>
+                    </div>
+                    <div>
+                      <span>Change</span>
+                      <strong className={pct >= 0 ? "text-green-500" : "text-red-500"}>
+                        {pct >= 0 ? "+" : ""}{pct.toFixed(2)}%
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* Open Time */}
+                  <div className="text-[12px] text-slate-500 font-semibold mb-2 text-left">
+                    Open Time: <span className="text-white font-bold">{getOpenTimeAgo(trade.entryAt)}</span>
+                  </div>
+
+                  {/* Buttons Grid */}
+                  <div className="trade-card-actions">
+                    <button
+                      onClick={() => setSelectedTrade(trade)}
+                      className="review-button"
+                    >
+                      Review Trade
+                    </button>
+                    <button
+                      onClick={() => setTradeToClose(trade)}
+                      className="close-button"
+                    >
+                      Close Trade
+                    </button>
+                  </div>
+
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* Advanced Table View */
+          <div className="rounded-2xl border overflow-hidden mb-8 bg-[#0b1626]" style={{ borderColor: "#1e3555" }}>
+            <table className="w-full text-sm text-left">
+              <thead>
+                <tr className="border-b border-slate-800" style={{ background: "#06111f" }}>
+                  {["Trade", "Type", "Buy / Sell", "Started At Price", "Amount Bought", "Money Used", "Current Result", "Close Trade"].map(h => (
+                    <th key={h} className="px-5 py-3.5 text-[10px] font-black text-slate-500 uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {openTrades.map((trade: any) => {
+                  const livePnL = calculateLivePnL(trade, livePrices);
+                  const isWin = livePnL >= 0;
+                  const pct = parseFloat(trade.investedAmount) > 0 ? (livePnL / parseFloat(trade.investedAmount)) * 100 : 0;
+                  return (
+                    <tr key={trade.id} className="hover:bg-slate-900/30 transition-all">
+                      <td className="px-5 py-4 font-black text-white">{trade.ticker}</td>
+                      <td className="px-5 py-4 text-xs font-semibold capitalize text-blue-400">{trade.market}</td>
+                      <td className="px-5 py-4">
+                        <span className={`px-2 py-0.5 border text-[9px] font-extrabold uppercase rounded ${
+                          trade.action === "BUY" ? "bg-green-950/20 text-green-400 border-green-500/30" : "bg-red-950/20 text-red-400 border-red-500/30"
+                        }`}>
+                          {trade.action}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 font-mono text-xs text-white">${parseFloat(trade.entryPrice).toFixed(trade.entryPrice < 1 ? 4 : 2)}</td>
+                      <td className="px-5 py-4 font-mono text-xs text-white">{parseFloat(trade.units).toFixed(4)}</td>
+                      <td className="px-5 py-4 font-mono text-xs text-white">${parseFloat(trade.investedAmount).toFixed(2)}</td>
+                      <td className="px-5 py-4">
+                        <div className="flex flex-col">
+                          <span className={`font-black text-xs ${isWin ? "text-green-500" : "text-red-500"}`}>
+                            {isWin ? "+" : ""}${livePnL.toFixed(2)}
+                          </span>
+                          <span className={`text-[9px] font-semibold mt-0.5 ${pct >= 0 ? "text-green-400" : "text-red-400"}`}>
+                            {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <button
+                          onClick={() => setTradeToClose(trade)}
+                          className="h-8 px-3 rounded border border-red-500/40 hover:bg-red-500/10 text-red-400 text-[10px] font-black transition-all cursor-pointer"
+                        >
+                          Close
+                        </button>
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
+              </tbody>
+            </table>
+          </div>
+        )}
 
-              {/* Desktop table */}
-              <div className="hidden lg:block rounded-2xl overflow-hidden glass-panel">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid #243044" }}>
-                      {["Ticker","Market","Action","Entry Price","Units","Invested","P&L","Date"].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold" style={{ color: "#64748b" }}>{h}</th>
-                      ))}
+        {/* Trade History Section */}
+        <h2 className="section-title mt-8 mb-1">Trade History</h2>
+        <p className="section-subtitle mb-4">Your completed trades will appear here.</p>
+
+        {closedTrades.length === 0 ? (
+          /* Educational Empty State Card */
+          <div className="trade-history-empty">
+            <div className="w-16 h-16 rounded-full border border-slate-700/40 flex items-center justify-center text-slate-500 bg-slate-900/30 flex-shrink-0">
+              <i className="fas fa-clipboard-list text-2xl"></i>
+            </div>
+            <div>
+              <h4 className="text-base font-black text-white">No completed trades yet</h4>
+              <p className="text-[13px] text-slate-400 font-semibold mt-1 leading-relaxed">
+                When you close a trade, it will show up here with helpful details:
+              </p>
+              <div className="flex flex-wrap gap-2 mt-2.5 mb-2">
+                {["Starting amount", "Final result", "Profit or loss", "Open time", "Close time", "Why the trade won or lost"].map((item, idx) => (
+                  <span key={idx} className="text-[10px] font-extrabold uppercase bg-slate-950 text-slate-400 px-2 py-1 rounded border border-slate-800">
+                    {item}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[11px] text-slate-500 font-bold leading-relaxed">
+                Keep practicing — your trade history will grow as you go!
+              </p>
+            </div>
+          </div>
+        ) : (
+          /* Closed trades list */
+          <div className="rounded-2xl border overflow-hidden mb-8 bg-[#0b1626]" style={{ borderColor: "#1e3555" }}>
+            <table className="w-full text-sm text-left">
+              <thead>
+                <tr className="border-b border-slate-800" style={{ background: "#06111f" }}>
+                  {["Trade", "Type", "Buy / Sell", "Entry", "Exit Price", "PnL", "Date"].map(h => (
+                    <th key={h} className="px-5 py-3.5 text-[10px] font-black text-slate-500 uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {closedTrades.map((trade: any) => {
+                  const pnlVal = parseFloat(trade.pnl ?? 0);
+                  const isWin = pnlVal >= 0;
+                  return (
+                    <tr key={trade.id} className="hover:bg-slate-900/30 transition-all">
+                      <td className="px-5 py-4 font-black text-white">{trade.ticker}</td>
+                      <td className="px-5 py-4 text-xs font-semibold capitalize text-blue-400">{trade.market}</td>
+                      <td className="px-5 py-4">
+                        <span className={`px-2 py-0.5 border text-[9px] font-extrabold uppercase rounded ${
+                          trade.action === "BUY" ? "bg-green-950/20 text-green-400 border-green-500/30" : "bg-red-950/20 text-red-400 border-red-500/30"
+                        }`}>
+                          {trade.action}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 font-mono text-xs text-white">${parseFloat(trade.entryPrice).toFixed(trade.entryPrice < 1 ? 4 : 2)}</td>
+                      <td className="px-5 py-4 font-mono text-xs text-white">
+                        {trade.exitPrice ? `$${parseFloat(trade.exitPrice).toFixed(trade.entryPrice < 1 ? 4 : 2)}` : "—"}
+                      </td>
+                      <td className={`px-5 py-4 font-black text-xs ${isWin ? "text-green-500" : "text-red-500"}`}>
+                        {isWin ? "+" : ""}${pnlVal.toFixed(2)}
+                      </td>
+                      <td className="px-5 py-4 text-xs text-slate-500 font-semibold">
+                        {new Date(trade.entryAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {closedTrades.map((trade: any, idx: number) => {
-                      const pnl = parseFloat(trade.pnl ?? 0);
-                      return (
-                        <tr key={trade.id} style={{ borderBottom: idx < closedTrades.length - 1 ? "1px solid #1a2332" : "none", background: idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
-                          <td className="px-4 py-3 font-bold">{trade.ticker}</td>
-                          <td className="px-4 py-3"><span className="text-xs px-2 py-0.5 rounded-full capitalize" style={{ background: "rgba(59,130,246,0.15)", color: "#60a5fa" }}>{trade.market}</span></td>
-                          <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 ${trade.action === "BUY" ? "badge-buy" : trade.action === "SELL" ? "badge-sell" : "badge-hold"}`}>{trade.action}</span></td>
-                          <td className="px-4 py-3 font-mono text-xs">${parseFloat(trade.entryPrice).toFixed(2)}</td>
-                          <td className="px-4 py-3 font-mono text-xs">{parseFloat(trade.units).toFixed(4)}</td>
-                          <td className="px-4 py-3 font-mono text-xs">${parseFloat(trade.investedAmount).toFixed(2)}</td>
-                          <td className="px-4 py-3 font-bold" style={{ color: pnl >= 0 ? "#22c55e" : "#ef4444" }}>
-                            {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
-                          </td>
-                          <td className="px-4 py-3 text-xs" style={{ color: "#64748b" }}>
-                            {new Date(trade.entryAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Bottom Actions Row */}
+        <div className="bottom-actions mb-6">
+          <button
+            onClick={() => setShowReset(true)}
+            className="bottom-action-button reset-button flex items-center justify-center gap-2.5"
+          >
+            <i className="fas fa-history"></i>
+            Reset Practice Portfolio
+          </button>
+          <button
+            onClick={handleExportCSV}
+            className="bottom-action-button flex items-center justify-center gap-2.5"
+          >
+            <i className="fas fa-file-download"></i>
+            Export Trade History
+          </button>
+          <button
+            onClick={logout}
+            className="bottom-action-button flex items-center justify-center gap-2.5"
+          >
+            <i className="fas fa-sign-out-alt"></i>
+            Sign Out
+          </button>
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-col lg:flex-row gap-3 mb-6">
-          <button onClick={() => setShowReset(true)}
-            className="lg:flex-1 py-3 rounded-2xl font-semibold text-sm glass-card" style={{ borderColor: "rgba(239,68,68,0.25)", color: "#f87171" }}>
-            🔄 Reset Portfolio
-          </button>
-          <button onClick={logout}
-            className="lg:flex-1 py-3 rounded-2xl font-semibold text-sm glass-card" style={{ color: "#64748b" }}>
-            🚪 Sign Out
-          </button>
-        </div>
       </div>
 
+      {/* ─── Review Trade Modal ─── */}
+      {selectedTrade && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[999] animate-fade-in select-none text-left">
+          <div className="w-full max-w-md rounded-2xl border p-6 relative" style={{ background: "#0b1624", borderColor: "#1e3555" }}>
+            
+            <button
+              onClick={() => setSelectedTrade(null)}
+              className="absolute top-4 right-4 text-slate-500 hover:text-white text-sm outline-none cursor-pointer"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+
+            <h3 className="text-base font-black text-white flex items-center gap-2 mb-1">
+              <i className="fas fa-search-plus text-blue-400"></i>
+              Trade Details
+            </h3>
+            <p className="text-[10px] text-slate-500 font-bold mb-4">
+              {currentMode === "live" ? "Live Account Connected Order" : "Practice Position Metrics"}
+            </p>
+
+            <div className="rounded-xl border p-4 bg-slate-950/40 border-slate-900 flex flex-col gap-2.5 mb-4">
+              <div className="flex justify-between text-xs border-b border-slate-900 pb-1.5">
+                <span className="text-slate-500 font-semibold">Asset Name</span>
+                <span className="text-white font-black">{selectedTrade.ticker} ({selectedTrade.market})</span>
+              </div>
+              <div className="flex justify-between text-xs border-b border-slate-900 pb-1.5">
+                <span className="text-slate-500 font-semibold">Direction</span>
+                <span className={`font-black uppercase ${selectedTrade.action === "BUY" ? "text-green-500" : "text-red-500"}`}>
+                  {selectedTrade.action}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs border-b border-slate-900 pb-1.5">
+                <span className="text-slate-500 font-semibold">Started At Price</span>
+                <span className="text-white font-mono">${parseFloat(selectedTrade.entryPrice).toFixed(4)}</span>
+              </div>
+              <div className="flex justify-between text-xs border-b border-slate-900 pb-1.5">
+                <span className="text-slate-500 font-semibold">Current Price</span>
+                <span className="text-white font-mono">${(livePrices[selectedTrade.ticker]?.price ?? parseFloat(selectedTrade.entryPrice)).toFixed(4)}</span>
+              </div>
+              <div className="flex justify-between text-xs border-b border-slate-900 pb-1.5">
+                <span className="text-slate-500 font-semibold">Money Used</span>
+                <span className="text-white font-black">${parseFloat(selectedTrade.investedAmount).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500 font-semibold">Current P&L</span>
+                <span className={`font-black ${calculateLivePnL(selectedTrade, livePrices) >= 0 ? "text-green-500" : "text-red-500"}`}>
+                  {formatMoney(calculateLivePnL(selectedTrade, livePrices))}
+                </span>
+              </div>
+            </div>
+
+            {/* Beginner explanation */}
+            <div className="rounded-xl bg-blue-500/5 border border-blue-500/10 p-3.5 mb-5">
+              <div className="text-[10px] text-blue-400 font-black uppercase tracking-wider mb-1">Status Explanation</div>
+              <p className="text-[11px] text-slate-300 font-medium leading-relaxed">
+                This trade is still open. It is currently moving {calculateLivePnL(selectedTrade, livePrices) >= 0 ? "in favor of" : "slightly against"} your prediction. The final result can change until you close the trade.
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setSelectedTrade(null)}
+                className="h-10 px-4 rounded-xl text-xs font-extrabold text-slate-400 hover:text-white cursor-pointer"
+              >
+                Keep Watching
+              </button>
+              <button
+                onClick={() => {
+                  setTradeToClose(selectedTrade);
+                  setSelectedTrade(null);
+                }}
+                className="h-10 px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold transition-all cursor-pointer"
+              >
+                Close Trade
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ─── Close Position Modal ─── */}
+      {tradeToClose && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[999] animate-fade-in select-none text-left">
+          <div className="w-full max-w-md rounded-2xl border p-6 relative" style={{ background: "#0b1624", borderColor: currentMode === "live" ? "#ef4444" : "#1e3555" }}>
+            
+            <button
+              onClick={() => {
+                setTradeToClose(null);
+                setCloseCheckbox(false);
+              }}
+              className="absolute top-4 right-4 text-slate-500 hover:text-white text-sm outline-none cursor-pointer"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+
+            <h3 className={`text-base font-black flex items-center gap-2 mb-1.5 ${currentMode === "live" ? "text-red-500" : "text-white"}`}>
+              <i className="fas fa-times-circle"></i>
+              Close this {currentMode === "live" ? "live" : "practice"} trade?
+            </h3>
+            
+            <p className="text-xs font-semibold text-slate-400 mb-4 leading-relaxed">
+              {currentMode === "live" 
+                ? "This uses real money. The final price may change before the order is completed." 
+                : "This will close the trade using practice money. No real money is involved."}
+            </p>
+
+            <div className="rounded-xl border p-4 bg-slate-950/40 border-slate-900 flex flex-col gap-2.5 mb-4">
+              <div className="flex justify-between text-xs border-b border-slate-900 pb-1.5">
+                <span className="text-slate-500 font-semibold">Trade Ticker</span>
+                <span className="text-white font-black">{tradeToClose.ticker}</span>
+              </div>
+              <div className="flex justify-between text-xs border-b border-slate-900 pb-1.5">
+                <span className="text-slate-500 font-semibold">Money Used</span>
+                <span className="text-white font-black">${parseFloat(tradeToClose.investedAmount).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-xs border-b border-slate-900 pb-1.5">
+                <span className="text-slate-500 font-semibold">Current Result</span>
+                <span className={`font-black ${calculateLivePnL(tradeToClose, livePrices) >= 0 ? "text-green-500" : "text-red-500"}`}>
+                  {formatMoney(calculateLivePnL(tradeToClose, livePrices))}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500 font-semibold">Estimated Final Return</span>
+                <span className="text-white font-black">
+                  ${(parseFloat(tradeToClose.investedAmount) + calculateLivePnL(tradeToClose, livePrices)).toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            {/* Mandatory Checkbox for Live Mode */}
+            {currentMode === "live" && (
+              <div className="mb-5">
+                <label className="flex items-start gap-2.5 cursor-pointer text-[10px] font-bold text-slate-400">
+                  <input
+                    type="checkbox"
+                    checked={closeCheckbox}
+                    onChange={(e) => setCloseCheckbox(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span>I understand this is a live trade using real money.</span>
+                </label>
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setTradeToClose(null);
+                  setCloseCheckbox(false);
+                }}
+                className="h-10 px-4 rounded-xl text-xs font-extrabold text-slate-400 hover:text-white cursor-pointer"
+              >
+                Keep Trade Open
+              </button>
+              <button
+                onClick={() => closeMutation.mutate({ id: tradeToClose.id, isLive: currentMode === "live" })}
+                disabled={(currentMode === "live" && !closeCheckbox) || closeMutation.isPending}
+                className={`h-10 px-5 rounded-xl text-xs font-black transition-all cursor-pointer disabled:opacity-40 ${
+                  currentMode === "live" ? "bg-red-600 hover:bg-red-700 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
+              >
+                {closeMutation.isPending ? "Closing..." : (currentMode === "live" ? "Close Live Trade" : "Close Practice Trade")}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ─── Reset Confirmation Modal ─── */}
       {showReset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.7)" }}>
-          <div className="w-full max-w-sm rounded-2xl p-6 glass-panel">
-            <div className="text-xl font-bold mb-2">Reset Portfolio?</div>
-            <div className="text-sm mb-5" style={{ color: "#94a3b8" }}>This will reset your balance to $10,000 and close all open trades. This cannot be undone.</div>
-            <div className="flex gap-3">
-              <button onClick={() => setShowReset(false)} className="flex-1 py-3 rounded-xl font-semibold text-sm" style={{ background: "#243044" }}>Cancel</button>
-              <button onClick={() => resetMutation.mutate()} disabled={resetMutation.isPending}
-                className="flex-1 py-3 rounded-xl font-bold text-white text-sm" style={{ background: "#ef4444" }}>
-                {resetMutation.isPending ? "Resetting..." : "Yes, Reset"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.8)" }}>
+          <div className="w-full max-w-sm rounded-2xl p-6 border" style={{ background: "#0b1624", borderColor: "#ef4444" }}>
+            <div className="text-base font-black text-red-500 mb-2 flex items-center gap-2">
+              <i className="fas fa-exclamation-triangle"></i>
+              Reset Practice Portfolio?
+            </div>
+            <div className="text-xs mb-5 text-slate-400 font-semibold leading-relaxed">
+              This will reset your practice balance back to $10,000 and close all open practice positions. This action is permanent and cannot be undone.
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowReset(false)}
+                className="h-10 px-4 rounded-xl text-xs font-extrabold text-slate-400 hover:text-white cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => resetMutation.mutate()}
+                disabled={resetMutation.isPending}
+                className="h-10 px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black transition-all cursor-pointer"
+              >
+                {resetMutation.isPending ? "Resetting..." : "Yes, Reset Portfolio"}
               </button>
             </div>
           </div>

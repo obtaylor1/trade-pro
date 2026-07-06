@@ -135,6 +135,65 @@ export const executeTradeSchema = z.object({
   stopLoss: z.coerce.number().optional(),
 });
 
+export const tradingAccounts = pgTable("trading_accounts", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  brokerName: text("broker_name").notNull(),
+  mode: text("mode").notNull(), // 'paper' or 'live'
+  status: text("status").notNull(), // 'connected', 'disconnected', 'needs_auth', 'error'
+  accountLabel: text("account_label").notNull(),
+  brokerAccountId: text("broker_account_id"),
+  accessTokenEncrypted: text("access_token_encrypted"),
+  refreshTokenEncrypted: text("refresh_token_encrypted"),
+  apiKeyEncrypted: text("api_key_encrypted"),
+  apiSecretEncrypted: text("api_secret_encrypted"),
+  maskedKey: text("masked_key"),
+  buyingPower: numeric("buying_power").default("0").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const orders = pgTable("orders", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  tradingAccountId: text("trading_account_id"),
+  mode: text("mode").notNull(), // 'paper' or 'live'
+  brokerName: text("broker_name").notNull(),
+  brokerOrderId: text("broker_order_id"),
+  symbol: text("symbol").notNull(),
+  assetClass: text("asset_class").notNull(),
+  side: text("side").notNull(), // 'buy' or 'sell'
+  orderType: text("order_type").notNull(), // 'market', 'limit', 'stop', 'stop_limit'
+  quantity: numeric("quantity").notNull(),
+  notionalAmount: numeric("notional_amount").notNull(),
+  estimatedPrice: numeric("estimated_price").notNull(),
+  estimatedCost: numeric("estimated_cost").notNull(),
+  estimatedFees: numeric("estimated_fees").default("0").notNull(),
+  status: text("status").notNull(), // 'preview', 'pending', 'filled', etc.
+  tradeScore: integer("trade_score"),
+  riskLevel: text("risk_level"),
+  reason: text("reason"),
+  openedAt: timestamp("opened_at"),
+  closedAt: timestamp("closed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const orderEvents = pgTable("order_events", {
+  id: text("id").primaryKey(),
+  orderId: text("order_id").notNull(),
+  eventType: text("event_type").notNull(),
+  oldStatus: text("old_status"),
+  newStatus: text("new_status"),
+  message: text("message"),
+  rawBrokerPayload: json("raw_broker_payload"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertTradingAccountSchema = createInsertSchema(tradingAccounts).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertOrderEventSchema = createInsertSchema(orderEvents).omit({ id: true, createdAt: true });
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -148,3 +207,9 @@ export type TradingOpportunity = z.infer<typeof tradingOpportunitySchema>;
 export type ExecuteTrade = z.infer<typeof executeTradeSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type TradingAccount = typeof tradingAccounts.$inferSelect;
+export type InsertTradingAccount = typeof tradingAccounts.$inferInsert;
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = typeof orders.$inferInsert;
+export type OrderEvent = typeof orderEvents.$inferSelect;
+export type InsertOrderEvent = typeof orderEvents.$inferInsert;

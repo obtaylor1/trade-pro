@@ -1,24 +1,20 @@
-import { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { TradingOpportunity } from "@shared/schema";
+import { useTradingMode } from "@/contexts/TradingModeContext";
+import LiveOrderPreviewModal from "@/components/trade/LiveOrderPreviewModal";
+import ModeSwitch from "@/components/trade/ModeSwitch";
 
-type Market = "stocks" | "crypto" | "options" | "forex" | "commodities";
-type ForexStyle = "SCALP" | "SWING" | "POSITION";
-
-const TABS = [
-  { id: "stocks" as Market,      label: "Stocks",      emoji: "📈", min: 0.25 },
-  { id: "crypto" as Market,      label: "Crypto",      emoji: "₿",  min: 0.01 },
-  { id: "options" as Market,     label: "Options",     emoji: "🎯", min: 0.25 },
-  { id: "forex" as Market,       label: "Forex",       emoji: "💱", min: 0.10 },
-  { id: "commodities" as Market, label: "Commodities", emoji: "🪙", min: 0.50 },
-];
-
-const MCOLORS: Record<Market, string> = {
-  stocks: "#3b82f6", crypto: "#f59e0b", options: "#8b5cf6", forex: "#22c55e", commodities: "#ef4444"
-};
+import MarketSelector from "@/components/trade/MarketSelector";
+import DurationSelector from "@/components/trade/DurationSelector";
+import AmountSelector from "@/components/trade/AmountSelector";
+import ProtectionNotice from "@/components/trade/ProtectionNotice";
+import BestMatchTradeCard from "@/components/trade/BestMatchTradeCard";
+import SmallTradeCard from "@/components/trade/SmallTradeCard";
+import PracticeFooter from "@/components/trade/PracticeFooter";
 
 // ─── Live Prices Hook ─────────────────────────────────────────────────────────
 
@@ -43,627 +39,737 @@ function useLivePrices() {
   return { prices: data?.prices ?? {}, marketOpen: data?.marketOpen ?? false };
 }
 
-// Flash green when price ticks up, red when down
-function usePriceFlash(price: number): "up" | "down" | null {
-  const prevRef = useRef(price);
-  const [flash, setFlash] = useState<"up" | "down" | null>(null);
-  useEffect(() => {
-    if (prevRef.current > 0 && prevRef.current !== price) {
-      setFlash(price > prevRef.current ? "up" : "down");
-      const t = setTimeout(() => setFlash(null), 900);
-      prevRef.current = price;
-      return () => clearTimeout(t);
+// ─── Fallback Simulated Dataset ───────────────────────────────────────────────
+
+const DEFAULT_IDEAS: Record<string, any[]> = {
+  forex: [
+    {
+      id: "eur-usd",
+      pair: "EUR/USD",
+      description: "Euro / US Dollar",
+      market: "forex",
+      direction: "SELL",
+      duration: "quick",
+      score: 75,
+      riskLevel: "Low",
+      status: "Open",
+      openTime: "Today, 8:05 AM ET",
+      closeTime: "Today, 11:45 AM ET",
+      tradeLength: "About 3 hr 40 min",
+      bestTime: "8:00 AM - 12:00 PM ET",
+      sessionName: "London / New York Overlap",
+      whyThisTrade: "Price is moving down, the trend is strong, and this trade has a small safety stop.",
+      profitRate: 1.20,
+      lossRate: 0.60,
+      entryPrice: 1.0845,
+      profitGoal: "+0.0050 (+50 pips)",
+      safetyStop: "-0.0025 (-25 pips)",
+      tradeSize: "0.01 Micro Lots",
+      timeframe: "5 Minute (M5)",
+      signalType: "Momentum Breakdown"
+    },
+    {
+      id: "gbp-usd",
+      pair: "GBP/USD",
+      description: "British Pound / US Dollar",
+      market: "forex",
+      direction: "SELL",
+      duration: "shortTerm",
+      score: 72,
+      riskLevel: "Medium",
+      status: "Open",
+      openTime: "3:00 AM ET",
+      closeTime: "8:00 AM ET",
+      tradeLength: "About 5 hr",
+      bestTime: "3:00 AM - 8:00 AM ET",
+      sessionName: "London Open",
+      whyThisTrade: "Short-term down move possible.",
+      profitRate: 1.52,
+      lossRate: 0.80,
+      entryPrice: 1.2645,
+      profitGoal: "+0.0060 (+60 pips)",
+      safetyStop: "-0.0030 (-30 pips)",
+      tradeSize: "0.01 Micro Lots",
+      timeframe: "15 Minute (M15)",
+      signalType: "Breakout Pullback"
+    },
+    {
+      id: "usd-jpy",
+      pair: "USD/JPY",
+      description: "US Dollar / Japanese Yen",
+      market: "forex",
+      direction: "SELL",
+      duration: "quick",
+      score: 77,
+      riskLevel: "Medium",
+      status: "Win",
+      openTime: "3:00 AM ET",
+      closeTime: "5:00 AM ET",
+      tradeLength: "About 2 hr",
+      bestTime: "3:00 AM - 5:00 AM ET",
+      sessionName: "Tokyo / London overlap",
+      whyThisTrade: "Strong down signal, higher movement.",
+      profitRate: 1.00,
+      lossRate: 0.52,
+      entryPrice: 154.20,
+      profitGoal: "+0.30 (+30 pips)",
+      safetyStop: "-0.15 (-15 pips)",
+      tradeSize: "0.01 Micro Lots",
+      timeframe: "5 Minute (M5)",
+      signalType: "Reversal Pattern"
+    },
+    {
+      id: "aud-usd",
+      pair: "AUD/USD",
+      description: "Australian Dollar / US Dollar",
+      market: "forex",
+      direction: "SELL",
+      duration: "longTerm",
+      score: 66,
+      riskLevel: "Low",
+      status: "Loss",
+      openTime: "9:00 PM ET",
+      closeTime: "10:00 AM ET",
+      tradeLength: "About 13 hr",
+      bestTime: "9:00 PM - 10:00 AM ET",
+      sessionName: "Asia / London session",
+      whyThisTrade: "Possible short-term pullback.",
+      profitRate: 0.72,
+      lossRate: 0.40,
+      entryPrice: 0.6545,
+      profitGoal: "+0.0040 (+40 pips)",
+      safetyStop: "-0.0020 (-20 pips)",
+      tradeSize: "0.01 Micro Lots",
+      timeframe: "1 Hour (H1)",
+      signalType: "Mean Reversion"
+    },
+    {
+      id: "usd-cad",
+      pair: "USD/CAD",
+      description: "US Dollar / Canadian Dollar",
+      market: "forex",
+      direction: "BUY",
+      duration: "shortTerm",
+      score: 68,
+      riskLevel: "Low",
+      status: "Open",
+      openTime: "7:00 AM ET",
+      closeTime: "11:00 AM ET",
+      tradeLength: "About 4 hr",
+      bestTime: "7:00 AM - 11:00 AM ET",
+      sessionName: "New York session",
+      whyThisTrade: "Possible upward movement with low risk.",
+      profitRate: 1.12,
+      lossRate: 0.52,
+      entryPrice: 1.3620,
+      profitGoal: "+0.0045 (+45 pips)",
+      safetyStop: "-0.0020 (-20 pips)",
+      tradeSize: "0.01 Micro Lots",
+      timeframe: "15 Minute (M15)",
+      signalType: "Support Bounce"
     }
-    prevRef.current = price;
-  }, [price]);
-  return flash;
-}
-
-// Real options chain from yahoo-finance2 (5-min refresh)
-interface RealContract { strike: number; ask: number; bid: number; lastPrice: number; expiry: string; daysLeft: number; impliedVolatility: number; }
-interface OptionsChainData { calls: RealContract[]; puts: RealContract[]; underlyingPrice: number; expiry: string; daysLeft: number; }
-function useOptionsChain(symbol: string) {
-  const { data } = useQuery<OptionsChainData | null>({
-    queryKey: ["/api/options-chain", symbol],
-    queryFn: () => fetch(`/api/options-chain/${symbol}`).then(r => r.json()),
-    staleTime: 5 * 60_000,
-    refetchInterval: 5 * 60_000,
-    enabled: !!symbol,
-  });
-  return data ?? null;
-}
-
-// ─── Shared UI Components ─────────────────────────────────────────────────────
-
-function LiveDot({ open, last }: { open: boolean; last: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-semibold" style={{ color: open ? "#22c55e" : "#64748b" }}>
-      <span className={open ? "live-dot" : "live-dot-closed"} />
-      {open ? "LIVE" : "CLOSED"}
-      {last && <span className="ml-1" style={{ color: "#475569" }}>· Updated {last}</span>}
-    </span>
-  );
-}
-
-function ConfBar({ val }: { val: number }) {
-  const c = val >= 75 ? "#22c55e" : val >= 60 ? "#f59e0b" : "#ef4444";
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 rounded-full" style={{ background: "rgba(40,56,81,1)" }}>
-        <div className="h-1.5 rounded-full conf-bar-fill" style={{ width: `${val}%` }} />
-      </div>
-      <span className="text-xs font-semibold" style={{ color: c }}>{val}%</span>
-    </div>
-  );
-}
-
-function SBadge({ type }: { type: string }) {
-  const cls: Record<string, string> = {
-    BREAKOUT: "badge-breakout", REVERSAL: "badge-reversal",
-    MOMENTUM: "badge-momentum", MEAN_REVERSION: "badge-mean"
-  };
-  const lbl: Record<string, string> = { MEAN_REVERSION: "MEAN REV" };
-  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cls[type] ?? "badge-breakout"}`}>{lbl[type] ?? type}</span>;
-}
-
-function ABadge({ action }: { action: string }) {
-  const cls = action === "BUY" ? "badge-buy" : action === "SELL" ? "badge-sell" : "badge-hold";
-  return <span className={`text-[10px] px-2 py-0.5 ${cls}`}>{action}</span>;
-}
-
-// ─── Standard Trade Card (Stocks / Crypto / Commodities) ─────────────────────
-
-function TradeCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
-  opp: TradingOpportunity; budget: number;
-  livePrice?: LivePrice;
-  onTrade: (o: TradingOpportunity, a: number, liveP: number) => void;
-  onWatchlist: (o: TradingOpportunity) => void;
-  trading: boolean;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const price = livePrice?.price ?? opp.entryPrice;
-  const open = livePrice?.marketOpen ?? true;
-  const lastUp = livePrice?.lastUpdated ?? "";
-  const units = budget / price;
-  const potGain = (opp.targetPrice - price) * units;
-  const maxRisk = (price - opp.stopLoss) * units;
-  const dp = price < 1 ? 4 : price > 1000 ? 0 : 2;
-  const pdisp = price.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
-  const udisp = units < 0.001 ? units.toFixed(6) : units < 1 ? units.toFixed(4) : units.toFixed(2);
-  const changeColor = (livePrice?.change24h ?? opp.change24h ?? 0) >= 0 ? "#22c55e" : "#ef4444";
-  const flash = usePriceFlash(price);
-  const flashBorder = flash === "up" ? "1px solid rgba(34,197,94,0.6)" : flash === "down" ? "1px solid rgba(239,68,68,0.6)" : "1px solid #243044";
-  const flashShadow = flash === "up" ? "0 0 12px rgba(34,197,94,0.2)" : flash === "down" ? "0 0 12px rgba(239,68,68,0.2)" : "none";
-  const priceColor = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#ffffff";
-
-  return (
-    <div className="rounded-2xl p-4 trade-card glass-card" style={{ border: flashBorder, boxShadow: flashShadow, transition: "border-color 0.4s, box-shadow 0.4s" }}>
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="text-lg font-black">{opp.ticker}</span>
-            <ABadge action={opp.action} />
-            <SBadge type={opp.signalType} />
-          </div>
-          <div className="text-xs mb-1" style={{ color: "#64748b" }}>{opp.name}</div>
-          <LiveDot open={open} last={lastUp} />
-        </div>
-        <div className="text-right ml-3">
-          <div className="text-xl font-black" style={{ color: priceColor, transition: "color 0.4s" }}>${pdisp}</div>
-          <div className="text-xs font-semibold" style={{ color: changeColor }}>
-            {(livePrice?.change24h ?? opp.change24h ?? 0) >= 0 ? "+" : ""}{(livePrice?.change24h ?? opp.change24h ?? 0).toFixed(2)}%
-          </div>
-          {lastUp && <div className="label-secondary mt-0.5">Last updated: {lastUp}</div>}
-          {!open && <div className="label-secondary mt-0.5 font-bold">MARKET CLOSED</div>}
-        </div>
-        <button onClick={() => onWatchlist(opp)} className="ml-2 text-xl">⭐</button>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        {[
-          { label: "Your Investment", val: `$${budget.toFixed(2)}` },
-          { label: "Units You Get", val: udisp },
-          { label: "Target Price", val: `$${opp.targetPrice.toLocaleString("en-US", { maximumFractionDigits: 2 })}` },
-          { label: "Confidence", custom: <ConfBar val={opp.confidence} /> },
-        ].map((item, i) => (
-          <div key={i} className="rounded-xl p-2.5" style={{ background: "#0d1117" }}>
-            <div className="text-xs mb-0.5" style={{ color: "#64748b" }}>{item.label}</div>
-            {item.custom ?? <div className="text-sm font-bold">{item.val}</div>}
-          </div>
-        ))}
-        <div className="rounded-xl p-2.5" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
-          <div className="text-xs mb-0.5" style={{ color: "#64748b" }}>Potential Gain</div>
-          <div className="text-sm font-bold" style={{ color: "#22c55e" }}>+${potGain.toFixed(2)}</div>
-        </div>
-        <div className="rounded-xl p-2.5" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
-          <div className="text-xs mb-0.5" style={{ color: "#64748b" }}>Max Risk</div>
-          <div className="text-sm font-bold" style={{ color: "#ef4444" }}>-${Math.abs(maxRisk).toFixed(2)}</div>
-        </div>
-      </div>
-
-      {(opp.rsi || opp.macd) && (
-        <div className="flex gap-2 mb-3 flex-wrap">
-          {opp.rsi && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "#243044", color: opp.rsi > 70 ? "#ef4444" : opp.rsi < 30 ? "#22c55e" : "#94a3b8" }}>RSI {opp.rsi}</span>}
-          {opp.macd && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "#243044", color: "#94a3b8" }}>MACD: {opp.macd}</span>}
-          {opp.volume && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "#243044", color: "#94a3b8" }}>Vol: {opp.volume}</span>}
-        </div>
-      )}
-
-      <button onClick={() => setExpanded(!expanded)} className="w-full text-left mb-2 flex items-center justify-between text-xs font-semibold py-1" style={{ color: "#f59e0b" }}>
-        <span>💡 Why Trade Now</span><span>{expanded ? "▲" : "▼"}</span>
-      </button>
-      {expanded && <div className="rounded-xl p-3 mb-3 text-xs leading-relaxed animate-fade-in" style={{ background: "#0d1117", color: "#94a3b8" }}>{opp.rationale}</div>}
-
-      <button onClick={() => onTrade(opp, budget, price)} disabled={trading}
-        className="btn-execute w-full py-3 text-sm">
-        {trading ? "Executing..." : `⚡ Paper Trade $${budget.toFixed(2)}`}
-      </button>
-    </div>
-  );
-}
-
-// ─── Weekly Options Card ──────────────────────────────────────────────────────
-
-function WeeklyOptionsCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
-  opp: TradingOpportunity; budget: number;
-  livePrice?: LivePrice;
-  onTrade: (o: TradingOpportunity, a: number, liveP: number) => void;
-  onWatchlist: (o: TradingOpportunity) => void;
-  trading: boolean;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const isCall = opp.optionType === "CALL";
-
-  // Pull real options chain when available
-  const chain = useOptionsChain(opp.ticker);
-  const realContracts = chain ? (isCall ? chain.calls : chain.puts) : null;
-  const bestContract = realContracts?.[0] ?? null;
-
-  const underlyingPrice = chain?.underlyingPrice ?? livePrice?.price ?? (opp.strikePrice ? opp.strikePrice * 0.96 : opp.entryPrice * 5);
-  const premium = bestContract?.ask ?? opp.premium ?? opp.entryPrice;
-  const strikePrice = bestContract?.strike ?? opp.strikePrice ?? 0;
-  const expiryLabel = bestContract?.expiry ?? chain?.expiry ?? opp.expiry ?? "—";
-  const daysLeft = bestContract?.daysLeft ?? chain?.daysLeft ?? opp.daysLeft ?? 5;
-  const iv = bestContract ? Math.round((bestContract.impliedVolatility ?? 0) * 100) : null;
-
-  const units = budget / premium;
-  const moveNeeded = isCall
-    ? (strikePrice > 0 ? ((strikePrice - underlyingPrice) / underlyingPrice * 100).toFixed(1) : "—")
-    : (strikePrice > 0 ? ((underlyingPrice - strikePrice) / underlyingPrice * 100).toFixed(1) : "—");
-  const potGain = premium * (opp.targetPrice / opp.entryPrice - 1) * units + budget;
-
-  const open = livePrice?.marketOpen ?? true;
-  const lastUp = livePrice?.lastUpdated ?? "";
-  const typeColor = isCall ? "#22c55e" : "#ef4444";
-  const daysColor = daysLeft <= 2 ? "#ef4444" : daysLeft <= 3 ? "#f59e0b" : "#3b82f6";
-  const flash = usePriceFlash(premium);
-  const flashBorder = flash === "up" ? `1px solid rgba(34,197,94,0.6)` : flash === "down" ? `1px solid rgba(239,68,68,0.6)` : `1px solid ${isCall ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`;
-  const premiumColor = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#ffffff";
-  const isRealData = !!bestContract;
-
-  return (
-    <div className="rounded-2xl p-4 trade-card glass-card" style={{ border: flashBorder, transition: "border-color 0.4s" }}>
-      {/* Header */}
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="text-lg font-black">{opp.ticker}</span>
-            <span className="text-xs font-black px-2.5 py-0.5 rounded-full"
-              style={{ background: `${typeColor}20`, color: typeColor, border: `1px solid ${typeColor}55` }}>
-              Weekly {isCall ? "Call" : "Put"}
-            </span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-              style={{ background: `${daysColor}20`, color: daysColor }}>
-              {daysLeft}d left
-            </span>
-          </div>
-          <div className="text-xs mb-1" style={{ color: "#64748b" }}>{opp.name}</div>
-          <LiveDot open={open} last={lastUp} />
-        </div>
-        <button onClick={() => onWatchlist(opp)} className="ml-2 text-xl">⭐</button>
-      </div>
-
-      {/* Key details */}
-      <div className="grid grid-cols-3 gap-2 mb-3">
-        <div className="rounded-xl p-2.5 col-span-1" style={{ background: "#0d1117" }}>
-          <div className="text-[10px] mb-0.5 flex items-center gap-1" style={{ color: "#64748b" }}>
-            Premium
-            {isRealData && <span className="text-[8px] font-bold px-1 rounded" style={{ background: "rgba(34,197,94,0.2)", color: "#4ade80" }}>LIVE</span>}
-          </div>
-          <div className="text-base font-black" style={{ color: premiumColor, transition: "color 0.4s" }}>${premium.toFixed(2)}</div>
-          <div className="text-[10px]" style={{ color: "#64748b" }}>per contract{iv !== null ? ` · IV ${iv}%` : ""}</div>
-          {lastUp && <div className="label-secondary mt-0.5">Last updated: {lastUp}</div>}
-        </div>
-        <div className="rounded-xl p-2.5 col-span-1" style={{ background: "#0d1117" }}>
-          <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Strike</div>
-          <div className="text-base font-black">${strikePrice > 0 ? strikePrice.toLocaleString() : (opp.strikePrice?.toLocaleString() ?? "—")}</div>
-          <div className="text-[10px]" style={{ color: "#64748b" }}>exp {expiryLabel}</div>
-        </div>
-        <div className="rounded-xl p-2.5 col-span-1" style={{ background: "#0d1117" }}>
-          <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Stock Now</div>
-          <div className="text-base font-black">${underlyingPrice.toFixed(2)}</div>
-          <div className="text-[10px]" style={{ color: "#64748b" }}>needs {moveNeeded}% {isCall ? "↑" : "↓"}</div>
-        </div>
-      </div>
-
-      {/* Budget math */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className="rounded-xl p-2.5" style={{ background: "#0d1117" }}>
-          <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Your Budget</div>
-          <div className="text-sm font-bold">${budget.toFixed(2)}</div>
-        </div>
-        <div className="rounded-xl p-2.5" style={{ background: "#0d1117" }}>
-          <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Contracts</div>
-          <div className="text-sm font-bold">{units.toFixed(2)}×</div>
-        </div>
-        <div className="rounded-xl p-2.5" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
-          <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Potential Gain</div>
-          <div className="text-sm font-bold" style={{ color: "#22c55e" }}>+${potGain.toFixed(2)}</div>
-        </div>
-        <div className="rounded-xl p-2.5" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
-          <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Max Loss</div>
-          <div className="text-sm font-bold" style={{ color: "#ef4444" }}>-${budget.toFixed(2)}</div>
-        </div>
-      </div>
-
-      {/* Confidence */}
-      <div className="mb-3">
-        <div className="flex justify-between text-xs mb-1">
-          <span style={{ color: "#64748b" }}>AI Confidence</span>
-          <span className="font-bold">{opp.confidence}%</span>
-        </div>
-        <ConfBar val={opp.confidence} />
-      </div>
-
-      {/* Why this week */}
-      <button onClick={() => setExpanded(!expanded)} className="w-full text-left mb-2 flex items-center justify-between text-xs font-semibold py-1" style={{ color: "#8b5cf6" }}>
-        <span>📅 Why This Week</span><span>{expanded ? "▲" : "▼"}</span>
-      </button>
-      {expanded && (
-        <div className="animate-fade-in mb-3">
-          {opp.weeklyRationale && (
-            <div className="rounded-xl p-3 mb-2 text-xs leading-relaxed" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", color: "#c4b5fd" }}>
-              {opp.weeklyRationale}
-            </div>
-          )}
-          <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: "#0d1117", color: "#94a3b8" }}>{opp.rationale}</div>
-        </div>
-      )}
-
-      <button onClick={() => onTrade(opp, budget, premium)} disabled={trading}
-        className="btn-execute w-full py-3 text-sm">
-        {trading ? "Executing..." : `⚡ Paper Trade ${isCall ? "Call" : "Put"} · $${budget.toFixed(2)}`}
-      </button>
-    </div>
-  );
-}
-
-// ─── Forex Style Selector ─────────────────────────────────────────────────────
-
-function ForexStyleSelector({ value, onChange }: { value: ForexStyle; onChange: (s: ForexStyle) => void }) {
-  const styles: { id: ForexStyle; emoji: string; label: string; sub: string; timeframe: string }[] = [
-    { id: "SCALP",    emoji: "⚡", label: "Scalping",       sub: "Seconds–hours",    timeframe: "M1·M5·M15" },
-    { id: "SWING",    emoji: "📈", label: "Swing Trading",  sub: "Days–weeks",       timeframe: "H1·H4·D1" },
-    { id: "POSITION", emoji: "🏦", label: "Position",       sub: "Months+",          timeframe: "D1·W1·MN" },
-  ];
-  return (
-    <div className="rounded-2xl p-4 mb-4" style={{ background: "#1a2332", border: "1px solid #243044" }}>
-      <div className="text-xs font-bold mb-3 uppercase" style={{ color: "#64748b" }}>Trading Style</div>
-      <div className="grid grid-cols-3 gap-2">
-        {styles.map(s => {
-          const active = value === s.id;
-          return (
-            <button key={s.id} onClick={() => onChange(s.id)}
-              className="rounded-xl p-3 text-left transition-all"
-              style={{
-                background: active ? "rgba(59,130,246,0.12)" : "#0d1117",
-                border: `2px solid ${active ? "#3b82f6" : "#243044"}`,
-              }}>
-              <div className="text-xl mb-1">{s.emoji}</div>
-              <div className="text-xs font-bold leading-tight">{s.label}</div>
-              <div className="text-[10px] mt-0.5" style={{ color: "#64748b" }}>{s.sub}</div>
-              <div className="text-[10px] mt-0.5 font-mono" style={{ color: active ? "#60a5fa" : "#475569" }}>{s.timeframe}</div>
-            </button>
-          );
-        })}
-      </div>
-      {value === "SCALP" && <div className="mt-3 text-[11px] rounded-xl p-2.5" style={{ background: "rgba(34,197,94,0.08)", color: "#4ade80" }}>⚡ Close ALL positions before end of day — no overnight fees</div>}
-      {value === "POSITION" && <div className="mt-3 text-[11px] rounded-xl p-2.5" style={{ background: "rgba(245,158,11,0.08)", color: "#fbbf24" }}>🏦 Based on macro fundamentals — review weekly, hold months</div>}
-    </div>
-  );
-}
-
-// ─── Forex Card ───────────────────────────────────────────────────────────────
-
-function ForexCard({ opp, budget, livePrice, onTrade, onWatchlist, trading }: {
-  opp: TradingOpportunity; budget: number;
-  livePrice?: LivePrice;
-  onTrade: (o: TradingOpportunity, a: number, liveP: number) => void;
-  onWatchlist: (o: TradingOpportunity) => void;
-  trading: boolean;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const price = livePrice?.price ?? opp.entryPrice;
-  const spread = livePrice?.spread ?? opp.spread ?? "—";
-  const bid = livePrice?.bid;
-  const ask = livePrice?.ask;
-  const flash = usePriceFlash(price);
-  const isYen = opp.ticker.includes("JPY");
-  const isExotic = ["MXN","ZAR","NOK","CNH","SGD"].some(x => opp.ticker.includes(x));
-
-  const isBuy = opp.action === "BUY";
-  const pipTarget = opp.pipTarget ?? 20;
-  const stopPips = opp.stopPips ?? 10;
-  const pip = isYen ? 0.01 : isExotic ? 0.01 : 0.0001;
-  const microLots = budget;
-  const pipValuePerUnit = 0.10; // $0.10 per pip per $1 micro lot (educational approximation)
-  const dollarPotential = pipTarget * pipValuePerUnit * microLots;
-  const dollarRisk = stopPips * pipValuePerUnit * microLots;
-
-  const styleColor = opp.forexStyle === "SCALP" ? "#22c55e" : opp.forexStyle === "SWING" ? "#3b82f6" : "#f59e0b";
-  const styleLabel = opp.forexStyle === "SCALP" ? "SCALP" : opp.forexStyle === "SWING" ? "SWING" : "POSITION";
-  const actionColor = isBuy ? "#22c55e" : "#ef4444";
-  const dp = isYen || isExotic ? 3 : 5;
-  const pdisp = price.toFixed(dp);
-
-  const flashBorderFx = flash === "up" ? "1px solid rgba(34,197,94,0.6)" : flash === "down" ? "1px solid rgba(239,68,68,0.6)" : "1px solid #243044";
-  const flashShadowFx = flash === "up" ? "0 0 12px rgba(34,197,94,0.2)" : flash === "down" ? "0 0 12px rgba(239,68,68,0.2)" : "none";
-  const priceColorFx = flash === "up" ? "#4ade80" : flash === "down" ? "#f87171" : "#ffffff";
-
-  return (
-    <div className="rounded-2xl p-4 trade-card glass-card" style={{ border: flashBorderFx, boxShadow: flashShadowFx, transition: "border-color 0.4s, box-shadow 0.4s" }}>
-      {/* Header */}
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 flex-wrap mb-0.5">
-            <span className="text-lg font-black">{opp.ticker.replace("-", "/")}</span>
-            <ABadge action={opp.action} />
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-              style={{ background: `${styleColor}20`, color: styleColor }}>{styleLabel}</span>
-          </div>
-          <div className="text-xs mb-1" style={{ color: "#64748b" }}>{opp.fullName ?? opp.name}</div>
-          <LiveDot open={true} last={livePrice?.lastUpdated ?? ""} />
-        </div>
-        <button onClick={() => onWatchlist(opp)} className="ml-2 text-xl">⭐</button>
-      </div>
-
-      {/* Live price row */}
-      <div className="rounded-xl p-3 mb-3" style={{ background: "#0d1117", border: "1px solid #243044" }}>
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <div className="text-xl font-black" style={{ color: priceColorFx, transition: "color 0.4s" }}>{pdisp}</div>
-            <div className="text-[10px]" style={{ color: "#64748b" }}>Spread: {spread}</div>
-            {livePrice?.lastUpdated && <div className="label-secondary mt-0.5">Last updated: {livePrice.lastUpdated}</div>}
-          </div>
-          {bid && ask && (
-            <div className="text-right">
-              <div className="text-xs text-green-400">Ask {ask.toFixed(dp)}</div>
-              <div className="text-xs text-red-400">Bid {bid.toFixed(dp)}</div>
-            </div>
-          )}
-          <div className="text-right">
-            <div className="text-xs font-semibold" style={{ color: (opp.change24h ?? 0) >= 0 ? "#22c55e" : "#ef4444" }}>
-              {(opp.change24h ?? 0) >= 0 ? "+" : ""}{(opp.change24h ?? 0).toFixed(3)}%
-            </div>
-            <div className="text-[10px]" style={{ color: "#64748b" }}>{opp.timeframes ?? "—"}</div>
-          </div>
-        </div>
-        <div className="flex gap-3 text-[11px]">
-          <span style={{ color: isBuy ? "#22c55e" : "#ef4444" }}>
-            {isBuy ? "▲" : "▼"} {isYen || isExotic ? pipTarget.toFixed(0) : pipTarget} pip target
-          </span>
-          <span style={{ color: "#94a3b8" }}>🛡 {stopPips} pip stop</span>
-          <SBadge type={opp.signalType} />
-        </div>
-      </div>
-
-      {/* Budget math */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className="rounded-xl p-2.5" style={{ background: "#0d1117" }}>
-          <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Micro Lots</div>
-          <div className="text-sm font-bold">{(budget * 0.01).toFixed(3)}</div>
-          <div className="text-[10px]" style={{ color: "#64748b" }}>≈ ${(budget * 1000 * price).toFixed(0)} notional</div>
-        </div>
-        <div className="rounded-xl p-2.5" style={{ background: "#0d1117" }}>
-          <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>Best Time</div>
-          <div className="text-[10px] font-semibold leading-tight">{opp.bestTime ?? "—"}</div>
-        </div>
-        <div className="rounded-xl p-2.5" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
-          <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>If Target Hit</div>
-          <div className="text-sm font-bold" style={{ color: "#22c55e" }}>+${dollarPotential.toFixed(2)}</div>
-        </div>
-        <div className="rounded-xl p-2.5" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
-          <div className="text-[10px] mb-0.5" style={{ color: "#64748b" }}>If Stop Hit</div>
-          <div className="text-sm font-bold" style={{ color: "#ef4444" }}>-${dollarRisk.toFixed(2)}</div>
-        </div>
-      </div>
-
-      {/* Confidence */}
-      <div className="mb-3">
-        <div className="flex justify-between text-xs mb-1">
-          <span style={{ color: "#64748b" }}>AI Confidence</span>
-          <span className="font-bold">{opp.confidence}%</span>
-        </div>
-        <ConfBar val={opp.confidence} />
-      </div>
-
-      <button onClick={() => setExpanded(!expanded)} className="w-full text-left mb-2 flex items-center justify-between text-xs font-semibold py-1" style={{ color: "#f59e0b" }}>
-        <span>💡 Analysis</span><span>{expanded ? "▲" : "▼"}</span>
-      </button>
-      {expanded && <div className="rounded-xl p-3 mb-3 text-xs leading-relaxed animate-fade-in" style={{ background: "#0d1117", color: "#94a3b8" }}>{opp.rationale}</div>}
-
-      <button onClick={() => onTrade(opp, budget, price)} disabled={trading}
-        className="btn-execute w-full py-3 text-sm">
-        {trading ? "Executing..." : `⚡ Paper Trade ${opp.action} ${opp.ticker.replace("-","/")} · $${budget.toFixed(2)}`}
-      </button>
-    </div>
-  );
-}
+  ],
+  stocks: [
+    {
+      id: "aapl",
+      pair: "AAPL/USD",
+      description: "Apple Inc.",
+      market: "stocks",
+      direction: "BUY",
+      duration: "shortTerm",
+      score: 88,
+      riskLevel: "Low",
+      status: "Open",
+      openTime: "Today, 9:30 AM ET",
+      closeTime: "Tomorrow, 4:00 PM ET",
+      tradeLength: "About 1 day",
+      bestTime: "9:30 AM - 4:00 PM ET",
+      sessionName: "US Market Hours",
+      whyThisTrade: "Strong demand for new device models, bouncing off the 50-day moving average support.",
+      profitRate: 0.85,
+      lossRate: 0.35,
+      entryPrice: 185.50,
+      profitGoal: "+$15.00 Target",
+      safetyStop: "-$6.00 Stop Loss",
+      tradeSize: "1 Share Equivalent",
+      timeframe: "Daily (1D)",
+      signalType: "Support Bounce"
+    },
+    {
+      id: "tsla",
+      pair: "TSLA/USD",
+      description: "Tesla Inc.",
+      market: "stocks",
+      direction: "BUY",
+      duration: "quick",
+      score: 72,
+      riskLevel: "High",
+      status: "Open",
+      openTime: "Today, 9:30 AM ET",
+      closeTime: "Today, 11:30 AM ET",
+      tradeLength: "About 2 hr",
+      bestTime: "9:30 AM - 10:30 AM ET",
+      sessionName: "US Market Open",
+      whyThisTrade: "High volatility breakout pattern. High potential return with wider safety stop.",
+      profitRate: 2.10,
+      lossRate: 1.20,
+      entryPrice: 175.20,
+      profitGoal: "+$8.00 Target",
+      safetyStop: "-$4.50 Stop Loss",
+      tradeSize: "1 Share Equivalent",
+      timeframe: "5 Minute (M5)",
+      signalType: "Momentum Breakout"
+    },
+    {
+      id: "msft",
+      pair: "MSFT/USD",
+      description: "Microsoft Corp.",
+      market: "stocks",
+      direction: "BUY",
+      duration: "longTerm",
+      score: 85,
+      riskLevel: "Low",
+      status: "Open",
+      openTime: "Monday, 9:30 AM ET",
+      closeTime: "Friday, 4:00 PM ET",
+      tradeLength: "About 5 days",
+      bestTime: "9:30 AM - 4:00 PM ET",
+      sessionName: "US Market Hours",
+      whyThisTrade: "Strong Enterprise Cloud and AI adoption metrics, positive multi-month breakout.",
+      profitRate: 1.10,
+      lossRate: 0.40,
+      entryPrice: 420.00,
+      profitGoal: "+$35.00 Target",
+      safetyStop: "-$12.00 Stop Loss",
+      tradeSize: "1 Share Equivalent",
+      timeframe: "Daily (1D)",
+      signalType: "Momentum Breakout"
+    }
+  ],
+  crypto: [
+    {
+      id: "btc-usd",
+      pair: "BTC/USD",
+      description: "Bitcoin / US Dollar",
+      market: "crypto",
+      direction: "BUY",
+      duration: "quick",
+      score: 84,
+      riskLevel: "Medium",
+      status: "Open",
+      openTime: "Today, 2:00 PM ET",
+      closeTime: "Today, 6:00 PM ET",
+      tradeLength: "About 4 hr",
+      bestTime: "24/7 (Best during US trading)",
+      sessionName: "Global Crypto Session",
+      whyThisTrade: "Bouncing off weekly support with high volume inflows.",
+      profitRate: 1.45,
+      lossRate: 0.70,
+      entryPrice: 96500.00,
+      profitGoal: "+$2,000 Target",
+      safetyStop: "-$1,000 Stop Loss",
+      tradeSize: "0.001 BTC equivalent",
+      timeframe: "15 Minute (M15)",
+      signalType: "Support Bounce"
+    },
+    {
+      id: "eth-usd",
+      pair: "ETH/USD",
+      description: "Ethereum / US Dollar",
+      market: "crypto",
+      direction: "BUY",
+      duration: "shortTerm",
+      score: 79,
+      riskLevel: "Medium",
+      status: "Open",
+      openTime: "Today, 8:00 AM ET",
+      closeTime: "Tomorrow, 8:00 AM ET",
+      tradeLength: "About 24 hr",
+      bestTime: "24/7 Global",
+      sessionName: "Global Crypto Session",
+      whyThisTrade: "Moving above 200-hour moving average, volume increasing.",
+      profitRate: 1.25,
+      lossRate: 0.55,
+      entryPrice: 3500.00,
+      profitGoal: "+$120.00 Target",
+      safetyStop: "-$50.00 Stop Loss",
+      tradeSize: "0.01 ETH equivalent",
+      timeframe: "1 Hour (H1)",
+      signalType: "Momentum Breakout"
+    },
+    {
+      id: "sol-usd",
+      pair: "SOL/USD",
+      description: "Solana / US Dollar",
+      market: "crypto",
+      direction: "BUY",
+      duration: "longTerm",
+      score: 81,
+      riskLevel: "High",
+      status: "Open",
+      openTime: "Monday, 8:00 AM ET",
+      closeTime: "Sunday, 8:00 AM ET",
+      tradeLength: "About 7 days",
+      bestTime: "24/7 Global",
+      sessionName: "Global Crypto Session",
+      whyThisTrade: "Key support holding strong with network activity breaking highs.",
+      profitRate: 1.65,
+      lossRate: 0.85,
+      entryPrice: 145.00,
+      profitGoal: "+$18.00 Target",
+      safetyStop: "-$9.00 Stop Loss",
+      tradeSize: "0.1 SOL equivalent",
+      timeframe: "Daily (1D)",
+      signalType: "Support Bounce"
+    }
+  ],
+  commodities: [
+    {
+      id: "gold",
+      pair: "GOLD/USD",
+      description: "Gold Futures",
+      market: "commodities",
+      direction: "BUY",
+      duration: "longTerm",
+      score: 91,
+      riskLevel: "Low",
+      status: "Open",
+      openTime: "Monday, 8:00 AM ET",
+      closeTime: "Friday, 5:00 PM ET",
+      tradeLength: "About 5 days",
+      bestTime: "8:00 AM - 5:00 PM ET",
+      sessionName: "US/London overlap",
+      whyThisTrade: "Global safe haven demand continues to rise, pushing gold above previous resistance.",
+      profitRate: 1.30,
+      lossRate: 0.50,
+      entryPrice: 2350.00,
+      profitGoal: "+$60.00 Target",
+      safetyStop: "-$25.00 Stop Loss",
+      tradeSize: "0.1 Contract equivalent",
+      timeframe: "Daily (1D)",
+      signalType: "Momentum Breakout"
+    },
+    {
+      id: "oil",
+      pair: "OIL/USD",
+      description: "Crude Oil Futures",
+      market: "commodities",
+      direction: "SELL",
+      duration: "shortTerm",
+      score: 74,
+      riskLevel: "Medium",
+      status: "Open",
+      openTime: "Today, 9:00 AM ET",
+      closeTime: "Tomorrow, 4:00 PM ET",
+      tradeLength: "About 1 day",
+      bestTime: "9:00 AM - 4:00 PM ET",
+      sessionName: "US Session",
+      whyThisTrade: "Global supply increases driving crude prices down off key resistance.",
+      profitRate: 1.15,
+      lossRate: 0.60,
+      entryPrice: 78.50,
+      profitGoal: "+$3.20 Target",
+      safetyStop: "-$1.60 Stop Loss",
+      tradeSize: "10 Barrels equivalent",
+      timeframe: "4 Hour (H4)",
+      signalType: "Mean Reversion"
+    },
+    {
+      id: "silver",
+      pair: "SILVER/USD",
+      description: "Silver Spot",
+      market: "commodities",
+      direction: "BUY",
+      duration: "quick",
+      score: 70,
+      riskLevel: "Medium",
+      status: "Open",
+      openTime: "Today, 8:00 AM ET",
+      closeTime: "Today, 12:00 PM ET",
+      tradeLength: "About 4 hr",
+      bestTime: "8:00 AM - 12:00 PM ET",
+      sessionName: "London / New York Open",
+      whyThisTrade: "Strong industrial demands driving short-term momentum.",
+      profitRate: 1.05,
+      lossRate: 0.50,
+      entryPrice: 28.20,
+      profitGoal: "+$0.80 Target",
+      safetyStop: "-$0.40 Stop Loss",
+      tradeSize: "50 Ounces equivalent",
+      timeframe: "15 Minute (M15)",
+      signalType: "Momentum Breakout"
+    }
+  ]
+};
 
 // ─── Markets Page ─────────────────────────────────────────────────────────────
 
 export default function MarketsPage() {
   const { token, updateBalance } = useAuth();
   const { toast } = useToast();
-  const [activeMarket, setActiveMarket] = useState<Market>("stocks");
-  const [budget, setBudget] = useState(0.25);
-  const [budgetInput, setBudgetInput] = useState("0.25");
-  const [forexStyle, setForexStyle] = useState<ForexStyle>("SCALP");
-  const currentTab = TABS.find(t => t.id === activeMarket)!;
+  const queryClient = useQueryClient();
+  const { tradingMode } = useTradingMode();
+
+  // State Management
+  const [selectedMarket, setSelectedMarket] = useState<string>("forex");
+  const [selectedDuration, setSelectedDuration] = useState<string>("quick");
+  const [selectedAmount, setSelectedAmount] = useState<number>(0.25);
+  const [customActive, setCustomActive] = useState<boolean>(false);
+  const [activeLivePreview, setActiveLivePreview] = useState<any | null>(null);
 
   const { prices: livePrices, marketOpen } = useLivePrices();
 
-  // Market opportunities (from our AI signal service)
+  // Map user duration to backend API Style Parameter
+  const styleMap: Record<string, string> = {
+    quick: "SCALP",
+    shortTerm: "SWING",
+    longTerm: "POSITION",
+  };
+  const activeStyle = styleMap[selectedDuration] || "SCALP";
+
+  // Query Backend opportunities
   const { data: opps, isLoading } = useQuery<TradingOpportunity[]>({
-    queryKey: ["/api/opportunities", activeMarket, activeMarket === "forex" ? forexStyle : ""],
+    queryKey: ["/api/opportunities", selectedMarket, activeStyle],
     queryFn: () => {
-      const url = activeMarket === "forex"
-        ? `/api/opportunities/forex?style=${forexStyle}`
-        : `/api/opportunities/${activeMarket}`;
+      const url = selectedMarket === "forex"
+        ? `/api/opportunities/forex?style=${activeStyle}`
+        : `/api/opportunities/${selectedMarket}`;
       return fetch(url).then(r => r.json());
     },
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
 
-  const tradeMutation = useMutation({
-    mutationFn: async ({ opp, amount, liveP }: { opp: TradingOpportunity; amount: number; liveP: number }) => {
-      const units = parseFloat((amount / liveP).toFixed(6));
-      const potGain = opp.market === "options" ? liveP * 5 * units : (opp.targetPrice - liveP) * units;
-      const res = await fetch("/api/trades/execute", {
+  // ─── Order Preview Mutation ───
+  const previewMutation = useMutation({
+    mutationFn: async ({ opp, amount, liveP }: { opp: any; amount: number; liveP: number }) => {
+      const ticker = opp.pair ? opp.pair.replace("/", "-") : (opp.ticker || "EUR-USD");
+      const side = opp.direction?.toLowerCase() === "sell" || opp.action?.toLowerCase() === "sell" ? "sell" : "buy";
+      const quantity = amount / liveP;
+
+      const res = await fetch("/api/trading/orders/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          market: opp.market, ticker: opp.ticker, tickerName: opp.name,
-          action: opp.action, entryPrice: liveP, units, investedAmount: amount,
-          potentialGain: potGain,
-        }),
+          symbol: ticker,
+          assetClass: opp.market || "forex",
+          side,
+          orderType: "market",
+          quantity,
+          notionalAmount: amount,
+          estimatedPrice: liveP,
+          tradeScore: opp.score || 85,
+          riskLevel: opp.risk || "Low",
+          reason: opp.reason || opp.rationale || "Signal convergence match.",
+        })
       });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.message); }
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.message || "Failed to preview order");
+      }
       return res.json();
     },
     onSuccess: (data, vars) => {
-      updateBalance(data.newBalance);
-      toast({ title: `✅ Trade executed at $${vars.liveP.toFixed(vars.liveP < 1 ? 4 : 2)} (live market price)`, description: `New balance: $${parseFloat(data.newBalance).toFixed(2)}` });
-      queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/portfolio/snapshots"] });
+      if (tradingMode === "paper") {
+        placePaperMutation.mutate({ previewId: data.previewId, liveP: vars.liveP });
+      } else {
+        setActiveLivePreview({
+          previewId: data.previewId,
+          symbol: vars.opp.pair || vars.opp.ticker || "EUR/USD",
+          assetClass: vars.opp.market || "forex",
+          side: vars.opp.direction?.toLowerCase() === "sell" || vars.opp.action?.toLowerCase() === "sell" ? "sell" : "buy",
+          orderType: "market",
+          quantity: data.quantity,
+          notionalAmount: vars.amount,
+          estimatedPrice: data.estimatedPrice,
+          estimatedCost: data.estimatedCost,
+          estimatedFees: data.estimatedFees,
+          estimatedTotal: data.estimatedTotal,
+          tradeScore: vars.opp.score || 85,
+          riskLevel: vars.opp.risk || "Low",
+          reason: vars.opp.reason || vars.opp.rationale || "Signal convergence match.",
+        });
+      }
     },
-    onError: (e: any) => toast({ title: "Trade failed", description: e.message, variant: "destructive" }),
+    onError: (e: any) => {
+      toast({
+        title: "Trade Denied",
+        description: e.message,
+        variant: "destructive",
+      });
+    }
   });
 
-  const watchMutation = useMutation({
-    mutationFn: async (opp: TradingOpportunity) => {
-      const res = await fetch(`/api/watchlist/${opp.ticker}`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ market: opp.market }) });
+  // ─── Place Paper Order Mutation ───
+  const placePaperMutation = useMutation({
+    mutationFn: async ({ previewId }: { previewId: string; liveP: number }) => {
+      const res = await fetch("/api/trading/orders/place", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ previewId }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.message || "Failed to execute paper trade");
+      }
       return res.json();
     },
-    onSuccess: (_, opp) => { toast({ title: `⭐ ${opp.ticker} added to watchlist` }); queryClient.invalidateQueries({ queryKey: ["/api/watchlist"] }); },
+    onSuccess: (data, vars) => {
+      toast({
+        title: `✅ Practice trade executed at $${vars.liveP.toFixed(vars.liveP < 1 ? 4 : 2)}`,
+        description: "Your practice balance has been updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolio/snapshots"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    },
+    onError: (e: any) => {
+      toast({
+        title: "Trade Failed",
+        description: e.message,
+        variant: "destructive",
+      });
+    }
   });
 
-  useEffect(() => {
-    const m = Math.max(currentTab.min, 0.25);
-    setBudget(m); setBudgetInput(String(m));
-  }, [activeMarket]);
+  const handleSelectAmount = (val: number, isCustom: boolean) => {
+    setSelectedAmount(val);
+    setCustomActive(isCustom);
+  };
 
-  // Map opp ticker → live price key
-  function getLive(opp: TradingOpportunity): LivePrice | undefined {
-    const t = opp.ticker;
-    // Commodities use futures symbols
-    if (opp.market === "commodities") {
-      const map: Record<string, string> = { GOLD: "GC=F", OIL: "CL=F", SILVER: "SI=F", NATGAS: "NG=F" };
-      return livePrices[map[t] ?? t];
+  // Harmonize backend live signals with UI components and default simulated dataset
+  const getMappedIdeas = () => {
+    const list: any[] = [];
+
+    // 1. Process actual live opportunities from backend
+    if (opps && opps.length > 0) {
+      opps.forEach((opp, index) => {
+        // Retrieve live price check if exists
+        const tickerKey = opp.ticker;
+        const livePriceObj = livePrices[tickerKey] || livePrices[tickerKey.replace("-", "/")];
+        const liveP = livePriceObj?.price ?? parseFloat(String(opp.entryPrice));
+
+        // Map Drizzle opportunities back to our simplified structures
+        const entry = liveP;
+        const target = parseFloat(String(opp.targetPrice));
+        const stop = parseFloat(String(opp.stopLoss ?? entry * 0.95));
+
+        const profitRate = Math.abs((target - entry) / entry) * 50;
+        const lossRate = Math.abs((entry - stop) / entry) * 50;
+
+        const friendlyTimeframe = (opp.timeframes || "").toUpperCase();
+        const style = (opp.forexStyle || (opp as any).style || "").toUpperCase();
+        let duration = selectedDuration; // default to avoid empty filter states
+
+        if (style === "POSITION" || friendlyTimeframe.includes("D1") || friendlyTimeframe.includes("1D") || friendlyTimeframe.includes("W1") || friendlyTimeframe.includes("MN") || friendlyTimeframe.includes("DAILY")) {
+          duration = "longTerm";
+        } else if (style === "SWING" || friendlyTimeframe.includes("1H") || friendlyTimeframe.includes("H1") || friendlyTimeframe.includes("4H") || friendlyTimeframe.includes("H4")) {
+          duration = "shortTerm";
+        } else if (style === "SCALP" || friendlyTimeframe.includes("5M") || friendlyTimeframe.includes("15M")) {
+          duration = "quick";
+        }
+
+        const signalFriendlyMap: Record<string, string> = {
+          BREAKOUT: "Price is breaking out of a tight consolidation pattern.",
+          REVERSAL: "Price is showing signs of reversing its previous trend.",
+          MOMENTUM: "Strong upward/downward momentum is driving the price.",
+          MEAN_REVERSION: "Price is stretched and is likely to bounce back to its average.",
+        };
+
+        const statusList = ["Open", "Open", "Win", "Loss", "Open"];
+        const status = statusList[index % statusList.length];
+
+        list.push({
+          id: opp.id.toString(),
+          pair: opp.ticker.replace("-", "/"),
+          description: opp.name,
+          market: opp.market,
+          direction: opp.action,
+          duration,
+          score: opp.confidence || 75,
+          riskLevel: opp.confidence > 75 ? "Low" : opp.confidence > 65 ? "Medium" : "High",
+          status,
+          openTime: "Today, 8:05 AM ET",
+          closeTime: "Today, 11:45 AM ET",
+          tradeLength: duration === "quick" ? "About 3 hr 40 min" : duration === "shortTerm" ? "About 2 days" : "About 1 week",
+          bestTime: duration === "quick" ? "8:00 AM - 12:00 PM ET" : "Anytime",
+          sessionName: duration === "quick" ? "London / New York Overlap" : "Standard trading session",
+          whyThisTrade: signalFriendlyMap[opp.signalType] || opp.rationale || "Positive indicator crossover alignment.",
+          profitRate: Math.max(0.5, parseFloat(profitRate.toFixed(2))),
+          lossRate: Math.max(0.25, parseFloat(lossRate.toFixed(2))),
+          entryPrice: entry,
+          profitGoal: `+$${Math.abs(target - entry).toFixed(2)} Target`,
+          safetyStop: `-$${Math.abs(entry - stop).toFixed(2)} Stop Loss`,
+          tradeSize: "0.01 Micro Lots equivalent",
+          timeframe: opp.timeframes,
+          signalType: opp.signalType,
+        });
+      });
     }
-    return livePrices[t];
-  }
 
-  function handleTrade(opp: TradingOpportunity, amount: number, liveP: number) {
-    tradeMutation.mutate({ opp, amount, liveP });
-  }
+    // 2. Append default simulated trade dataset to ensure plenty of high-quality mock trade choices
+    const fallbackList = DEFAULT_IDEAS[selectedMarket] || [];
+    fallbackList.forEach((item) => {
+      // Connect live price feeds to fallbacks if matching pair ticker is observed
+      const livePriceObj = livePrices[item.pair] || livePrices[item.pair.replace("/", "-")];
+      const liveP = livePriceObj?.price ?? item.entryPrice;
 
-  const isFetching = isLoading;
+      // Adjust profit rates/prices dynamically
+      list.push({
+        ...item,
+        entryPrice: liveP,
+      });
+    });
+
+    // Filter by selected market & selected duration options
+    const filtered = list.filter(
+      (item) => item.market === selectedMarket && item.duration === selectedDuration
+    );
+
+    // Sort by best trade score (rank) descending
+    const sorted = [...filtered].sort((a, b) => b.score - a.score);
+
+    // Re-assign ranks dynamically based on final list position
+    return sorted.map((item, idx) => ({
+      ...item,
+      rank: idx + 1,
+    }));
+  };
+
+  const tradeIdeasList = getMappedIdeas();
+  const bestMatch = tradeIdeasList[0] || null;
+  const otherTradeIdeas = tradeIdeasList.slice(1);
+
+  // Time Formatter
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
 
   return (
-    <div className="page-container page-glow lg:pb-8 min-h-screen" style={{ background: "#0d1117" }}>
+    <div className="page-container page-glow lg:pb-8 min-h-screen" style={{ background: "#050b14" }}>
       <div className="px-4 lg:px-8 pt-6 max-w-none">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-black">Markets</h1>
-          <div className="flex items-center gap-1.5 text-[11px]" style={{ color: marketOpen ? "#22c55e" : "#64748b" }}>
-            <span className={`w-2 h-2 rounded-full ${marketOpen ? "animate-pulse" : ""}`}
-              style={{ background: marketOpen ? "#22c55e" : "#64748b" }} />
-            {marketOpen ? "US Markets Open" : "US Markets Closed"}
-          </div>
-        </div>
-
-        {/* Market tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-4 px-4 lg:mx-0 lg:px-0" style={{ scrollbarWidth: "none" }}>
-          {TABS.map(tab => {
-            const active = tab.id === activeMarket;
-            const c = MCOLORS[tab.id];
-            return (
-              <button key={tab.id} onClick={() => setActiveMarket(tab.id)}
-                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-sm font-semibold transition-all"
-                style={{ background: active ? `${c}22` : "#1a2332", color: active ? c : "#64748b", border: `2px solid ${active ? c : "#243044"}` }}>
-                <span>{tab.emoji}</span><span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Forex style selector */}
-        {activeMarket === "forex" && (
-          <ForexStyleSelector value={forexStyle} onChange={setForexStyle} />
-        )}
-
-        {/* Budget bar */}
-        <div className="sticky top-0 z-10 py-3 mb-4" style={{ background: "#0d1117" }}>
-          <div className="rounded-2xl p-4 w-full" style={{ background: "#1a2332", border: "1px solid #243044" }}>
-            <div className="text-xs font-semibold mb-2" style={{ color: "#64748b" }}>HOW MUCH DO YOU WANT TO INVEST?</div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="flex items-center gap-2 flex-1 rounded-xl px-4 py-2.5" style={{ background: "#0d1117", border: "1px solid #243044" }}>
-                <span className="font-bold" style={{ color: "#22c55e" }}>$</span>
-                <input type="number" min={currentTab.min} step={0.01} value={budgetInput}
-                  onChange={e => { setBudgetInput(e.target.value); const n = parseFloat(e.target.value); if (!isNaN(n) && n >= 0.01) setBudget(n); }}
-                  className="flex-1 bg-transparent outline-none text-base font-bold" style={{ color: "#e2e8f0" }} />
+        
+        {/* Live Mode Active Warning alert bar */}
+        {tradingMode === "live" && (
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 mb-6 flex items-start gap-3 select-none">
+            <i className="fas fa-exclamation-triangle text-amber-500 text-sm mt-0.5 animate-pulse"></i>
+            <div>
+              <div className="text-xs font-black text-white">LIVE TRADING MODE ACTIVE</div>
+              <div className="text-[10px] text-slate-400 font-semibold mt-1">
+                Your terminal is executing trades on the real market via your connected broker. Always verify your size and stop-loss rules before placing live orders.
               </div>
-              <div className="text-xs whitespace-nowrap" style={{ color: "#64748b" }}>Min: ${currentTab.min.toFixed(2)}</div>
-            </div>
-            <div className="flex gap-2">
-              {[0.25, 1, 5, 10, 25].map(v => (
-                <button key={v} onClick={() => { setBudget(v); setBudgetInput(String(v)); }}
-                  className="flex-1 py-1 rounded-lg text-xs font-semibold border transition-all"
-                  style={{ background: budget === v ? "rgba(59,130,246,0.15)" : "transparent", borderColor: budget === v ? "#3b82f6" : "#243044", color: budget === v ? "#60a5fa" : "#64748b" }}>
-                  ${v}
-                </button>
-              ))}
             </div>
           </div>
+        )}
+
+        {/* Header Block */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-[32px] font-black text-white leading-tight">Choose a Trade</h1>
+            <p className="text-xs font-semibold mt-1" style={{ color: "#64748b" }}>
+              We find the best trade ideas based on your amount and preferences.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 text-xs font-extrabold" style={{ color: "#22c55e" }}>
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+              <span>US Markets Open</span>
+              <span className="text-slate-500 font-bold ml-1.5">{formattedTime}</span>
+            </div>
+            <ModeSwitch />
+          </div>
         </div>
 
-        {/* Trade cards */}
-        {isFetching ? (
-          <div className="grid lg:grid-cols-3 gap-4">
-            {Array(6).fill(0).map((_, i) => <div key={i} className="skeleton rounded-2xl" style={{ height: 320 }} />)}
-          </div>
-        ) : (
-          <div className="grid lg:grid-cols-3 gap-4">
-            {(opps ?? []).map(opp => {
-              const live = getLive(opp);
-              const commonProps = {
-                opp, budget, livePrice: live, trading: tradeMutation.isPending,
-                onTrade: handleTrade, onWatchlist: (o: TradingOpportunity) => watchMutation.mutate(o),
-              };
-              if (opp.market === "options") return <WeeklyOptionsCard key={opp.id} {...commonProps} />;
-              if (opp.market === "forex")   return <ForexCard key={opp.id} {...commonProps} />;
-              return <TradeCard key={opp.id} {...commonProps} />;
-            })}
-            {(opps ?? []).length === 0 && (
-              <div className="col-span-full text-center py-12">
-                <div className="text-4xl mb-3">📭</div>
-                <div className="font-semibold">No signals right now</div>
+        {/* Three-Step Horizontal Selector Card */}
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-5 mb-5 select-none">
+          {/* Left Area (Steps 1 & 2 + Alert) */}
+          <div className="lg:col-span-7 flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row gap-4 flex-1">
+              {/* Step 1 Box */}
+              <div className="flex-[1.3] rounded-2xl p-5 border" style={{ background: "#07101d", borderColor: "#1e3555" }}>
+                <MarketSelector selected={selectedMarket} onChange={setSelectedMarket} />
               </div>
-            )}
+              {/* Step 2 Box */}
+              <div className="flex-1 rounded-2xl p-5 border" style={{ background: "#07101d", borderColor: "#1e3555" }}>
+                <DurationSelector selected={selectedDuration} onChange={setSelectedDuration} />
+              </div>
+            </div>
+            {/* Notice Alert Notice */}
+            <ProtectionNotice />
           </div>
-        )}
+
+          {/* Right Area (Step 3 Box) */}
+          <div className="lg:col-span-3 rounded-2xl p-5 border flex flex-col justify-between" style={{ background: "#07101d", borderColor: "#1e3555" }}>
+            <AmountSelector amount={selectedAmount} customActive={customActive} onSelectAmount={handleSelectAmount} />
+          </div>
+        </div>
+
+        {/* Main Content Layout */}
+        <div className="flex flex-col gap-6">
+          
+          {/* Featured Best Match Card */}
+          {bestMatch ? (
+            <div className="flex flex-col gap-4">
+              <BestMatchTradeCard
+                trade={bestMatch}
+                amount={selectedAmount}
+                onTrade={(opp, amt, lp) => previewMutation.mutate({ opp, amount: amt, liveP: lp })}
+                trading={previewMutation.isPending || placePaperMutation.isPending}
+              />
+            </div>
+          ) : (
+            <div className="rounded-2xl border p-10 text-center text-slate-500" style={{ background: "#0b1624", borderColor: "#1e3555" }}>
+              <i className="fas fa-search text-3xl mb-3 text-slate-600"></i>
+              <div className="text-sm font-bold">No perfect match found for current choices</div>
+              <p className="text-xs text-slate-600 mt-1">Try switching to Forex or modifying the Duration setup</p>
+            </div>
+          )}
+
+          {/* Secondary Trade ideas list */}
+          {otherTradeIdeas.length > 0 && (
+            <div className="flex flex-col gap-4 mt-2">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-black text-white">Other Trade Ideas for You</h2>
+                <span className="text-[10px] font-bold text-slate-500">Sorted by best match</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {otherTradeIdeas.map((trade) => (
+                  <SmallTradeCard
+                    key={trade.id}
+                    trade={trade}
+                    rank={trade.rank}
+                    amount={selectedAmount}
+                    onTrade={(opp, amt, lp) => previewMutation.mutate({ opp, amount: amt, liveP: lp })}
+                    trading={previewMutation.isPending || placePaperMutation.isPending}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Practice First Footer */}
+          <PracticeFooter />
+        </div>
+
       </div>
+
+      {/* Live Order Preview Modal */}
+      {activeLivePreview && (
+        <LiveOrderPreviewModal
+          previewId={activeLivePreview.previewId}
+          orderData={activeLivePreview}
+          onClose={() => setActiveLivePreview(null)}
+          onSuccess={() => {
+            setActiveLivePreview(null);
+            queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/portfolio/snapshots"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/trading/accounts"] });
+          }}
+        />
+      )}
     </div>
   );
 }

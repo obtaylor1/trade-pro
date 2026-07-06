@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { storage } from "./storage";
@@ -406,6 +407,217 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (e) {
       console.error(e);
       res.status(500).json({ message: "Failed to load user" });
+    }
+  });
+
+  // ─── Trading Mode & Connect Broker APIs ──────────────────────────────────────
+
+  const userModes = new Map<string, string>();
+  const activePreviews = new Map<string, any>(); // keyed by userId + previewId
+
+  app.get("/api/trading/mode", authMiddleware, (req: any, res) => {
+    const mode = userModes.get(req.userId) || "paper";
+    res.json({ mode });
+  });
+
+  app.post("/api/trading/mode", authMiddleware, async (req: any, res) => {
+    const { mode } = req.body;
+    if (mode !== "paper" && mode !== "live") {
+      return res.status(400).json({ message: "Invalid trading mode" });
+    }
+
+    if (mode === "live") {
+      const accounts = await storage.getTradingAccounts(req.userId);
+      const hasLiveBroker = accounts.some(acc => acc.mode === "live" && acc.status === "connected");
+      if (!hasLiveBroker) {
+        return res.status(400).json({ message: "No active live broker connection found. Connect a broker first!" });
+      }
+    }
+
+    userModes.set(req.userId, mode);
+    res.json({ success: true, mode });
+  });
+
+  app.get("/api/trading/accounts", authMiddleware, async (req: any, res) => {
+    const accounts = await storage.getTradingAccounts(req.userId);
+    res.json(accounts);
+  });
+
+  app.post("/api/trading/accounts/connect", authMiddleware, async (req: any, res) => {
+    try {
+      const { brokerName, mode, accountLabel, apiKey, apiSecret, brokerAccountId } = req.body;
+      if (!brokerName || !mode || !accountLabel || !apiKey || !apiSecret) {
+        return res.status(400).json({ message: "All required connection fields must be provided." });
+      }
+
+      const { encrypt } = await import("./crypto");
+      const apiKeyEncrypted = encrypt(apiKey);
+      const apiSecretEncrypted = encrypt(apiSecret);
+      const maskedKey = "****" + apiKey.slice(-4);
+
+      const acc = await storage.connectTradingAccount(req.userId, {
+        brokerName,
+        mode,
+        status: "connected",
+        accountLabel,
+        brokerAccountId: brokerAccountId || null,
+        apiKeyEncrypted,
+        apiSecretEncrypted,
+        maskedKey,
+        buyingPower: mode === "live" ? "25000" : "10000",
+        accessTokenEncrypted: null,
+        refreshTokenEncrypted: null,
+      });
+
+      res.json(acc);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ message: "Failed to connect broker account" });
+    }
+  });
+
+  app.delete("/api/trading/accounts/:id", authMiddleware, async (req: any, res) => {
+    try {
+      await storage.deleteTradingAccount(req.userId, req.params.id);
+      res.json({ success: true });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ message: "Failed to disconnect account" });
+    }
+  });
+
+  app.post("/api/trading/orders/preview", authMiddleware, async (req: any, res) => {
+    try {
+      const { symbol, assetClass, side, orderType, quantity, notionalAmount, estimatedPrice, tradeScore, riskLevel, reason } = req.body;
+
+      // Beginner safety rules check
+      const amount = parseFloat(String(notionalAmount));
+      if (amount > 100) {
+        return res.status(400).json({ message: "This trade is above your beginner safety limit. Lower the amount to $100 or less, or unlock Advanced Mode after reviewing the risks." });
+      }
+
+      if (assetClass === "options" || assetClass === "futures") {
+        return res.status(400).json({ message: "Options and futures trades are locked under beginner safety rules. Enable Advanced Mode to trade them." });
+      }
+
+      const mode = userModes.get(req.userId) || "paper";
+      const { getBrokerAdapter } = await import("./broker");
+
+      let adapter;
+      if (mode === "paper") {
+        adapter = getBrokerAdapter("paper");
+      } else {
+        const accounts = await storage.getTradingAccounts(req.userId);
+        const liveAcc = accounts.find(a => a.mode === "live" && a.status === "connected");
+        if (!liveAcc) {
+          return res.status(400).json({ message: "No active live broker connection found. Connect a broker first!" });
+        }
+        adapter = getBrokerAdapter(liveAcc.brokerName);
+      }
+
+      const preview = await adapter.previewOrder(req.userId, {
+        symbol,
+        assetClass,
+        side,
+        orderType,
+        quantity: parseFloat(String(quantity)),
+        notionalAmount: amount,
+        estimatedPrice: parseFloat(String(estimatedPrice)),
+        estimatedCost: amount,
+        tradeScore,
+        riskLevel,
+        reason,
+      });
+
+      const previewId = randomUUID();
+      activePreviews.set(req.userId + "-" + previewId, { ...req.body, preview });
+      res.json({ previewId, ...preview });
+    } catch (e: any) {
+      console.error(e);
+      res.status(400).json({ message: e.message || "Failed to preview order" });
+    }
+  });
+
+  app.post("/api/trading/orders/place", authMiddleware, async (req: any, res) => {
+    try {
+      const { previewId } = req.body;
+      if (!previewId) {
+        return res.status(400).json({ message: "previewId is required for placing orders." });
+      }
+
+      const cachedKey = req.userId + "-" + previewId;
+      const cached = activePreviews.get(cachedKey);
+      if (!cached) {
+        return res.status(400).json({ message: "Order preview has expired or is invalid. Please preview your order again." });
+      }
+
+      // Cleanup preview cached record so it cannot be double-executed (replay protection)
+      activePreviews.delete(cachedKey);
+
+      const mode = userModes.get(req.userId) || "paper";
+      const { getBrokerAdapter } = await import("./broker");
+
+      let adapter;
+      if (mode === "paper") {
+        adapter = getBrokerAdapter("paper");
+      } else {
+        const accounts = await storage.getTradingAccounts(req.userId);
+        const liveAcc = accounts.find(a => a.mode === "live" && a.status === "connected");
+        if (!liveAcc) {
+          return res.status(400).json({ message: "No active live broker connection found. Connect a broker first!" });
+        }
+        adapter = getBrokerAdapter(liveAcc.brokerName);
+      }
+
+      const result = await adapter.placeOrder(req.userId, {
+        symbol: cached.symbol,
+        assetClass: cached.assetClass,
+        side: cached.side,
+        orderType: cached.orderType,
+        quantity: parseFloat(String(cached.quantity)),
+        notionalAmount: parseFloat(String(cached.notionalAmount)),
+        estimatedPrice: parseFloat(String(cached.estimatedPrice)),
+        estimatedCost: parseFloat(String(cached.notionalAmount)),
+        tradeScore: cached.tradeScore,
+        riskLevel: cached.riskLevel,
+        reason: cached.reason,
+      });
+
+      res.json(result);
+    } catch (e: any) {
+      console.error(e);
+      res.status(400).json({ message: e.message || "Failed to place order" });
+    }
+  });
+
+  app.get("/api/trading/orders", authMiddleware, async (req: any, res) => {
+    const ordersList = await storage.getUserOrders(req.userId);
+    res.json(ordersList);
+  });
+
+  app.get("/api/trading/orders/:id", authMiddleware, async (req: any, res) => {
+    const order = await storage.getOrder(req.params.id);
+    if (!order || order.userId !== req.userId) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    res.json(order);
+  });
+
+  app.post("/api/trading/orders/:id/cancel", authMiddleware, async (req: any, res) => {
+    try {
+      const order = await storage.getOrder(req.params.id);
+      if (!order || order.userId !== req.userId) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      const { getBrokerAdapter } = await import("./broker");
+      const adapter = getBrokerAdapter(order.brokerName);
+      await adapter.cancelOrder(order.id);
+
+      res.json({ success: true });
+    } catch (e: any) {
+      console.error(e);
+      res.status(400).json({ message: e.message || "Failed to cancel order" });
     }
   });
 

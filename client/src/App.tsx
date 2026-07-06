@@ -15,8 +15,13 @@ import AISignalPage from "@/pages/ai-signal";
 import NewsPage from "@/pages/news";
 import LearnPage from "@/pages/learn";
 import AccountPage from "@/pages/account";
+import AccountCenterPage from "@/pages/account-center";
+import SettingsPage from "@/pages/settings-center";
 import AdminPage from "@/pages/admin";
+import ConnectBrokerPage from "@/pages/connect-broker";
 import NotFound from "@/pages/not-found";
+import { TradingModeProvider } from "@/contexts/TradingModeContext";
+import ModeSwitch from "@/components/trade/ModeSwitch";
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -47,26 +52,33 @@ function AppRoutes() {
   }
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#0d1117" }}>
-      <Sidebar />
-      <main className="flex-1 w-full lg:ml-[220px] min-h-screen page-dot-grid">
-        <Switch>
-          <Route path="/" component={HomePage} />
-          <Route path="/markets" component={MarketsPage} />
-          <Route path="/ai-signal" component={AISignalPage} />
-          <Route path="/news" component={NewsPage} />
-          <Route path="/learn" component={LearnPage} />
-          <Route path="/account" component={AccountPage} />
-          <Route path="/admin">
-            {user.isAdmin ? <AdminPage /> : <Redirect to="/" />}
-          </Route>
-          <Route path="/login"><Redirect to="/" /></Route>
-          <Route path="/signup"><Redirect to="/" /></Route>
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-      <BottomNavigation />
-    </div>
+    <TradingModeProvider>
+      <div className="app-shell flex min-h-screen">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-h-screen main-content page-dot-grid">
+          <main className="flex-1 w-full min-h-screen">
+            <Switch>
+              <Route path="/" component={HomePage} />
+              <Route path="/markets" component={MarketsPage} />
+              <Route path="/connect-broker" component={ConnectBrokerPage} />
+              <Route path="/ai-signal" component={AISignalPage} />
+              <Route path="/news" component={NewsPage} />
+              <Route path="/learn" component={LearnPage} />
+              <Route path="/my-trades" component={AccountPage} />
+              <Route path="/account" component={AccountCenterPage} />
+              <Route path="/settings" component={SettingsPage} />
+              <Route path="/admin">
+                {user.isAdmin ? <AdminPage /> : <Redirect to="/" />}
+              </Route>
+              <Route path="/login"><Redirect to="/" /></Route>
+              <Route path="/signup"><Redirect to="/" /></Route>
+              <Route component={NotFound} />
+            </Switch>
+          </main>
+        </div>
+        <BottomNavigation />
+      </div>
+    </TradingModeProvider>
   );
 }
 
