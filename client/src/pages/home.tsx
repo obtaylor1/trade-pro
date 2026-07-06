@@ -122,6 +122,16 @@ export default function HomePage() {
   const bestDay = dayChanges.length ? Math.max(...dayChanges, 0) : 0;
   const worstDay = dayChanges.length ? Math.min(...dayChanges, 0) : 0;
 
+  // Today's result = balance now vs the last snapshot taken before today.
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const priorSnapshots = (snapshots ?? []).filter(s => new Date(s.snapshotAt) < todayStart);
+  const dayStartBalance = priorSnapshots.length
+    ? parseFloat(priorSnapshots[priorSnapshots.length - 1].balance)
+    : startingBalance;
+  const todayResult = balance - dayStartBalance;
+  const fmtSigned = (v: number) => `${v >= 0 ? "+" : "-"}$${Math.abs(v).toFixed(2)}`;
+
   // Starter watchlist item defaults
   const starters = [
     { ticker: "BTC", market: "crypto" },
@@ -176,11 +186,11 @@ export default function HomePage() {
               <div className="border-t border-slate-900/60 pt-2 mt-2 flex flex-col gap-1 text-[10px] font-bold text-slate-400 select-none">
                 <div className="flex justify-between">
                   <span>Starting Balance:</span>
-                  <span className="text-white">$1,000.00</span>
+                  <span className="text-white">${startingBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Today's Result:</span>
-                  <span className="text-green-500">+$0.00</span>
+                  <span className={todayResult >= 0 ? "text-green-500" : "text-red-400"}>{fmtSigned(todayResult)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Open Trades:</span>
@@ -196,8 +206,8 @@ export default function HomePage() {
             <div className="account-card flex flex-col justify-between min-height-[180px]">
               <div>
                 <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider block">Today's Result</span>
-                <strong className="text-3xl font-mono font-black text-green-400 mt-1 block">
-                  +$0.00
+                <strong className={`text-3xl font-mono font-black mt-1 block ${todayResult >= 0 ? "text-green-400" : "text-red-400"}`}>
+                  {fmtSigned(todayResult)}
                 </strong>
                 <p className="text-[10px] text-slate-400 font-bold mt-1.5 leading-relaxed">
                   How much your practice account changed today.
@@ -293,7 +303,7 @@ export default function HomePage() {
                     <YAxis domain={["auto", "auto"]} tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false}
                       tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
                     <Tooltip
-                      contentStyle={{ background: "#1a2332", border: "1px solid #243044", borderRadius: 8, fontSize: 12 }}
+                      contentStyle={{ background: "#1a2332", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }}
                       formatter={(v: any) => [`$${parseFloat(v).toLocaleString()}`, "Balance"]}
                     />
                     <ReferenceLine y={startingBalance} stroke="#3b82f6" strokeDasharray="3 3" />

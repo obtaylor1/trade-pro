@@ -42,7 +42,7 @@ export default function LoginPage() {
     <div className="page-glow min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#0d1117" }}>
       <div className="text-center mb-8" style={{ position: "relative", zIndex: 1 }}>
         <div className="text-4xl font-black mb-2 gradient-text">Trade Pro</div>
-        <div className="text-base" style={{ color: "#64748b" }}>Trade any market. Start with $0.25.</div>
+        <div className="text-base" style={{ color: "var(--color-muted)" }}>Trade any market. Start with $0.25.</div>
       </div>
 
       {/* Demo CTA */}
@@ -74,7 +74,7 @@ export default function LoginPage() {
         <h1 className="text-xl font-bold mb-6 text-center">Sign In</h1>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-medium mb-1 block" style={{ color: "#94a3b8" }}>Email</label>
+            <label className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Email</label>
             <input
               type="email" value={email} onChange={e => setEmail(e.target.value)}
               required placeholder="you@example.com"
@@ -83,7 +83,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium mb-1 block" style={{ color: "#94a3b8" }}>Password</label>
+            <label className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Password</label>
             <input
               type="password" value={password} onChange={e => setPassword(e.target.value)}
               required placeholder="••••••••"
@@ -104,7 +104,7 @@ export default function LoginPage() {
             >
               {rememberMe && <span className="text-white text-xs font-bold">✓</span>}
             </div>
-            <span className="text-sm" style={{ color: "#94a3b8" }}>
+            <span className="text-sm" style={{ color: "var(--color-text-soft)" }}>
               Remember me{" "}
               <span className="text-xs" style={{ color: "#475569" }}>(stay signed in for 90 days)</span>
             </span>
@@ -117,9 +117,9 @@ export default function LoginPage() {
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
-        <p className="text-center text-sm mt-4" style={{ color: "#64748b" }}>
+        <p className="text-center text-sm mt-4" style={{ color: "var(--color-muted)" }}>
           No account?{" "}
-          <button onClick={() => setLocation("/signup")} className="font-semibold" style={{ color: "#3b82f6" }}>
+          <button onClick={() => setLocation("/signup")} className="font-semibold" style={{ color: "var(--color-blue)" }}>
             Create one free
           </button>
         </p>

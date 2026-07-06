@@ -62,7 +62,7 @@ function timeAgo(dateStr: string) {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl overflow-hidden animate-pulse" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+    <div className="rounded-2xl overflow-hidden animate-pulse" style={{ background: "#1a2332", border: "1px solid var(--color-border)" }}>
       <div style={{ height: 180, background: "#243044" }} />
       <div className="p-4 flex flex-col gap-3">
         <div className="flex gap-2">
@@ -118,7 +118,7 @@ function LiveVideoSection() {
         <div className="flex items-center gap-3 flex-wrap">
           <span className="font-bold text-sm" style={{ color: "#e2e8f0" }}>📺 Yahoo Finance Live — 24/7 Market Coverage</span>
           <span className="flex items-center gap-1.5 text-[10px] font-black px-2 py-0.5 rounded-full"
-            style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.4)" }}>
+            style={{ background: "rgba(239,68,68,0.2)", color: "var(--color-red)", border: "1px solid rgba(239,68,68,0.4)" }}>
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
             LIVE
           </span>
@@ -129,7 +129,7 @@ function LiveVideoSection() {
               US Markets {isOpen ? "Open" : "Closed"}
             </span>
           )}
-          {time && <span className="text-[10px] font-mono" style={{ color: "#64748b" }}>{time}</span>}
+          {time && <span className="text-[10px] font-mono" style={{ color: "var(--color-muted)" }}>{time}</span>}
         </div>
         <button onClick={toggle}
           className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ml-2"
@@ -177,7 +177,7 @@ export default function NewsPage() {
         <div className="mb-4">
           <input type="text" placeholder="Search news..." value={search} onChange={e => setSearch(e.target.value)}
             className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-            style={{ background: "#1a2332", border: "1px solid #243044", color: "#e2e8f0" }} />
+            style={{ background: "#1a2332", border: "1px solid var(--color-border)", color: "#e2e8f0" }} />
         </div>
 
         {/* Category tabs */}
@@ -203,7 +203,7 @@ export default function NewsPage() {
           <div className="text-center py-12 glass-card">
             <div className="text-4xl mb-3">⚠️</div>
             <div className="font-semibold mb-1" style={{ color: "#e2e8f0" }}>Unable to load news</div>
-            <div className="text-sm" style={{ color: "#64748b" }}>Check your connection and try again</div>
+            <div className="text-sm" style={{ color: "var(--color-muted)" }}>Check your connection and try again</div>
           </div>
         )}
 
@@ -211,7 +211,7 @@ export default function NewsPage() {
         {!isLoading && !isError && filtered.length === 0 && (
           <div className="text-center py-12">
             <div className="text-4xl mb-3">📭</div>
-            <div className="font-semibold" style={{ color: "#64748b" }}>No articles found</div>
+            <div className="font-semibold" style={{ color: "var(--color-muted)" }}>No articles found</div>
           </div>
         )}
 
@@ -220,7 +220,7 @@ export default function NewsPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {filtered.map(n => (
               <div key={n.id} className="rounded-2xl overflow-hidden flex flex-col"
-                style={{ background: "#1a2332", border: "1px solid #243044" }}>
+                style={{ background: "#1a2332", border: "1px solid var(--color-border)" }}>
                 {/* Cover image */}
                 <ArticleImage src={n.imageUrl} category={n.category} />
 
@@ -229,7 +229,7 @@ export default function NewsPage() {
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     {/* Favicon + source */}
                     <span className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: "#243044", color: "#94a3b8" }}>
+                      style={{ background: "#243044", color: "var(--color-text-soft)" }}>
                       {n.sourceDomain && (
                         <img src={`https://www.google.com/s2/favicons?domain=${n.sourceDomain}&sz=16`}
                           alt="" width={12} height={12} style={{ borderRadius: 2 }}
@@ -243,7 +243,7 @@ export default function NewsPage() {
                       {CATEGORY_ICONS[n.category]} {n.category}
                     </span>
                     {/* Time */}
-                    <span className="text-[10px]" style={{ color: "#64748b" }}>{timeAgo(n.publishedAt)}</span>
+                    <span className="text-[10px]" style={{ color: "var(--color-muted)" }}>{timeAgo(n.publishedAt)}</span>
                   </div>
 
                   {/* Title */}
@@ -252,7 +252,7 @@ export default function NewsPage() {
                   </div>
 
                   {/* Summary — 2 lines max */}
-                  <div className="text-xs leading-relaxed mb-3" style={{ color: "#94a3b8", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                  <div className="text-xs leading-relaxed mb-3" style={{ color: "var(--color-text-soft)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                     {n.summary}
                   </div>
 

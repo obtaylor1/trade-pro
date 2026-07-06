@@ -39,7 +39,7 @@ export default function AdvancedDetails({
       className="rounded-xl p-3 grid grid-cols-2 sm:grid-cols-4 gap-3 border text-xs text-left"
       style={{
         background: "rgba(16, 29, 47, 0.5)",
-        borderColor: "#1e3555",
+        borderColor: "var(--color-border-strong)",
       }}
     >
       {fields.map((f, i) => (

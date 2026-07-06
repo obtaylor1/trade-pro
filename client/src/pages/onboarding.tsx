@@ -55,7 +55,7 @@ export default function OnboardingPage() {
         {step === 1 && (
           <div className="animate-fade-in">
             <h2 className="text-2xl font-bold mb-1">Hi {user?.name?.split(" ")[0]}! 👋</h2>
-            <p className="text-sm mb-6" style={{ color: "#64748b" }}>Which markets interest you? (pick all that apply)</p>
+            <p className="text-sm mb-6" style={{ color: "var(--color-muted)" }}>Which markets interest you? (pick all that apply)</p>
             <div className="flex flex-col gap-3 mb-8">
               {MARKETS.map(m => {
                 const selected = interests.includes(m.id);
@@ -69,7 +69,7 @@ export default function OnboardingPage() {
                     <span className="text-2xl">{m.emoji}</span>
                     <div>
                       <div className="font-semibold text-sm">{m.label}</div>
-                      <div className="text-xs" style={{ color: "#64748b" }}>{m.desc}</div>
+                      <div className="text-xs" style={{ color: "var(--color-muted)" }}>{m.desc}</div>
                     </div>
                     {selected && <span className="ml-auto text-blue-400">✓</span>}
                   </button>
@@ -87,10 +87,10 @@ export default function OnboardingPage() {
         {step === 2 && (
           <div className="animate-fade-in">
             <h2 className="text-2xl font-bold mb-1">Your paper balance</h2>
-            <p className="text-sm mb-6" style={{ color: "#64748b" }}>This is fake money for practice. You can always reset it.</p>
-            <div className="rounded-2xl p-6 mb-6" style={{ background: "#1a2332", border: "1px solid #243044" }}>
-              <div className="text-sm mb-2" style={{ color: "#94a3b8" }}>Starting paper balance</div>
-              <div className="text-4xl font-black mb-4" style={{ color: "#22c55e" }}>
+            <p className="text-sm mb-6" style={{ color: "var(--color-muted)" }}>This is fake money for practice. You can always reset it.</p>
+            <div className="rounded-2xl p-6 mb-6" style={{ background: "#1a2332", border: "1px solid var(--color-border)" }}>
+              <div className="text-sm mb-2" style={{ color: "var(--color-text-soft)" }}>Starting paper balance</div>
+              <div className="text-4xl font-black mb-4" style={{ color: "var(--color-green)" }}>
                 ${balance.toLocaleString()}
               </div>
               <input
@@ -98,7 +98,7 @@ export default function OnboardingPage() {
                 value={balance} onChange={e => setBalance(Number(e.target.value))}
                 className="w-full accent-blue-500"
               />
-              <div className="flex justify-between text-xs mt-2" style={{ color: "#64748b" }}>
+              <div className="flex justify-between text-xs mt-2" style={{ color: "var(--color-muted)" }}>
                 <span>$100</span><span>$100,000</span>
               </div>
             </div>
@@ -127,18 +127,18 @@ export default function OnboardingPage() {
           <div className="animate-fade-in text-center">
             <div className="text-6xl mb-4">🚀</div>
             <h2 className="text-2xl font-bold mb-2">You're all set!</h2>
-            <p className="text-sm mb-6" style={{ color: "#64748b" }}>
-              Your account is ready with <strong style={{ color: "#22c55e" }}>${balance.toLocaleString()}</strong> in paper money.
+            <p className="text-sm mb-6" style={{ color: "var(--color-muted)" }}>
+              Your account is ready with <strong style={{ color: "var(--color-green)" }}>${balance.toLocaleString()}</strong> in paper money.
               The AI will find the best trades for you.
             </p>
-            <div className="rounded-2xl p-4 mb-6 text-left" style={{ background: "#1a2332", border: "1px solid #243044" }}>
+            <div className="rounded-2xl p-4 mb-6 text-left" style={{ background: "#1a2332", border: "1px solid var(--color-border)" }}>
               {[
                 "🤖 AI scans markets 24/7 for you",
                 "💵 Trade with as little as $0.25",
                 "📊 No real money — zero risk",
                 "🎓 Learn while you trade",
               ].map(item => (
-                <div key={item} className="flex items-center gap-3 py-2 text-sm" style={{ color: "#94a3b8" }}>
+                <div key={item} className="flex items-center gap-3 py-2 text-sm" style={{ color: "var(--color-text-soft)" }}>
                   <span>{item}</span>
                 </div>
               ))}

@@ -59,7 +59,7 @@ export default function AmountSelector({ amount, customActive, onSelectAmount }:
         <div
           className="flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-200"
           style={{
-            background: "#07101d",
+            background: "var(--color-panel)",
             borderColor: customActive ? (isInvalid ? "#ef4444" : "#2563eb") : "#1e3555",
             boxShadow: customActive && !isInvalid ? "0 0 12px rgba(59, 130, 246, 0.2)" : "none",
           }}

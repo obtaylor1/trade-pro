@@ -45,12 +45,12 @@ function SignalModal({ opp, onClose, onTrade, trading }: { opp: TradingOpportuni
         style={{ maxHeight: "90vh", overflowY: "auto" }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2"><MBadge market={opp.market} /><SBadge type={opp.signalType} /></div>
-          <button onClick={onClose} className="text-xl" style={{ color: "#64748b" }}>✕</button>
+          <button onClick={onClose} className="text-xl" style={{ color: "var(--color-muted)" }}>✕</button>
         </div>
         <div className="text-2xl font-black mb-1">{opp.ticker}</div>
-        <div className="text-sm mb-4" style={{ color: "#64748b" }}>{opp.name}</div>
+        <div className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>{opp.name}</div>
         <div className="mb-4">
-          <div className="text-xs font-semibold mb-2" style={{ color: "#64748b" }}>CONFIDENCE</div>
+          <div className="text-xs font-semibold mb-2" style={{ color: "var(--color-muted)" }}>CONFIDENCE</div>
           <ConfBar val={opp.confidence} />
         </div>
         <div className="grid grid-cols-3 gap-3 mb-4">
@@ -60,28 +60,28 @@ function SignalModal({ opp, onClose, onTrade, trading }: { opp: TradingOpportuni
             { label: "Stop Loss", val: `$${opp.stopLoss < 10 ? opp.stopLoss.toFixed(4) : opp.stopLoss.toLocaleString()}`, red: true },
           ].map(item => (
             <div key={item.label} className="rounded-xl p-3 text-center" style={{ background: "#0d1117" }}>
-              <div className="text-xs mb-1" style={{ color: "#64748b" }}>{item.label}</div>
+              <div className="text-xs mb-1" style={{ color: "var(--color-muted)" }}>{item.label}</div>
               <div className="text-sm font-bold" style={{ color: item.green ? "#22c55e" : item.red ? "#ef4444" : "#e2e8f0" }}>{item.val}</div>
             </div>
           ))}
         </div>
         <div className="rounded-xl p-4 mb-4" style={{ background: "#0d1117" }}>
           <div className="flex justify-between mb-2">
-            <span className="text-xs" style={{ color: "#64748b" }}>Risk/Reward Ratio</span>
+            <span className="text-xs" style={{ color: "var(--color-muted)" }}>Risk/Reward Ratio</span>
             <span className="text-sm font-bold" style={{ color: "#f59e0b" }}>1:{rr}</span>
           </div>
           <div className="flex gap-2 flex-wrap">
             {opp.rsi && <span className="text-xs px-2 py-1 rounded-lg font-semibold" style={{ background: "#243044", color: opp.rsi > 70 ? "#ef4444" : opp.rsi < 30 ? "#22c55e" : "#94a3b8" }}>RSI {opp.rsi}</span>}
-            {opp.macd && <span className="text-xs px-2 py-1 rounded-lg font-semibold" style={{ background: "#243044", color: "#94a3b8" }}>MACD: {opp.macd}</span>}
-            {opp.volume && <span className="text-xs px-2 py-1 rounded-lg font-semibold" style={{ background: "#243044", color: "#94a3b8" }}>Vol: {opp.volume}</span>}
+            {opp.macd && <span className="text-xs px-2 py-1 rounded-lg font-semibold" style={{ background: "#243044", color: "var(--color-text-soft)" }}>MACD: {opp.macd}</span>}
+            {opp.volume && <span className="text-xs px-2 py-1 rounded-lg font-semibold" style={{ background: "#243044", color: "var(--color-text-soft)" }}>Vol: {opp.volume}</span>}
           </div>
         </div>
         <div className="rounded-xl p-4 mb-4" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
           <div className="text-xs font-bold mb-2" style={{ color: "#f59e0b" }}>💡 AI Analysis</div>
-          <div className="text-sm leading-relaxed" style={{ color: "#94a3b8" }}>{opp.rationale}</div>
+          <div className="text-sm leading-relaxed" style={{ color: "var(--color-text-soft)" }}>{opp.rationale}</div>
         </div>
         <div className="rounded-xl p-3 mb-4" style={{ background: "#0d1117" }}>
-          <div className="text-xs" style={{ color: "#64748b" }}>Expected timeline: <span className="text-white font-medium">1–5 trading days</span></div>
+          <div className="text-xs" style={{ color: "var(--color-muted)" }}>Expected timeline: <span className="text-white font-medium">1–5 trading days</span></div>
         </div>
         <button onClick={onTrade} disabled={trading} className="btn-execute w-full py-3 text-base">
           {trading ? "Executing..." : "⚡ Execute Paper Trade ($1.00)"}
@@ -142,7 +142,7 @@ export default function AISignalPage() {
         <div className="flex items-center justify-between mb-5">
           <div>
             <h1 className="text-xl font-black">🤖 AI Signal</h1>
-            <div className="text-xs mt-0.5" style={{ color: "#64748b" }}>Updated {lastUpdate} · Auto-refreshes every 60s</div>
+            <div className="text-xs mt-0.5" style={{ color: "var(--color-muted)" }}>Updated {lastUpdate} · Auto-refreshes every 60s</div>
           </div>
         </div>
 
@@ -150,7 +150,7 @@ export default function AISignalPage() {
         <div className="rounded-2xl p-4 mb-4 glass-panel">
           <div className="lg:flex lg:gap-8">
             <div className="flex-1 mb-3 lg:mb-0">
-              <div className="text-xs font-semibold mb-2" style={{ color: "#64748b" }}>MARKET</div>
+              <div className="text-xs font-semibold mb-2" style={{ color: "var(--color-muted)" }}>MARKET</div>
               <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
                 {MARKETS.map(m => (
                   <button key={m} onClick={() => setMarketFilter(m)}
@@ -162,7 +162,7 @@ export default function AISignalPage() {
               </div>
             </div>
             <div className="flex-1 mb-3 lg:mb-0">
-              <div className="text-xs font-semibold mb-2" style={{ color: "#64748b" }}>SIGNAL TYPE</div>
+              <div className="text-xs font-semibold mb-2" style={{ color: "var(--color-muted)" }}>SIGNAL TYPE</div>
               <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
                 {SIGNAL_TYPES.map(t => (
                   <button key={t} onClick={() => setTypeFilter(t)}
@@ -174,13 +174,13 @@ export default function AISignalPage() {
               </div>
             </div>
             <div className="lg:w-48">
-              <div className="text-xs font-semibold mb-2" style={{ color: "#64748b" }}>MIN CONFIDENCE: <span style={{ color: "#60a5fa" }}>{minConf}%</span></div>
+              <div className="text-xs font-semibold mb-2" style={{ color: "var(--color-muted)" }}>MIN CONFIDENCE: <span style={{ color: "#60a5fa" }}>{minConf}%</span></div>
               <input type="range" min={0} max={90} step={5} value={minConf} onChange={e => setMinConf(Number(e.target.value))} className="w-full accent-blue-500" />
             </div>
           </div>
         </div>
 
-        <div className="text-xs mb-3" style={{ color: "#64748b" }}>{filtered.length} signal{filtered.length !== 1 ? "s" : ""} found</div>
+        <div className="text-xs mb-3" style={{ color: "var(--color-muted)" }}>{filtered.length} signal{filtered.length !== 1 ? "s" : ""} found</div>
 
         {/* Cards — 2-3 col grid on desktop */}
         {isLoading ? (
@@ -191,7 +191,7 @@ export default function AISignalPage() {
           <div className="text-center py-12">
             <div className="text-4xl mb-3">🔍</div>
             <div className="font-semibold mb-1">No signals match your filters</div>
-            <div className="text-sm" style={{ color: "#64748b" }}>Try lowering the minimum confidence or changing filters</div>
+            <div className="text-sm" style={{ color: "var(--color-muted)" }}>Try lowering the minimum confidence or changing filters</div>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -209,25 +209,25 @@ export default function AISignalPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <div className="text-xl font-black">{opp.ticker}</div>
-                      <div className="text-xs" style={{ color: "#64748b" }}>{opp.name}</div>
+                      <div className="text-xs" style={{ color: "var(--color-muted)" }}>{opp.name}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs" style={{ color: "#64748b" }}>R/R</div>
+                      <div className="text-xs" style={{ color: "var(--color-muted)" }}>R/R</div>
                       <div className="text-sm font-bold" style={{ color: "#f59e0b" }}>1:{rr}</div>
                     </div>
                   </div>
                   <ConfBar val={opp.confidence} />
                   <div className="grid grid-cols-3 gap-2 mt-3">
-                    <div className="text-center"><div className="text-xs" style={{ color: "#64748b" }}>Entry</div><div className="text-xs font-bold">${opp.entryPrice < 10 ? opp.entryPrice.toFixed(4) : opp.entryPrice.toLocaleString()}</div></div>
-                    <div className="text-center"><div className="text-xs" style={{ color: "#64748b" }}>Target</div><div className="text-xs font-bold" style={{ color: "#22c55e" }}>${opp.targetPrice < 10 ? opp.targetPrice.toFixed(4) : opp.targetPrice.toLocaleString()}</div></div>
-                    <div className="text-center"><div className="text-xs" style={{ color: "#64748b" }}>Stop</div><div className="text-xs font-bold" style={{ color: "#ef4444" }}>${opp.stopLoss < 10 ? opp.stopLoss.toFixed(4) : opp.stopLoss.toLocaleString()}</div></div>
+                    <div className="text-center"><div className="text-xs" style={{ color: "var(--color-muted)" }}>Entry</div><div className="text-xs font-bold">${opp.entryPrice < 10 ? opp.entryPrice.toFixed(4) : opp.entryPrice.toLocaleString()}</div></div>
+                    <div className="text-center"><div className="text-xs" style={{ color: "var(--color-muted)" }}>Target</div><div className="text-xs font-bold" style={{ color: "var(--color-green)" }}>${opp.targetPrice < 10 ? opp.targetPrice.toFixed(4) : opp.targetPrice.toLocaleString()}</div></div>
+                    <div className="text-center"><div className="text-xs" style={{ color: "var(--color-muted)" }}>Stop</div><div className="text-xs font-bold" style={{ color: "var(--color-red)" }}>${opp.stopLoss < 10 ? opp.stopLoss.toFixed(4) : opp.stopLoss.toLocaleString()}</div></div>
                   </div>
                   <div className="mt-3 flex gap-2">
                     <button onClick={e => { e.stopPropagation(); tradeMutation.mutate(opp); }} disabled={tradeMutation.isPending}
                       className="btn-execute flex-1 py-2 text-xs">
                       ⚡ Paper Trade
                     </button>
-                    <button onClick={e => { e.stopPropagation(); setSelected(opp); }} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ background: "#243044", color: "#94a3b8" }}>
+                    <button onClick={e => { e.stopPropagation(); setSelected(opp); }} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ background: "#243044", color: "var(--color-text-soft)" }}>
                       Details
                     </button>
                   </div>

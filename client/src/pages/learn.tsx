@@ -234,7 +234,7 @@ function QuizSection({ module, onComplete }: { module: typeof MODULES[0]; onComp
 
       {submitted && (
         <div className="rounded-lg p-3 text-center mt-2 border" style={{ background: "rgba(34,197,94,0.06)", borderColor: "rgba(34,197,94,0.2)" }}>
-          <div className="text-sm font-black" style={{ color: "#22c55e" }}>Score: {score}/{module.quiz.length} Correct</div>
+          <div className="text-sm font-black" style={{ color: "var(--color-green)" }}>Score: {score}/{module.quiz.length} Correct</div>
           <div className="text-[11px] text-slate-400 font-semibold mt-1">
             {score === module.quiz.length 
               ? "Perfect! Lesson complete! 🎉" 

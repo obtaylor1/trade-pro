@@ -175,7 +175,7 @@ export default function ConnectBrokerPage() {
   };
 
   return (
-    <div className="page-container page-glow min-h-screen pb-12 select-none" style={{ background: "#050b14" }}>
+    <div className="page-container page-glow min-h-screen pb-12 select-none" style={{ background: "var(--color-bg-deep)" }}>
       <div className="px-4 lg:px-8 pt-6 max-w-6xl mx-auto text-left">
         
         {/* Back Link */}
@@ -213,7 +213,7 @@ export default function ConnectBrokerPage() {
             <h2 className="text-sm font-black uppercase tracking-wider text-slate-400 mb-4">Connected Accounts</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {accounts.map((acc) => (
-                <div key={acc.id} className="rounded-2xl p-5 border flex items-center justify-between bg-[#07101d]" style={{ borderColor: "#1e3555" }}>
+                <div key={acc.id} className="rounded-2xl p-5 border flex items-center justify-between bg-[#07101d]" style={{ borderColor: "var(--color-border-strong)" }}>
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
                       <i className="fas fa-link text-xs"></i>
@@ -254,7 +254,7 @@ export default function ConnectBrokerPage() {
             <div
               key={broker.id}
               className="rounded-2xl p-6 border flex flex-col justify-between min-h-[280px]"
-              style={{ background: "#07101d", borderColor: "#1e3555" }}
+              style={{ background: "var(--color-panel)", borderColor: "var(--color-border-strong)" }}
             >
               <div>
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-400 bg-blue-900/10 border border-blue-500/10 px-2.5 py-1 rounded">
@@ -316,7 +316,7 @@ export default function ConnectBrokerPage() {
       {/* ─── Connection Modal ─── */}
       {modalOpen && selectedBroker && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 animate-fade-in select-none">
-          <div className="w-full max-w-md rounded-2xl border p-6 text-left relative" style={{ background: "#0b1624", borderColor: "#1e3555" }}>
+          <div className="w-full max-w-md rounded-2xl border p-6 text-left relative" style={{ background: "var(--color-card-deep)", borderColor: "var(--color-border-strong)" }}>
             
             <button
               onClick={() => { setModalOpen(false); resetForm(); }}

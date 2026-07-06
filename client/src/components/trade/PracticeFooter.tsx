@@ -10,8 +10,8 @@ export default function PracticeFooter() {
       <div
         className="rounded-2xl p-5 border flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
         style={{
-          background: "#0b1624",
-          borderColor: "#1e3555",
+          background: "var(--color-card-deep)",
+          borderColor: "var(--color-border-strong)",
         }}
       >
         <div className="flex-1 text-left">
@@ -19,7 +19,7 @@ export default function PracticeFooter() {
             <i className="fas fa-graduation-cap text-blue-400"></i>
             Practice First
           </h4>
-          <p className="text-xs font-semibold mt-1 leading-relaxed" style={{ color: "#64748b" }}>
+          <p className="text-xs font-semibold mt-1 leading-relaxed" style={{ color: "var(--color-muted)" }}>
             All trades use practice money. You can practice as much as you want before using real money.
           </p>
         </div>

@@ -28,13 +28,29 @@
 
   /* Brand colors */
   --color-bg: #0d1117;
+  --color-bg-deep: #050b14;       /* page background on dense screens */
   --color-card: #1a2332;
+  --color-card-deep: #0b1624;     /* trade cards, sidebar widgets */
+  --color-panel: #07101d;         /* selector step boxes */
   --color-blue: #3b82f6;
   --color-green: #22c55e;
   --color-red: #ef4444;
   --color-gold: #f59e0b;
   --color-border: #243044;
+  --color-border-strong: #1e3555; /* card outlines on dense screens */
   --color-muted: #64748b;
+  --color-text: #f8fafc;
+  --color-text-soft: #94a3b8;
+
+  /* Typography scale (matches reference screenshots) */
+  --text-page-title: 28px;
+  --text-section-title: 20px;
+  --text-card-title: 15px;
+  --text-body: 13px;
+  --text-label: 10px;
+
+  /* Spacing */
+  --card-padding: 20px;
 }
 
 * {
@@ -60,7 +76,13 @@ html, body, #root {
 h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1.2;
 }
+h1 { font-size: var(--text-page-title); }
+h2 { font-size: var(--text-section-title); }
+h3 { font-size: 16px; }
+h4 { font-size: var(--text-card-title); }
+body { line-height: 1.5; }
 .label-secondary {
   font-size: 10px;
   letter-spacing: 0.06em;
@@ -328,17 +350,17 @@ button:active { transform: scale(0.98); }
 }
 
 .page-title {
-  font-size: 34px;
-  line-height: 1.05;
+  font-size: var(--text-page-title);
+  line-height: 1.1;
   font-weight: 800;
-  letter-spacing: -0.04em;
-  color: #f8fafc;
+  letter-spacing: -0.03em;
+  color: var(--color-text);
 }
 
 .page-subtitle {
-  font-size: 16px;
-  color: #94a3b8;
-  margin-top: 6px;
+  font-size: var(--text-body);
+  color: var(--color-text-soft);
+  margin-top: 4px;
 }
 
 .mode-toggle {
@@ -386,32 +408,33 @@ button:active { transform: scale(0.98); }
 }
 
 .summary-card {
-  min-height: 150px;
+  min-height: 126px;
   background: linear-gradient(180deg, #0b1626 0%, #081321 100%);
   border: 1px solid rgba(51, 85, 120, 0.65);
   border-radius: 16px;
-  padding: 22px;
+  padding: var(--card-padding);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
 }
 
 .summary-label {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
-  color: #94a3b8;
-  margin-bottom: 14px;
+  color: var(--color-text-soft);
+  margin-bottom: 10px;
 }
 
 .summary-value {
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 800;
   line-height: 1;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
+  display: block;
 }
 
 .summary-helper {
-  font-size: 14px;
-  line-height: 1.35;
-  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-text-soft);
 }
 
 .happening-card {
@@ -419,7 +442,7 @@ button:active { transform: scale(0.98); }
   background: linear-gradient(180deg, #0b1626 0%, #081321 100%);
   border: 1px solid rgba(51, 85, 120, 0.65);
   border-radius: 16px;
-  padding: 18px 22px;
+  padding: 16px var(--card-padding);
   display: flex;
   align-items: center;
   gap: 18px;
@@ -446,14 +469,14 @@ button:active { transform: scale(0.98); }
 }
 
 .section-title {
-  font-size: 23px;
+  font-size: var(--text-section-title);
   font-weight: 800;
-  color: #f8fafc;
+  color: var(--color-text);
 }
 
 .section-subtitle {
-  font-size: 15px;
-  color: #94a3b8;
+  font-size: var(--text-body);
+  color: var(--color-text-soft);
   margin-top: 4px;
 }
 
@@ -706,7 +729,7 @@ button:active { transform: scale(0.98); }
   border: 1px solid rgba(51, 85, 120, 0.68);
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  padding: 22px;
+  padding: var(--card-padding);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 

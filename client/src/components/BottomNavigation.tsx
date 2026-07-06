@@ -26,10 +26,12 @@ export default function BottomNavigation() {
           <button
             key={tab.path}
             onClick={() => setLocation(tab.path)}
+            aria-label={tab.label}
+            aria-current={active ? "page" : undefined}
             className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all"
             style={{ color: active ? "#3b82f6" : "#4b5563" }}
           >
-            <span className="text-xl leading-none">{tab.icon}</span>
+            <span className="text-xl leading-none" aria-hidden="true">{tab.icon}</span>
             <span className="text-[10px] font-semibold">{tab.label}</span>
             {active && <div className="w-1 h-1 rounded-full" style={{ background: "#3b82f6" }} />}
           </button>

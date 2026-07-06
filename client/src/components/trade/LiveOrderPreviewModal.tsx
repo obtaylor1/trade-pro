@@ -76,7 +76,7 @@ export default function LiveOrderPreviewModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[999] animate-fade-in select-none text-left">
-      <div className="w-full max-w-md rounded-2xl border p-6" style={{ background: "#0b1624", borderColor: "#e2e8f0" }}>
+      <div className="w-full max-w-md rounded-2xl border p-6" style={{ background: "var(--color-card-deep)", borderColor: "#e2e8f0" }}>
         
         {/* Header */}
         <h3 className="text-base font-black text-amber-500 flex items-center gap-2">

@@ -113,7 +113,7 @@ export default function AdminPage() {
         <div className="flex items-center gap-3 mb-1">
           <span className="text-2xl">🛡️</span>
           <h1 className="text-2xl font-black" style={{ color: "#e2e8f0" }}>Admin Panel</h1>
-          <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}>RESTRICTED</span>
+          <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: "rgba(239,68,68,0.15)", color: "var(--color-red)", border: "1px solid rgba(239,68,68,0.3)" }}>RESTRICTED</span>
         </div>
         <p className="label-secondary">Platform analytics and user management</p>
       </div>
@@ -141,9 +141,9 @@ export default function AdminPage() {
           <div className="flex flex-wrap gap-3">
             {stats.topAssets.map((a, i) => (
               <div key={a.ticker} className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.2)" }}>
-                <span className="text-xs font-bold" style={{ color: "#3b82f6" }}>#{i + 1}</span>
+                <span className="text-xs font-bold" style={{ color: "var(--color-blue)" }}>#{i + 1}</span>
                 <span className="text-sm font-semibold" style={{ color: "#e2e8f0" }}>{a.ticker}</span>
-                <span className="text-xs" style={{ color: "#64748b" }}>{a.count} trades</span>
+                <span className="text-xs" style={{ color: "var(--color-muted)" }}>{a.count} trades</span>
               </div>
             ))}
           </div>
@@ -196,23 +196,23 @@ export default function AdminPage() {
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "rgba(59,130,246,0.2)", color: "#3b82f6" }}>
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "rgba(59,130,246,0.2)", color: "var(--color-blue)" }}>
                             {u.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <div className="text-sm font-semibold" style={{ color: "#e2e8f0" }}>{u.name}</div>
-                            {u.isAdmin && <span className="text-[9px] font-bold px-1 rounded" style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444" }}>ADMIN</span>}
+                            {u.isAdmin && <span className="text-[9px] font-bold px-1 rounded" style={{ background: "rgba(239,68,68,0.15)", color: "var(--color-red)" }}>ADMIN</span>}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: "#94a3b8" }}>{u.email}</td>
-                      <td className="px-4 py-3 text-sm" style={{ color: "#64748b" }}>{formatDate(u.createdAt)}</td>
-                      <td className="px-4 py-3 text-sm" style={{ color: "#64748b" }}>{formatDate(u.lastLogin)}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: "var(--color-text-soft)" }}>{u.email}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: "var(--color-muted)" }}>{formatDate(u.createdAt)}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: "var(--color-muted)" }}>{formatDate(u.lastLogin)}</td>
                       <td className="px-4 py-3 text-sm font-semibold" style={{ color: "#e2e8f0" }}>{formatBalance(u.paperBalance)}</td>
                       <td className="px-4 py-3 text-sm font-semibold" style={{ color: pnlColor }}>
                         {u.totalPnl >= 0 ? "+" : ""}${Math.abs(u.totalPnl).toFixed(2)}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: "#94a3b8" }}>{u.tradeCount}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: "var(--color-text-soft)" }}>{u.tradeCount}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="h-1.5 w-16 rounded-full overflow-hidden" style={{ background: "rgba(40,56,81,1)" }}>
@@ -225,7 +225,7 @@ export default function AdminPage() {
                         <button
                           onClick={() => setSelectedUserId(u.id)}
                           className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-                          style={{ background: "rgba(59,130,246,0.15)", color: "#3b82f6", border: "1px solid rgba(59,130,246,0.3)" }}
+                          style={{ background: "rgba(59,130,246,0.15)", color: "var(--color-blue)", border: "1px solid rgba(59,130,246,0.3)" }}
                         >
                           View
                         </button>
@@ -264,12 +264,12 @@ export default function AdminPage() {
                 {/* Modal Header */}
                 <div className="px-6 py-5 flex items-start justify-between" style={{ borderBottom: "1px solid rgba(59,130,246,0.1)" }}>
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-black" style={{ background: "rgba(59,130,246,0.2)", color: "#3b82f6" }}>
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-black" style={{ background: "rgba(59,130,246,0.2)", color: "var(--color-blue)" }}>
                       {selectedUser.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <div className="font-bold text-lg" style={{ color: "#e2e8f0" }}>{selectedUser.name}</div>
-                      <div className="text-sm" style={{ color: "#64748b" }}>{selectedUser.email}</div>
+                      <div className="text-sm" style={{ color: "var(--color-muted)" }}>{selectedUser.email}</div>
                     </div>
                   </div>
                   <button onClick={() => setSelectedUserId(null)} className="text-2xl leading-none" style={{ color: "#475569" }}>×</button>
@@ -299,9 +299,9 @@ export default function AdminPage() {
 
                 {/* Meta */}
                 <div className="px-6 py-4 flex gap-6 flex-wrap">
-                  <div><span className="label-secondary">Joined</span><div className="text-sm mt-0.5" style={{ color: "#94a3b8" }}>{formatDate(selectedUser.createdAt)}</div></div>
-                  <div><span className="label-secondary">Last Login</span><div className="text-sm mt-0.5" style={{ color: "#94a3b8" }}>{formatDate(selectedUser.lastLogin)}</div></div>
-                  {selectedUser.isAdmin && <div className="flex items-center"><span className="text-xs font-bold px-2 py-1 rounded" style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}>ADMIN</span></div>}
+                  <div><span className="label-secondary">Joined</span><div className="text-sm mt-0.5" style={{ color: "var(--color-text-soft)" }}>{formatDate(selectedUser.createdAt)}</div></div>
+                  <div><span className="label-secondary">Last Login</span><div className="text-sm mt-0.5" style={{ color: "var(--color-text-soft)" }}>{formatDate(selectedUser.lastLogin)}</div></div>
+                  {selectedUser.isAdmin && <div className="flex items-center"><span className="text-xs font-bold px-2 py-1 rounded" style={{ background: "rgba(239,68,68,0.15)", color: "var(--color-red)", border: "1px solid rgba(239,68,68,0.3)" }}>ADMIN</span></div>}
                 </div>
 
                 {/* Trade History */}
@@ -336,7 +336,7 @@ export default function AdminPage() {
                                   {pnl >= 0 ? "+" : ""}${Math.abs(pnl).toFixed(2)} P&L
                                 </div>
                               ) : (
-                                <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}>OPEN</span>
+                                <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(34,197,94,0.15)", color: "var(--color-green)" }}>OPEN</span>
                               )}
                             </div>
                           </div>

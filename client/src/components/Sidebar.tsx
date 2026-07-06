@@ -82,7 +82,7 @@ export default function Sidebar() {
       <div className="px-4 flex flex-col gap-3">
         {/* Account Balance Display */}
         {tradingMode === "live" && connectedLiveAccount ? (
-          <div className="rounded-xl p-3" style={{ background: "#0b1624", border: "1px solid #d97706" }}>
+          <div className="rounded-xl p-3" style={{ background: "var(--color-card-deep)", border: "1px solid #d97706" }}>
             <div className="text-[10px] uppercase tracking-wider font-bold text-amber-500">
               Live Buying Power
             </div>
@@ -94,27 +94,27 @@ export default function Sidebar() {
             </div>
           </div>
         ) : (
-          <div className="rounded-xl p-3" style={{ background: "#0b1624", border: "1px solid #1e3555" }}>
-            <div className="text-[10px] uppercase tracking-wider font-extrabold" style={{ color: "#64748b" }}>
+          <div className="rounded-xl p-3" style={{ background: "var(--color-card-deep)", border: "1px solid var(--color-border-strong)" }}>
+            <div className="text-[10px] uppercase tracking-wider font-extrabold" style={{ color: "var(--color-muted)" }}>
               PRACTICE BALANCE
             </div>
-            <div className="text-lg font-black mt-1" style={{ color: "#22c55e" }}>
+            <div className="text-lg font-black mt-1" style={{ color: "var(--color-green)" }}>
               {formattedBalance}
             </div>
-            <div className="text-[9px] mt-1" style={{ color: "#64748b" }}>
+            <div className="text-[9px] mt-1" style={{ color: "var(--color-muted)" }}>
               This is practice money
             </div>
           </div>
         )}
 
         {/* Need Help Box */}
-        <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: "#0b1624", border: "1px solid #1e3555" }}>
+        <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: "var(--color-card-deep)", border: "1px solid var(--color-border-strong)" }}>
           <div className="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
             <i className="fas fa-headset text-xs"></i>
           </div>
           <div>
             <div className="text-xs font-bold text-white">Need Help?</div>
-            <div className="text-[10px]" style={{ color: "#64748b" }}>We're here for you</div>
+            <div className="text-[10px]" style={{ color: "var(--color-muted)" }}>We're here for you</div>
           </div>
         </div>
       </div>

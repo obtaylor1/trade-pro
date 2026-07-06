@@ -175,7 +175,7 @@ function LiveModeConfirmationModal({ onClose, onConfirm }: LiveModeConfirmationM
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[9999] animate-fade-in select-none text-left">
-      <div className="w-full max-w-md rounded-2xl border p-6" style={{ background: "#0b1624", borderColor: "#ef4444" }}>
+      <div className="w-full max-w-md rounded-2xl border p-6" style={{ background: "var(--color-card-deep)", borderColor: "#ef4444" }}>
         <h3 className="text-lg font-black text-red-500 flex items-center gap-2">
           <i className="fas fa-exclamation-triangle"></i>
           Switch to Live Trading?

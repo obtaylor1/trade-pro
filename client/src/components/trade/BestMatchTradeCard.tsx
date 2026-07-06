@@ -74,7 +74,7 @@ export default function BestMatchTradeCard({ trade, amount, onTrade, trading }: 
         border: "1.5px solid #16a34a",
         borderRadius: "18px",
         boxShadow: "0 0 24px rgba(22, 163, 74, 0.18)",
-        color: "#f8fafc",
+        color: "var(--color-text)",
         padding: "28px 32px 28px 32px",
         minHeight: "380px",
       }}
@@ -162,7 +162,7 @@ export default function BestMatchTradeCard({ trade, amount, onTrade, trading }: 
 
         {/* Column 2: What Could Happen + Trade Timeline */}
         <section className="lg:col-span-1 px-[28px] flex flex-col justify-between text-left pt-5 border-r border-[rgba(51,85,120,0.55)]">
-          <OutcomeBox amount={amount} profitRate={profitRate} lossRate={lossRate} />
+          <OutcomeBox amount={amount} profitRate={profitRate} lossRate={lossRate} riskLevel={trade.riskLevel} />
           <div className="border-t border-[rgba(51,85,120,0.55)] pt-4 timeline mb-1">
             <TradeTimeline openTime={openTime} closeTime={closeTime} tradeLength={tradeLength} />
           </div>

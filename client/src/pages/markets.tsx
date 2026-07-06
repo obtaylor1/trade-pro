@@ -16,6 +16,7 @@ import BestMatchTradeCard from "@/components/trade/BestMatchTradeCard";
 import SmallTradeCard from "@/components/trade/SmallTradeCard";
 import PracticeFooter from "@/components/trade/PracticeFooter";
 import { useLivePrices } from "@/hooks/useLivePrices";
+import PageHeader from "@/components/shared/PageHeader";
 import { DEFAULT_IDEAS } from "@/lib/defaultIdeas";
 import type { TradeIdea, LiveOrderPreview } from "@/lib/types";
 
@@ -265,7 +266,7 @@ export default function MarketsPage() {
   });
 
   return (
-    <div className="page-container page-glow lg:pb-8 min-h-screen" style={{ background: "#050b14" }}>
+    <div className="page-container page-glow lg:pb-8 min-h-screen" style={{ background: "var(--color-bg-deep)" }}>
       <div className="px-4 lg:px-8 pt-6 max-w-none">
         
         {/* Live Mode Active Warning alert bar */}
@@ -282,22 +283,20 @@ export default function MarketsPage() {
         )}
 
         {/* Header Block */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-[32px] font-black text-white leading-tight">Choose a Trade</h1>
-            <p className="text-xs font-semibold mt-1" style={{ color: "#64748b" }}>
-              We find the best trade ideas based on your amount and preferences.
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 text-xs font-extrabold" style={{ color: "#22c55e" }}>
-              <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
-              <span>US Markets Open</span>
-              <span className="text-slate-500 font-bold ml-1.5">{formattedTime}</span>
-            </div>
-            <ModeSwitch />
-          </div>
-        </div>
+        <PageHeader
+          title="Choose a Trade"
+          subtitle="We find the best trade ideas based on your amount and preferences."
+          action={
+            <>
+              <div className={`flex items-center gap-1.5 text-xs font-extrabold ${marketOpen ? "text-green-500" : "text-slate-400"}`}>
+                <span className={`w-2.5 h-2.5 rounded-full ${marketOpen ? "bg-green-500 animate-pulse" : "bg-slate-500"}`} />
+                <span>{marketOpen ? "US Markets Open" : "US Markets Closed"}</span>
+                <span className="text-slate-500 font-bold ml-1.5">{formattedTime}</span>
+              </div>
+              <ModeSwitch />
+            </>
+          }
+        />
 
         {/* Three-Step Horizontal Selector Card */}
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-5 mb-5 select-none">
@@ -305,11 +304,11 @@ export default function MarketsPage() {
           <div className="lg:col-span-7 flex flex-col gap-4">
             <div className="flex flex-col md:flex-row gap-4 flex-1">
               {/* Step 1 Box */}
-              <div className="flex-[1.3] rounded-2xl p-5 border" style={{ background: "#07101d", borderColor: "#1e3555" }}>
+              <div className="flex-[1.3] rounded-2xl p-5 border" style={{ background: "var(--color-panel)", borderColor: "var(--color-border-strong)" }}>
                 <MarketSelector selected={selectedMarket} onChange={setSelectedMarket} />
               </div>
               {/* Step 2 Box */}
-              <div className="flex-1 rounded-2xl p-5 border" style={{ background: "#07101d", borderColor: "#1e3555" }}>
+              <div className="flex-1 rounded-2xl p-5 border" style={{ background: "var(--color-panel)", borderColor: "var(--color-border-strong)" }}>
                 <DurationSelector selected={selectedDuration} onChange={setSelectedDuration} />
               </div>
             </div>
@@ -318,7 +317,7 @@ export default function MarketsPage() {
           </div>
 
           {/* Right Area (Step 3 Box) */}
-          <div className="lg:col-span-3 rounded-2xl p-5 border flex flex-col justify-between" style={{ background: "#07101d", borderColor: "#1e3555" }}>
+          <div className="lg:col-span-3 rounded-2xl p-5 border flex flex-col justify-between" style={{ background: "var(--color-panel)", borderColor: "var(--color-border-strong)" }}>
             <AmountSelector amount={selectedAmount} customActive={customActive} onSelectAmount={handleSelectAmount} />
           </div>
         </div>
@@ -337,7 +336,7 @@ export default function MarketsPage() {
               />
             </div>
           ) : (
-            <div className="rounded-2xl border p-10 text-center text-slate-500" style={{ background: "#0b1624", borderColor: "#1e3555" }}>
+            <div className="rounded-2xl border p-10 text-center text-slate-500" style={{ background: "var(--color-card-deep)", borderColor: "var(--color-border-strong)" }}>
               <i className="fas fa-search text-3xl mb-3 text-slate-600"></i>
               <div className="text-sm font-bold">No perfect match found for current choices</div>
               <p className="text-xs text-slate-600 mt-1">Try switching to Forex or modifying the Duration setup</p>

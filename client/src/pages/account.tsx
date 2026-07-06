@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTradingMode } from "@/contexts/TradingModeContext";
 import { useToast } from "@/hooks/use-toast";
 import { useLivePrices } from "@/hooks/useLivePrices";
+import StatCard from "@/components/shared/StatCard";
 import type { LivePrice } from "@/lib/types";
 import type { Trade } from "@shared/schema";
 
@@ -283,59 +284,47 @@ export default function AccountPage() {
 
         {/* Summary Stat Cards Grid */}
         <div className="summary-grid">
-          
-          {/* Card 1: Balance */}
-          <div className="summary-card">
-            <div className="summary-label">
-              {currentMode === "live" ? "Live Balance" : "Practice Balance"}
-            </div>
-            <div className="summary-value text-blue-400">
-              {balance.toLocaleString("en-US", { style: "currency", currency: "USD" })}
-            </div>
-            <div className="summary-helper">
-              {currentMode === "live" ? "Funds available in live broker." : "Virtual money you can use for practice trades."}
-            </div>
-          </div>
-
-          {/* Card 2: Today's PnL */}
-          <div className="summary-card">
-            <div className="summary-label">Today's Profit / Loss</div>
-            <div className={`summary-value ${totalPnL >= 0 ? "text-green-500" : "text-red-500"}`}>
-              {totalPnL >= 0 ? "+" : ""}${totalPnL.toFixed(2)}
-            </div>
-            <div className="summary-helper">Your total result for today.</div>
-          </div>
-
-          {/* Card 3: Open Trades */}
-          <div className="summary-card">
-            <div className="summary-label">Open Trades</div>
-            <div className="summary-value text-white">{openTrades.length}</div>
-            <div className="summary-helper">Trades you currently have open.</div>
-          </div>
-
-          {/* Card 4: Win Rate */}
-          <div className="summary-card">
-            <div className="summary-label">Win Rate</div>
-            <div className={`summary-value ${winRate >= 60 ? "text-green-500" : winRate >= 45 ? "text-amber-500" : "text-red-500"}`}>
-              {winRate}%
-            </div>
-            <div className="summary-helper">% of closed trades that were winners.</div>
-          </div>
-
-          {/* Card 5: Best Trade */}
-          <div className="summary-card">
-            <div className="summary-label">Best Trade</div>
-            <div className="summary-value text-green-500">+{formatMoney(bestTrade)}</div>
-            <div className="summary-helper">Your biggest winner so far.</div>
-          </div>
-
-          {/* Card 6: Worst Trade */}
-          <div className="summary-card">
-            <div className="summary-label">Worst Trade</div>
-            <div className="summary-value text-red-500">{formatMoney(worstTrade)}</div>
-            <div className="summary-helper">Your biggest loser so far.</div>
-          </div>
-
+          <StatCard
+            icon="fas fa-wallet"
+            label={currentMode === "live" ? "Live Balance" : "Practice Balance"}
+            value={balance.toLocaleString("en-US", { style: "currency", currency: "USD" })}
+            valueClass="text-blue-400"
+            helper={currentMode === "live" ? "Funds available in live broker." : "Virtual money you can use for practice trades."}
+          />
+          <StatCard
+            icon="fas fa-wave-square"
+            label="Today's Profit / Loss"
+            value={`${totalPnL >= 0 ? "+" : ""}$${totalPnL.toFixed(2)}`}
+            valueClass={totalPnL >= 0 ? "text-green-500" : "text-red-500"}
+            helper="Your total result for today."
+          />
+          <StatCard
+            icon="fas fa-chart-pie"
+            label="Open Trades"
+            value={openTrades.length}
+            helper="Trades you currently have open."
+          />
+          <StatCard
+            icon="fas fa-bullseye"
+            label="Win Rate"
+            value={`${winRate}%`}
+            valueClass={winRate >= 60 ? "text-green-500" : winRate >= 45 ? "text-amber-500" : "text-red-500"}
+            helper="% of closed trades that were winners."
+          />
+          <StatCard
+            icon="fas fa-trophy"
+            label="Best Trade"
+            value={`+${formatMoney(bestTrade)}`}
+            valueClass="text-green-500"
+            helper="Your biggest winner so far."
+          />
+          <StatCard
+            icon="fas fa-arrow-trend-down"
+            label="Worst Trade"
+            value={formatMoney(worstTrade)}
+            valueClass="text-red-500"
+            helper="Your biggest loser so far."
+          />
         </div>
 
         {/* What's Happening Now Card */}
@@ -382,7 +371,7 @@ export default function AccountPage() {
 
         {/* Open Trades Content */}
         {openTrades.length === 0 ? (
-          <div className="rounded-2xl border p-8 text-center text-slate-500 mb-6 bg-[#0b1626]" style={{ borderColor: "#1e3555" }}>
+          <div className="rounded-2xl border p-8 text-center text-slate-500 mb-6 bg-[#0b1626]" style={{ borderColor: "var(--color-border-strong)" }}>
             <i className="fas fa-chart-line text-2xl mb-2.5 text-slate-600"></i>
             <div className="text-xs font-black text-slate-400">No open trades at the moment</div>
             <Link href="/markets" className="text-[10px] font-extrabold text-blue-400 hover:text-blue-300 block mt-2 cursor-pointer">
@@ -489,7 +478,7 @@ export default function AccountPage() {
           </div>
         ) : (
           /* Advanced Table View */
-          <div className="rounded-2xl border overflow-hidden mb-8 bg-[#0b1626]" style={{ borderColor: "#1e3555" }}>
+          <div className="rounded-2xl border overflow-hidden mb-8 bg-[#0b1626]" style={{ borderColor: "var(--color-border-strong)" }}>
             <table className="w-full text-sm text-left">
               <thead>
                 <tr className="border-b border-slate-800" style={{ background: "#06111f" }}>
@@ -572,7 +561,7 @@ export default function AccountPage() {
           </div>
         ) : (
           /* Closed trades list */
-          <div className="rounded-2xl border overflow-hidden mb-8 bg-[#0b1626]" style={{ borderColor: "#1e3555" }}>
+          <div className="rounded-2xl border overflow-hidden mb-8 bg-[#0b1626]" style={{ borderColor: "var(--color-border-strong)" }}>
             <table className="w-full text-sm text-left">
               <thead>
                 <tr className="border-b border-slate-800" style={{ background: "#06111f" }}>
@@ -644,7 +633,7 @@ export default function AccountPage() {
       {/* ─── Review Trade Modal ─── */}
       {selectedTrade && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[999] animate-fade-in select-none text-left">
-          <div className="w-full max-w-md rounded-2xl border p-6 relative" style={{ background: "#0b1624", borderColor: "#1e3555" }}>
+          <div className="w-full max-w-md rounded-2xl border p-6 relative" style={{ background: "var(--color-card-deep)", borderColor: "var(--color-border-strong)" }}>
             
             <button
               onClick={() => setSelectedTrade(null)}
@@ -725,7 +714,7 @@ export default function AccountPage() {
       {/* ─── Close Position Modal ─── */}
       {tradeToClose && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[999] animate-fade-in select-none text-left">
-          <div className="w-full max-w-md rounded-2xl border p-6 relative" style={{ background: "#0b1624", borderColor: currentMode === "live" ? "#ef4444" : "#1e3555" }}>
+          <div className="w-full max-w-md rounded-2xl border p-6 relative" style={{ background: "var(--color-card-deep)", borderColor: currentMode === "live" ? "#ef4444" : "#1e3555" }}>
             
             <button
               onClick={() => {
@@ -814,7 +803,7 @@ export default function AccountPage() {
       {/* ─── Reset Confirmation Modal ─── */}
       {showReset && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.8)" }}>
-          <div className="w-full max-w-sm rounded-2xl p-6 border" style={{ background: "#0b1624", borderColor: "#ef4444" }}>
+          <div className="w-full max-w-sm rounded-2xl p-6 border" style={{ background: "var(--color-card-deep)", borderColor: "#ef4444" }}>
             <div className="text-base font-black text-red-500 mb-2 flex items-center gap-2">
               <i className="fas fa-exclamation-triangle"></i>
               Reset Practice Portfolio?

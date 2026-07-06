@@ -32,15 +32,15 @@ export default function SignupPage() {
     <div className="page-glow min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#0d1117" }}>
       <div className="text-center mb-10" style={{ position: "relative", zIndex: 1 }}>
         <div className="text-4xl font-black mb-2 gradient-text">Trade Pro</div>
-        <div className="text-base" style={{ color: "#64748b" }}>Trade any market. Start with $0.25.</div>
+        <div className="text-base" style={{ color: "var(--color-muted)" }}>Trade any market. Start with $0.25.</div>
       </div>
 
       <div className="w-full max-w-sm rounded-2xl p-6 glass-panel" style={{ position: "relative", zIndex: 1 }}>
         <h1 className="text-xl font-bold mb-1 text-center">Create Account</h1>
-        <p className="text-xs text-center mb-5" style={{ color: "#64748b" }}>Free forever. No credit card needed.</p>
+        <p className="text-xs text-center mb-5" style={{ color: "var(--color-muted)" }}>Free forever. No credit card needed.</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-medium mb-1 block" style={{ color: "#94a3b8" }}>Your Name</label>
+            <label className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Your Name</label>
             <input
               type="text" value={name} onChange={e => setName(e.target.value)}
               required placeholder="Alex Smith"
@@ -49,7 +49,7 @@ export default function SignupPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium mb-1 block" style={{ color: "#94a3b8" }}>Email</label>
+            <label className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Email</label>
             <input
               type="email" value={email} onChange={e => setEmail(e.target.value)}
               required placeholder="you@example.com"
@@ -58,7 +58,7 @@ export default function SignupPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium mb-1 block" style={{ color: "#94a3b8" }}>Password</label>
+            <label className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Password</label>
             <input
               type="password" value={password} onChange={e => setPassword(e.target.value)}
               required placeholder="At least 6 characters"
@@ -74,9 +74,9 @@ export default function SignupPage() {
             {loading ? "Creating account..." : "Get Started Free"}
           </button>
         </form>
-        <p className="text-center text-sm mt-4" style={{ color: "#64748b" }}>
+        <p className="text-center text-sm mt-4" style={{ color: "var(--color-muted)" }}>
           Already have an account?{" "}
-          <button onClick={() => setLocation("/login")} className="font-semibold" style={{ color: "#3b82f6" }}>
+          <button onClick={() => setLocation("/login")} className="font-semibold" style={{ color: "var(--color-blue)" }}>
             Sign in
           </button>
         </p>

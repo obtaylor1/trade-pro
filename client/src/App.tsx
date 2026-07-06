@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import ErrorBoundary from "@/components/shared/ErrorBoundary";
 import BottomNavigation from "@/components/BottomNavigation";
 import Sidebar from "@/components/Sidebar";
 import LoginPage from "@/pages/login";
@@ -30,8 +31,8 @@ function AppRoutes() {
     return (
       <div className="flex items-center justify-center min-h-screen" style={{ background: "#0d1117" }}>
         <div className="text-center">
-          <div className="text-3xl font-bold mb-2" style={{ color: "#3b82f6" }}>Trade Pro</div>
-          <div className="text-sm" style={{ color: "#64748b" }}>Loading...</div>
+          <div className="text-3xl font-bold mb-2" style={{ color: "var(--color-blue)" }}>Trade Pro</div>
+          <div className="text-sm" style={{ color: "var(--color-muted)" }}>Loading...</div>
         </div>
       </div>
     );
@@ -84,13 +85,15 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <AppRoutes />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <AppRoutes />
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

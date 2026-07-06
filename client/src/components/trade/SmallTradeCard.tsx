@@ -104,8 +104,8 @@ export default function SmallTradeCard({ trade, rank, amount, onTrade, trading }
     <div
       className="rounded-2xl border p-4 flex flex-col gap-3.5"
       style={{
-        background: "#0b1624",
-        borderColor: "#1e3555",
+        background: "var(--color-card-deep)",
+        borderColor: "var(--color-border-strong)",
       }}
     >
       {/* Header Info */}
@@ -122,8 +122,8 @@ export default function SmallTradeCard({ trade, rank, amount, onTrade, trading }
         </div>
 
         {/* Favorite Icon */}
-        <button className="text-slate-600 hover:text-yellow-500 transition-colors">
-          <i className="far fa-star text-xs"></i>
+        <button aria-label={`Add ${pair} to watchlist`} className="text-slate-600 hover:text-yellow-500 transition-colors">
+          <i className="far fa-star text-xs" aria-hidden="true"></i>
         </button>
       </div>
 
