@@ -12,9 +12,9 @@ const DURATIONS = [
 export default function DurationSelector({ selected, onChange }: DurationSelectorProps) {
   return (
     <div className="flex flex-col gap-3.5 flex-1 text-left">
-      <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+      <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
         2. How long do you want to stay in the trade?
-      </h3>
+      </h2>
       <div className="grid grid-cols-3 gap-2">
         {DURATIONS.map(dur => {
           const active = dur.id === selected;
@@ -22,6 +22,7 @@ export default function DurationSelector({ selected, onChange }: DurationSelecto
             <button
               key={dur.id}
               onClick={() => onChange(dur.id)}
+              aria-pressed={active}
               className="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 outline-none select-none min-h-[110px]"
               style={{
                 background: active ? "#0b1624" : "#07101d",

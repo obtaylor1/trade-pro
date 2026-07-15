@@ -3,6 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { apiJson } from "@/lib/queryClient";
+import type { TradingAccount } from "@shared/schema";
+
+type PublicTradingAccount = Omit<TradingAccount, "apiKeyEncrypted" | "apiSecretEncrypted" | "accessTokenEncrypted" | "refreshTokenEncrypted">;
 
 type TradingMode = "paper" | "live";
 
@@ -10,7 +14,7 @@ interface TradingModeContextType {
   tradingMode: TradingMode;
   isLoadingMode: boolean;
   setMode: (mode: TradingMode) => void;
-  connectedLiveAccount: any | null;
+  connectedLiveAccount: PublicTradingAccount | null;
   isLoadingAccounts: boolean;
   showConfirmation: boolean;
   setShowConfirmation: (show: boolean) => void;
@@ -28,27 +32,21 @@ export function TradingModeProvider({ children }: { children: React.ReactNode })
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Fetch current mode from backend
-  const { data: modeData, isLoading: isLoadingMode } = useQuery({
+  const { data: modeData, isLoading: isLoadingMode } = useQuery<{ mode: TradingMode }>({
     queryKey: ["/api/trading/mode"],
     queryFn: async () => {
-      if (!token) return { mode: "paper" };
-      const res = await fetch("/api/trading/mode", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return res.json();
+      if (!token) return { mode: "paper" as const };
+      return apiJson<{ mode: TradingMode }>("/api/trading/mode");
     },
     enabled: !!token,
   });
 
   // Fetch accounts to check live broker status
-  const { data: accounts = [], isLoading: isLoadingAccounts } = useQuery<any[]>({
+  const { data: accounts = [], isLoading: isLoadingAccounts } = useQuery<PublicTradingAccount[]>({
     queryKey: ["/api/trading/accounts"],
     queryFn: async () => {
       if (!token) return [];
-      const res = await fetch("/api/trading/accounts", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return res.json();
+      return apiJson<PublicTradingAccount[]>("/api/trading/accounts");
     },
     enabled: !!token,
   });
@@ -84,9 +82,9 @@ export function TradingModeProvider({ children }: { children: React.ReactNode })
       setTradingMode(data.mode);
       queryClient.invalidateQueries({ queryKey: ["/api/trading/mode"] });
       toast({
-        title: `Switched to ${data.mode === "live" ? "Live Trading" : "Practice Mode"}`,
+        title: `Switched to ${data.mode === "live" ? "Broker Sandbox" : "Practice Mode"}`,
         description: data.mode === "live" 
-          ? "You are now trading with real money." 
+          ? "Orders are simulated against a connected broker profile. No real order is sent." 
           : "You are now trading with practice money.",
         variant: data.mode === "live" ? "default" : "default"
       });
@@ -95,7 +93,7 @@ export function TradingModeProvider({ children }: { children: React.ReactNode })
       toast({
         variant: "destructive",
         title: "Mode Switch Denied",
-        description: err.message || "Please connect a live broker connection first.",
+        description: err.message || "Please connect a broker sandbox profile first.",
       });
       if (err.message?.toLowerCase().includes("connect a broker")) {
         setLocation("/connect-broker");
@@ -109,7 +107,7 @@ export function TradingModeProvider({ children }: { children: React.ReactNode })
         toast({
           variant: "destructive",
           title: "Broker Account Required",
-          description: "Please connect a live trading account before enabling Live Mode.",
+          description: "Please connect a broker sandbox profile before enabling Sandbox Mode.",
         });
         setLocation("/connect-broker");
         return;
@@ -140,7 +138,7 @@ export function TradingModeProvider({ children }: { children: React.ReactNode })
     >
       {children}
 
-      {/* ─── Live Mode Confirmation Modal ─── */}
+      {/* ─── Broker Sandbox Confirmation Modal ─── */}
       {showConfirmation && (
         <LiveModeConfirmationModal
           onClose={() => setShowConfirmation(false)}
@@ -171,18 +169,18 @@ function LiveModeConfirmationModal({ onClose, onConfirm }: LiveModeConfirmationM
   const [checked3, setChecked3] = useState(false);
   const [confirmText, setConfirmText] = useState("");
 
-  const isConfirmed = checked1 && checked2 && checked3 && confirmText.toUpperCase() === "LIVE";
+  const isConfirmed = checked1 && checked2 && checked3 && confirmText.toUpperCase() === "SANDBOX";
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[9999] animate-fade-in select-none text-left">
       <div className="w-full max-w-md rounded-2xl border p-6" style={{ background: "var(--color-card-deep)", borderColor: "#ef4444" }}>
         <h3 className="text-lg font-black text-red-500 flex items-center gap-2">
           <i className="fas fa-exclamation-triangle"></i>
-          Switch to Live Trading?
+          Switch to Broker Sandbox?
         </h3>
         
         <p className="text-xs font-semibold text-slate-400 mt-2 leading-relaxed">
-          Live trading uses real money. You can lose money. Practice results do not guarantee live results. Please check the agreements below to proceed:
+          This environment simulates broker orders for product testing. It does not verify credentials or send orders to a real broker.
         </p>
 
         <div className="mt-4 flex flex-col gap-3">
@@ -193,7 +191,7 @@ function LiveModeConfirmationModal({ onClose, onConfirm }: LiveModeConfirmationM
               onChange={(e) => setChecked1(e.target.checked)}
               className="mt-0.5"
             />
-            <span>I understand this will use real money.</span>
+            <span>I understand this is a simulation and no real order is sent.</span>
           </label>
           <label className="flex items-start gap-3 cursor-pointer text-xs font-semibold text-slate-300">
             <input
@@ -202,7 +200,7 @@ function LiveModeConfirmationModal({ onClose, onConfirm }: LiveModeConfirmationM
               onChange={(e) => setChecked2(e.target.checked)}
               className="mt-0.5"
             />
-            <span>I understand trades can lose money.</span>
+            <span>I understand sandbox fills and balances are illustrative.</span>
           </label>
           <label className="flex items-start gap-3 cursor-pointer text-xs font-semibold text-slate-300">
             <input
@@ -211,17 +209,17 @@ function LiveModeConfirmationModal({ onClose, onConfirm }: LiveModeConfirmationM
               onChange={(e) => setChecked3(e.target.checked)}
               className="mt-0.5"
             />
-            <span>I want to switch from Practice Mode to Live Mode.</span>
+            <span>I want to switch from Practice Mode to Broker Sandbox.</span>
           </label>
         </div>
 
         <div className="mt-5">
           <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
-            Type "LIVE" to confirm
+            Type "SANDBOX" to confirm
           </label>
           <input
             type="text"
-            placeholder="Type LIVE here"
+            placeholder="Type SANDBOX here"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             className="w-full h-10 rounded-lg px-3 bg-slate-900 border border-slate-800 text-white text-xs font-bold focus:outline-none focus:border-red-500"
@@ -240,7 +238,7 @@ function LiveModeConfirmationModal({ onClose, onConfirm }: LiveModeConfirmationM
             disabled={!isConfirmed}
             className="h-10 px-6 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white text-xs font-extrabold transition-all cursor-pointer"
           >
-            Switch to Live Trading
+            Enter Broker Sandbox
           </button>
         </div>
       </div>

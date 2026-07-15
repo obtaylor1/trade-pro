@@ -89,7 +89,7 @@ function extractImage(item: any): string | null {
 function timeAgo(dateStr: string): string {
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return "recently";
-  const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+  const diff = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
   if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;

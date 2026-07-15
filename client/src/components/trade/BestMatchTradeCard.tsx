@@ -51,7 +51,7 @@ export default function BestMatchTradeCard({ trade, amount, onTrade, trading }: 
 
   return (
     <div
-      className="flex flex-col relative transition-all duration-300 select-none border-box"
+      className="best-match-card flex flex-col relative transition-all duration-300 select-none border-box"
       style={{
         background: "radial-gradient(circle at top left, rgba(0, 140, 80, 0.18), transparent 28%), linear-gradient(135deg, #07111f 0%, #081625 45%, #06101c 100%)",
         border: "1.5px solid #16a34a",
@@ -79,11 +79,10 @@ export default function BestMatchTradeCard({ trade, amount, onTrade, trading }: 
 
       {/* Main 4-Column Grid */}
       <div
-        className="grid grid-cols-1 lg:grid-cols-12 gap-0 items-stretch flex-1"
-        style={{ gridTemplateColumns: "1.05fr 1.35fr 0.9fr 1.15fr" }}
+        className="best-match-grid grid gap-0 items-stretch flex-1"
       >
         {/* Column 1: Trade Identity */}
-        <section className="lg:col-span-1 pr-[28px] flex flex-col justify-between text-left pt-5 border-r border-[rgba(51,85,120,0.55)]">
+        <section className="best-match-column pr-[28px] flex flex-col justify-between text-left pt-5 border-r border-[rgba(51,85,120,0.55)]">
           <div>
             <div className="flex items-center gap-4">
               {/* Rank Circle */}
@@ -144,7 +143,7 @@ export default function BestMatchTradeCard({ trade, amount, onTrade, trading }: 
         </section>
 
         {/* Column 2: What Could Happen + Trade Timeline */}
-        <section className="lg:col-span-1 px-[28px] flex flex-col justify-between text-left pt-5 border-r border-[rgba(51,85,120,0.55)]">
+        <section className="best-match-column px-[28px] flex flex-col justify-between text-left pt-5 border-r border-[rgba(51,85,120,0.55)]">
           <OutcomeBox amount={amount} profitRate={profitRate} lossRate={lossRate} riskLevel={trade.riskLevel} />
           <div className="border-t border-[rgba(51,85,120,0.55)] pt-4 timeline mb-1">
             <TradeTimeline openTime={openTime} closeTime={closeTime} tradeLength={tradeLength} />
@@ -152,12 +151,12 @@ export default function BestMatchTradeCard({ trade, amount, onTrade, trading }: 
         </section>
 
         {/* Column 3: Trade Score */}
-        <section className="lg:col-span-1 px-[28px] score-column flex flex-col justify-center items-center text-center pt-5 border-r border-[rgba(51,85,120,0.55)]">
+        <section className="best-match-column px-[28px] score-column flex flex-col justify-center items-center text-center pt-5 border-r border-[rgba(51,85,120,0.55)]">
           <TradeScoreGauge score={score} />
         </section>
 
         {/* Column 4: Best Time, Why, and Actions */}
-        <section className="lg:col-span-1 pl-[28px] action-column flex flex-col justify-between text-left pt-5">
+        <section className="best-match-column pl-[28px] action-column flex flex-col justify-between text-left pt-5">
           {/* Best Time to Trade */}
           <div className="best-time-block">
             <div className="text-[14px] font-extrabold uppercase tracking-wider text-[#cbd5e1] flex items-center gap-1.5 mb-2">
@@ -207,7 +206,7 @@ export default function BestMatchTradeCard({ trade, amount, onTrade, trading }: 
                 </>
               ) : (
                 <>
-                  {tradingMode === "live" ? "Review Live Order" : "Practice This Trade"}
+                  {tradingMode === "live" ? "Review Sandbox Order" : "Practice This Trade"}
                   <i className="fas fa-arrow-right"></i>
                 </>
               )}
@@ -215,7 +214,7 @@ export default function BestMatchTradeCard({ trade, amount, onTrade, trading }: 
 
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="show-options-link font-extrabold hover:text-blue-300 flex items-center justify-center gap-1.5 py-1 w-full transition-all outline-none"
+              className="show-options-link min-h-10 font-extrabold hover:text-blue-300 flex items-center justify-center gap-1.5 py-2 w-full transition-all outline-none"
             >
               {showAdvanced ? "Hide Advanced Details" : "Show other options"}
               <i className={`fas ${showAdvanced ? "fa-chevron-up" : "fa-chevron-down"} text-[10px]`}></i>

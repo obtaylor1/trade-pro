@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiJson } from "@/lib/queryClient";
+import type { LearnProgress } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 const MODULES = [
@@ -258,9 +260,9 @@ export default function LearnPage() {
   const [lessonDone, setLessonDone] = useState<Set<number>>(new Set());
 
   // Database progress queries
-  const { data: progress = [] } = useQuery<any[]>({
+  const { data: progress = [] } = useQuery<LearnProgress[]>({
     queryKey: ["/api/learn/progress"],
-    queryFn: () => fetch("/api/learn/progress", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+    queryFn: () => apiJson<LearnProgress[]>("/api/learn/progress"),
     enabled: !!token,
   });
 

@@ -40,8 +40,9 @@ export default function SignupPage() {
         <p className="text-xs text-center mb-5" style={{ color: "var(--color-muted)" }}>Free forever. No credit card needed.</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Your Name</label>
+            <label htmlFor="signup-name" className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Your Name</label>
             <input
+              id="signup-name"
               type="text" value={name} onChange={e => setName(e.target.value)}
               required placeholder="Alex Smith"
               className="w-full rounded-xl px-4 py-3 text-sm border outline-none"
@@ -49,8 +50,9 @@ export default function SignupPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Email</label>
+            <label htmlFor="signup-email" className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Email</label>
             <input
+              id="signup-email"
               type="email" value={email} onChange={e => setEmail(e.target.value)}
               required placeholder="you@example.com"
               className="w-full rounded-xl px-4 py-3 text-sm border outline-none"
@@ -58,10 +60,11 @@ export default function SignupPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Password</label>
+            <label htmlFor="signup-password" className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Password</label>
             <input
+              id="signup-password"
               type="password" value={password} onChange={e => setPassword(e.target.value)}
-              required placeholder="At least 6 characters"
+              required minLength={8} placeholder="At least 8 characters"
               className="w-full rounded-xl px-4 py-3 text-sm border outline-none"
               style={{ background: "#0d1117", borderColor: "#243044", color: "#e2e8f0" }}
             />

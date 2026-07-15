@@ -72,11 +72,12 @@ export default function Sidebar() {
             <button
               key={tab.label}
               onClick={() => setLocation(tab.path)}
+              aria-current={active ? "page" : undefined}
               className={`sidebar-item w-full text-left transition-all ${
                 active ? "active" : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              <span className="text-sm opacity-80 flex items-center justify-center w-5 h-5"><i className={tab.icon}></i></span>
+              <span className="text-sm opacity-80 flex items-center justify-center w-5 h-5"><i className={tab.icon} aria-hidden="true"></i></span>
               <span>{tab.label}</span>
             </button>
           );

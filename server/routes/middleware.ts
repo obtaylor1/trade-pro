@@ -13,7 +13,9 @@ export type AuthedHandler = (req: AuthedRequest, res: Response) => unknown | Pro
 
 /** Adapts an AuthedHandler to Express's plain signature. */
 export function authed(handler: AuthedHandler) {
-  return (req: Request, res: Response) => handler(req as AuthedRequest, res);
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(handler(req as AuthedRequest, res)).catch(next);
+  };
 }
 
 export function makeToken(userId: string, isAdmin: boolean, expiresIn: string | number = "30d") {

@@ -157,7 +157,7 @@ export default function LiveOrderPreviewModal({
               onChange={(e) => setConfirmSafety(e.target.checked)}
               className="mt-0.5"
             />
-            <span>I confirm that this live order will use real money from my broker balance.</span>
+            <span>I understand this sandbox order is simulated and will not reach a real broker.</span>
           </label>
           <label className="flex items-start gap-2.5 cursor-pointer text-[10px] font-bold text-slate-400">
             <input

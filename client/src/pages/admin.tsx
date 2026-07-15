@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiJson } from "@/lib/queryClient";
 
 interface AdminStats {
   totalUsers: number;
@@ -60,19 +61,19 @@ export default function AdminPage() {
 
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
-    queryFn: () => fetch("/api/admin/stats", { headers }).then(r => r.json()),
+    queryFn: () => apiJson<AdminStats>("/api/admin/stats"),
     refetchInterval: 30000,
   });
 
   const { data: users, isLoading: usersLoading } = useQuery<AdminUser[]>({
     queryKey: ["/api/admin/users"],
-    queryFn: () => fetch("/api/admin/users", { headers }).then(r => r.json()),
+    queryFn: () => apiJson<AdminUser[]>("/api/admin/users"),
     refetchInterval: 30000,
   });
 
   const { data: selectedUser, isLoading: detailLoading } = useQuery<UserDetail>({
     queryKey: ["/api/admin/users", selectedUserId],
-    queryFn: () => fetch(`/api/admin/users/${selectedUserId}`, { headers }).then(r => r.json()),
+    queryFn: () => apiJson<UserDetail>(`/api/admin/users/${selectedUserId}`),
     enabled: !!selectedUserId,
   });
 

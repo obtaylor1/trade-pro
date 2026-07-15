@@ -3,45 +3,29 @@ import { z } from "zod";
 import { storage } from "../storage";
 import { executeTradeSchema } from "@shared/schema";
 import { authMiddleware, authed } from "./middleware";
+import { executePracticeOrder } from "../practiceOrderService";
 
 export function registerTradeRoutes(app: Express) {
   app.post("/api/trades/execute", authMiddleware, authed(async (req, res) => {
     try {
       const body = executeTradeSchema.parse({ ...req.body, userId: req.userId });
-      // Atomic conditional debit — concurrent executes cannot overdraw the balance.
-      const newBalance = await storage.debitBalance(req.userId, body.investedAmount);
-      if (newBalance === null) {
-        return res.status(400).json({ message: "Insufficient balance" });
-      }
       const potGain = body.potentialGain != null && isFinite(body.potentialGain) ? body.potentialGain : null;
-      try {
-        const trade = await storage.createTrade({
-          userId: req.userId,
-          market: body.market,
-          ticker: body.ticker,
-          tickerName: body.tickerName ?? body.ticker,
-          action: body.action,
-          entryPrice: String(body.entryPrice),
-          units: String(body.units),
-          investedAmount: String(body.investedAmount),
-          potentialGain: potGain !== null ? String(potGain) : null,
-          status: "OPEN",
-        });
-        await storage.saveSnapshot(req.userId, newBalance);
-        res.json({ trade, newBalance });
-      } catch (createErr) {
-        // Trade insert failed after the debit — refund so the balance stays consistent.
-        await storage.creditBalance(req.userId, body.investedAmount);
-        throw createErr;
-      }
-    } catch (e) {
+      const result = await executePracticeOrder(req.userId, {
+        symbol: body.ticker, assetClass: body.market,
+        side: body.action.toLowerCase() === "sell" ? "sell" : "buy",
+        orderType: "market", quantity: body.units,
+        notionalAmount: body.investedAmount, estimatedPrice: body.entryPrice,
+        tickerName: body.tickerName ?? body.ticker, potentialGain: potGain,
+      });
+      res.json({ trade: result.trade, order: result.order, newBalance: result.newBalance });
+    } catch (e: any) {
       if (e instanceof z.ZodError) {
         const fields = e.errors.map(err => `${err.path.join(".")}: ${err.message}`).join(", ");
         console.error("[trade] Validation failed:", fields, "| body:", JSON.stringify(req.body));
         return res.status(400).json({ message: e.errors[0].message, fields });
       }
       console.error(e);
-      res.status(500).json({ message: "Trade failed" });
+      res.status(e.statusCode || 500).json({ message: e.message || "Trade failed" });
     }
   }));
 
@@ -75,7 +59,7 @@ export function registerTradeRoutes(app: Express) {
 
       const newBal = await storage.creditBalance(req.userId, invested + pnl);
       if (newBal !== null) await storage.saveSnapshot(req.userId, newBal);
-      res.json({ success: true, pnl });
+      res.json({ success: true, pnl, newBalance: newBal });
     } catch (e) {
       console.error(e);
       res.status(500).json({ message: "Close trade failed" });

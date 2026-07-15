@@ -14,7 +14,7 @@ export default function ModeSwitch() {
           </span>
         ) : (
           <span className="text-[10px] font-black uppercase tracking-wider text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg animate-pulse">
-            LIVE TRADING - Real money is active.
+            BROKER SANDBOX - Orders are simulated.
           </span>
         )}
       </div>
@@ -24,7 +24,7 @@ export default function ModeSwitch() {
         {/* Practice Selection */}
         <button
           onClick={() => setMode("paper")}
-          className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+          className={`flex-1 min-h-10 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
             tradingMode === "paper"
               ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
               : "text-slate-400 hover:text-slate-200"
@@ -36,13 +36,13 @@ export default function ModeSwitch() {
         {/* Live Selection */}
         <button
           onClick={() => setMode("live")}
-          className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+          className={`flex-1 min-h-10 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
             tradingMode === "live"
               ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
-          Live
+          Sandbox
         </button>
       </div>
 
@@ -50,7 +50,7 @@ export default function ModeSwitch() {
       {tradingMode === "live" && connectedLiveAccount && (
         <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#cbd5e1] border border-amber-500/30 px-2 py-1 rounded bg-[#0b1624]">
           <i className="fas fa-lock text-amber-500 mr-1"></i>
-          {connectedLiveAccount.brokerName} Live
+          {connectedLiveAccount.brokerName} Sandbox
         </span>
       )}
     </div>

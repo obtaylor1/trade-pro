@@ -1,4 +1,5 @@
 import { Switch, Route, Redirect } from "wouter";
+import { lazy, Suspense } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,19 +11,23 @@ import Sidebar from "@/components/Sidebar";
 import LoginPage from "@/pages/login";
 import SignupPage from "@/pages/signup";
 import OnboardingPage from "@/pages/onboarding";
-import HomePage from "@/pages/home";
-import MarketsPage from "@/pages/markets";
-import AISignalPage from "@/pages/ai-signal";
-import NewsPage from "@/pages/news";
-import LearnPage from "@/pages/learn";
-import AccountPage from "@/pages/account";
-import AccountCenterPage from "@/pages/account-center";
-import SettingsPage from "@/pages/settings-center";
-import AdminPage from "@/pages/admin";
-import ConnectBrokerPage from "@/pages/connect-broker";
-import NotFound from "@/pages/not-found";
 import { TradingModeProvider } from "@/contexts/TradingModeContext";
-import ModeSwitch from "@/components/trade/ModeSwitch";
+
+const HomePage = lazy(() => import("@/pages/home"));
+const MarketsPage = lazy(() => import("@/pages/markets"));
+const AISignalPage = lazy(() => import("@/pages/ai-signal"));
+const NewsPage = lazy(() => import("@/pages/news"));
+const LearnPage = lazy(() => import("@/pages/learn"));
+const AccountPage = lazy(() => import("@/pages/account"));
+const AccountCenterPage = lazy(() => import("@/pages/account-center"));
+const SettingsPage = lazy(() => import("@/pages/settings-center"));
+const AdminPage = lazy(() => import("@/pages/admin"));
+const ConnectBrokerPage = lazy(() => import("@/pages/connect-broker"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+
+function PageFallback() {
+  return <div className="min-h-[50vh] grid place-items-center text-sm font-semibold text-slate-400" role="status">Loading page…</div>;
+}
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -58,6 +63,7 @@ function AppRoutes() {
         <Sidebar />
         <div className="flex-1 flex flex-col min-h-screen main-content page-dot-grid">
           <main className="flex-1 w-full min-h-screen">
+            <Suspense fallback={<PageFallback />}>
             <Switch>
               <Route path="/" component={HomePage} />
               <Route path="/markets" component={MarketsPage} />
@@ -75,6 +81,7 @@ function AppRoutes() {
               <Route path="/signup"><Redirect to="/" /></Route>
               <Route component={NotFound} />
             </Switch>
+            </Suspense>
           </main>
         </div>
         <BottomNavigation />

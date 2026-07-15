@@ -81,7 +81,7 @@ export default function SmallTradeCard({ trade, rank, amount, onTrade, trading }
         </div>
 
         {/* Favorite Icon */}
-        <button aria-label={`Add ${pair} to watchlist`} className="text-slate-600 hover:text-yellow-500 transition-colors">
+        <button aria-label={`Add ${pair} to watchlist`} className="w-10 h-10 flex items-center justify-center text-slate-600 hover:text-yellow-500 transition-colors">
           <i className="far fa-star text-xs" aria-hidden="true"></i>
         </button>
       </div>
@@ -157,14 +157,14 @@ export default function SmallTradeCard({ trade, rank, amount, onTrade, trading }
           <button
             onClick={() => onTrade(trade, amount, trade.entryPrice || 1.0)}
             disabled={trading || amount < 0.10}
-            className="flex-1 bg-blue-600/80 hover:bg-blue-600 text-white text-[10px] font-extrabold py-2 px-3 rounded-lg transition-all disabled:opacity-50 disabled:pointer-events-none"
+            className="flex-1 min-h-10 bg-blue-600/80 hover:bg-blue-600 text-white text-[10px] font-extrabold py-2 px-3 rounded-lg transition-all disabled:opacity-50 disabled:pointer-events-none"
           >
-            {trading ? "Executing..." : (tradingMode === "live" ? "Review Live Order" : "Practice Trade")}
+            {trading ? "Executing..." : (tradingMode === "live" ? "Review Sandbox Order" : "Practice Trade")}
           </button>
 
           <button
             onClick={() => setShowWhy(!showWhy)}
-            className="text-[10px] font-bold text-slate-400 hover:text-slate-300 py-2 px-2 flex items-center gap-1 transition-all"
+            className="min-h-10 text-[10px] font-bold text-slate-400 hover:text-slate-300 py-2 px-2 flex items-center gap-1 transition-all"
           >
             Why?
             <i className={`fas ${showWhy ? "fa-chevron-up" : "fa-chevron-down"} text-[8px]`}></i>
@@ -172,7 +172,7 @@ export default function SmallTradeCard({ trade, rank, amount, onTrade, trading }
 
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="text-[10px] font-bold text-blue-400 hover:text-blue-300 py-2 px-2 flex items-center gap-1 transition-all"
+            className="min-h-10 text-[10px] font-bold text-blue-400 hover:text-blue-300 py-2 px-2 flex items-center gap-1 transition-all"
             title="Advanced details"
           >
             Details

@@ -1,5 +1,6 @@
 import { storage } from "./storage";
 import { randomUUID } from "crypto";
+import { executePracticeOrder } from "./practiceOrderService";
 
 export interface OrderRequest {
   symbol: string;
@@ -70,66 +71,14 @@ export class PaperBrokerAdapter implements BrokerAdapter {
 
   async placeOrder(userId: string, order: OrderRequest): Promise<any> {
     const preview = await this.previewOrder(userId, order);
-
-    // Stake the notional atomically before writing any rows. Both BUY and
-    // SELL debit the stake here; closing the trade credits stake + P&L back,
-    // matching the legacy /api/trades flow.
-    const newBal = await storage.debitBalance(userId, preview.estimatedTotal);
-    if (newBal === null) {
-      throw new Error("Insufficient practice balance.");
-    }
-    await storage.saveSnapshot(userId, newBal);
-
-    const dbOrder = await storage.createOrder(userId, {
-      tradingAccountId: null,
-      mode: "paper",
-      brokerName: "Paper Broker",
-      brokerOrderId: `paper-order-${randomUUID().slice(0, 8)}`,
-      symbol: order.symbol,
-      assetClass: order.assetClass,
-      side: order.side,
-      orderType: order.orderType,
-      quantity: String(order.quantity),
-      notionalAmount: String(order.notionalAmount),
-      estimatedPrice: String(order.estimatedPrice),
-      estimatedCost: String(order.estimatedCost),
-      estimatedFees: String(preview.estimatedFees),
-      status: "filled", // Paper trades execute instantly
-      tradeScore: order.tradeScore ?? null,
-      riskLevel: order.riskLevel ?? null,
-      reason: order.reason ?? null,
-      openedAt: new Date(),
-      closedAt: new Date(),
+    const result = await executePracticeOrder(userId, {
+      symbol: order.symbol, assetClass: order.assetClass, side: order.side,
+      orderType: order.orderType, quantity: order.quantity,
+      notionalAmount: order.notionalAmount, estimatedPrice: order.estimatedPrice,
+      estimatedFees: preview.estimatedFees, tradeScore: order.tradeScore,
+      riskLevel: order.riskLevel, reason: order.reason,
     });
-
-    // Also log in legacy trades table to maintain compatibility with portfolio, charts, and trades list
-    await storage.createTrade({
-      userId,
-      market: order.assetClass,
-      ticker: order.symbol,
-      tickerName: order.reason ?? `${order.symbol} Order`,
-      action: order.side.toUpperCase(),
-      entryPrice: String(order.estimatedPrice),
-      units: String(order.quantity),
-      investedAmount: String(order.notionalAmount),
-      status: "OPEN",
-      exitPrice: null,
-      exitAt: null,
-      pnl: "0",
-      potentialGain: String(order.notionalAmount * 1.2),
-    });
-
-    // Log event in order_events
-    await storage.createOrderEvent(
-      dbOrder.id,
-      "FILL",
-      null,
-      "filled",
-      `Practice order executed successfully. Paper balance updated.`,
-      { preview }
-    );
-
-    return dbOrder;
+    return { ...result.order, newBalance: result.newBalance };
   }
 
   async cancelOrder(orderId: string): Promise<void> {
@@ -153,7 +102,7 @@ export class PaperBrokerAdapter implements BrokerAdapter {
   }
 }
 
-// Helper stub for live adapters
+// Sandbox-only adapters. These never transmit an order to a broker.
 abstract class StubBrokerAdapter implements BrokerAdapter {
   protected brokerName: string;
 
@@ -193,7 +142,7 @@ abstract class StubBrokerAdapter implements BrokerAdapter {
       estimatedFees: fees,
       estimatedTotal: total,
       allowed: true,
-      reason: "Live mock sandbox validation successful.",
+      reason: "Broker sandbox validation successful. No real order will be sent.",
     };
   }
 
@@ -206,7 +155,7 @@ abstract class StubBrokerAdapter implements BrokerAdapter {
       tradingAccountId: acc ? acc.id : null,
       mode: "live",
       brokerName: this.brokerName,
-      brokerOrderId: `live-${this.brokerName.toLowerCase()}-${randomUUID().slice(0, 8)}`,
+      brokerOrderId: `sandbox-${this.brokerName.toLowerCase()}-${randomUUID().slice(0, 8)}`,
       symbol: order.symbol,
       assetClass: order.assetClass,
       side: order.side,
@@ -216,7 +165,7 @@ abstract class StubBrokerAdapter implements BrokerAdapter {
       estimatedPrice: String(order.estimatedPrice),
       estimatedCost: String(order.estimatedCost),
       estimatedFees: String(preview.estimatedFees),
-      status: "filled", // Executes instantly for demo convenience
+      status: "filled", // Simulated fill in the local broker sandbox.
       tradeScore: order.tradeScore ?? null,
       riskLevel: order.riskLevel ?? null,
       reason: order.reason ?? null,
@@ -246,7 +195,7 @@ abstract class StubBrokerAdapter implements BrokerAdapter {
       "FILL",
       null,
       "filled",
-      `Mock live order executed successfully via sandbox endpoint.`,
+      `Sandbox order simulated successfully. No real broker order was sent.`,
       { preview }
     );
 
@@ -299,6 +248,12 @@ export class InteractiveBrokersAdapter extends StubBrokerAdapter {
   }
 }
 
+export class GenericSandboxBrokerAdapter extends StubBrokerAdapter {
+  constructor(brokerName: string) {
+    super(brokerName);
+  }
+}
+
 // Adapter Dispatcher helper
 export function getBrokerAdapter(brokerName: string): BrokerAdapter {
   const name = brokerName.toLowerCase();
@@ -308,5 +263,6 @@ export function getBrokerAdapter(brokerName: string): BrokerAdapter {
   if (name === "interactive brokers" || name === "interactivebrokers" || name === "ibkr") {
     return new InteractiveBrokersAdapter();
   }
-  return new PaperBrokerAdapter();
+  if (name === "paper" || name === "paper broker") return new PaperBrokerAdapter();
+  return new GenericSandboxBrokerAdapter(brokerName);
 }

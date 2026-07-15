@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { SETTINGS_STORAGE_KEY } from "@/lib/preferences";
 
 // Recommended default states for easy resets
 const RECOMMENDED_SETTINGS = {
@@ -31,6 +32,15 @@ const RECOMMENDED_SETTINGS = {
   reduceAnimations: false,
   colorblindFriendly: true,
   alwaysShowWordsWithColors: true,
+  // Auto Trading defaults
+  enableAutoPracticeTrading: true,
+  enableLiveAutoTrading: false,
+  maxAutoTradeAmount: 25,
+  maxReinvestAmount: 50,
+  maxAutoTradesPerDay: 3,
+  maxDailyAutoLoss: 25,
+  stopAfterOneLoss: true,
+  requireLiveAutoConfirmation: true,
 };
 
 const DEFAULT_NOTIFS = {
@@ -86,6 +96,16 @@ export default function SettingsPage() {
   const [confirmPracticeTrades, setConfirmPracticeTrades] = useState(RECOMMENDED_SETTINGS.confirmPracticeTrades);
   const [requireLiveTyping, setRequireLiveTyping] = useState(RECOMMENDED_SETTINGS.requireLiveTyping);
 
+  // Auto Trading Safety settings states
+  const [enableAutoPracticeTrading, setEnableAutoPracticeTrading] = useState(RECOMMENDED_SETTINGS.enableAutoPracticeTrading);
+  const [enableLiveAutoTrading, setEnableLiveAutoTrading] = useState(RECOMMENDED_SETTINGS.enableLiveAutoTrading);
+  const [maxAutoTradeAmount, setMaxAutoTradeAmount] = useState(RECOMMENDED_SETTINGS.maxAutoTradeAmount);
+  const [maxReinvestAmount, setMaxReinvestAmount] = useState(RECOMMENDED_SETTINGS.maxReinvestAmount);
+  const [maxAutoTradesPerDay, setMaxAutoTradesPerDay] = useState(RECOMMENDED_SETTINGS.maxAutoTradesPerDay);
+  const [maxDailyAutoLoss, setMaxDailyAutoLoss] = useState(RECOMMENDED_SETTINGS.maxDailyAutoLoss);
+  const [stopAfterOneLoss, setStopAfterOneLoss] = useState(RECOMMENDED_SETTINGS.stopAfterOneLoss);
+  const [requireLiveAutoConfirmation, setRequireLiveAutoConfirmation] = useState(RECOMMENDED_SETTINGS.requireLiveAutoConfirmation);
+
   // Market Data
   const [priceRefreshSpeed, setPriceRefreshSpeed] = useState(RECOMMENDED_SETTINGS.priceRefreshSpeed);
   const [showMarketStatus, setShowMarketStatus] = useState(RECOMMENDED_SETTINGS.showMarketStatus);
@@ -108,6 +128,57 @@ export default function SettingsPage() {
   // Notifications
   const [notifs, setNotifs] = useState(DEFAULT_NOTIFS);
 
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || "null");
+      if (!saved) return;
+      setTheme(saved.theme ?? RECOMMENDED_SETTINGS.theme);
+      setAccentColor(saved.accentColor ?? RECOMMENDED_SETTINGS.accentColor);
+      setDensity(saved.density ?? RECOMMENDED_SETTINGS.density);
+      setCardStyle(saved.cardStyle ?? RECOMMENDED_SETTINGS.cardStyle);
+      setExperienceMode(saved.experienceMode ?? RECOMMENDED_SETTINGS.experienceMode);
+      setShowPlainExplanations(saved.showPlainExplanations ?? RECOMMENDED_SETTINGS.showPlainExplanations);
+      setShowAdvancedTerms(saved.showAdvancedTerms ?? RECOMMENDED_SETTINGS.showAdvancedTerms);
+      setShowLearningTips(saved.showLearningTips ?? RECOMMENDED_SETTINGS.showLearningTips);
+      setHideProIndicators(saved.hideProIndicators ?? RECOMMENDED_SETTINGS.hideProIndicators);
+      setDefaultTradingMode(saved.defaultTradingMode ?? RECOMMENDED_SETTINGS.defaultTradingMode);
+      setDefaultMarket(saved.defaultMarket ?? RECOMMENDED_SETTINGS.defaultMarket);
+      setDefaultTradeAmount(saved.defaultTradeAmount ?? RECOMMENDED_SETTINGS.defaultTradeAmount);
+      setDefaultTradeDuration(saved.defaultTradeDuration ?? RECOMMENDED_SETTINGS.defaultTradeDuration);
+      setConfirmPracticeTrades(saved.confirmPracticeTrades ?? RECOMMENDED_SETTINGS.confirmPracticeTrades);
+      setRequireLiveTyping(saved.requireLiveTyping ?? RECOMMENDED_SETTINGS.requireLiveTyping);
+      setEnableAutoPracticeTrading(saved.enableAutoPracticeTrading ?? RECOMMENDED_SETTINGS.enableAutoPracticeTrading);
+      setEnableLiveAutoTrading(saved.enableLiveAutoTrading ?? RECOMMENDED_SETTINGS.enableLiveAutoTrading);
+      setMaxAutoTradeAmount(saved.maxAutoTradeAmount ?? RECOMMENDED_SETTINGS.maxAutoTradeAmount);
+      setMaxReinvestAmount(saved.maxReinvestAmount ?? RECOMMENDED_SETTINGS.maxReinvestAmount);
+      setMaxAutoTradesPerDay(saved.maxAutoTradesPerDay ?? RECOMMENDED_SETTINGS.maxAutoTradesPerDay);
+      setMaxDailyAutoLoss(saved.maxDailyAutoLoss ?? RECOMMENDED_SETTINGS.maxDailyAutoLoss);
+      setStopAfterOneLoss(saved.stopAfterOneLoss ?? RECOMMENDED_SETTINGS.stopAfterOneLoss);
+      setPriceRefreshSpeed(saved.priceRefreshSpeed ?? RECOMMENDED_SETTINGS.priceRefreshSpeed);
+      setShowMarketStatus(saved.showMarketStatus ?? RECOMMENDED_SETTINGS.showMarketStatus);
+      setShowAfterHoursWarning(saved.showAfterHoursWarning ?? RECOMMENDED_SETTINGS.showAfterHoursWarning);
+      setShowDataDelayWarning(saved.showDataDelayWarning ?? RECOMMENDED_SETTINGS.showDataDelayWarning);
+      setTimezone(saved.timezone ?? RECOMMENDED_SETTINGS.timezone);
+      setSaveTradeHistory(saved.saveTradeHistory ?? RECOMMENDED_SETTINGS.saveTradeHistory);
+      setSaveLearningProgress(saved.saveLearningProgress ?? RECOMMENDED_SETTINGS.saveLearningProgress);
+      setUseHistoryForRecommendations(saved.useHistoryForRecommendations ?? RECOMMENDED_SETTINGS.useHistoryForRecommendations);
+      setLargerText(saved.largerText ?? RECOMMENDED_SETTINGS.largerText);
+      setHighContrast(saved.highContrast ?? RECOMMENDED_SETTINGS.highContrast);
+      setReduceAnimations(saved.reduceAnimations ?? RECOMMENDED_SETTINGS.reduceAnimations);
+      setColorblindFriendly(saved.colorblindFriendly ?? RECOMMENDED_SETTINGS.colorblindFriendly);
+      setAlwaysShowWordsWithColors(saved.alwaysShowWordsWithColors ?? RECOMMENDED_SETTINGS.alwaysShowWordsWithColors);
+      setNotifs(saved.notifs ?? DEFAULT_NOTIFS);
+    } catch {
+      localStorage.removeItem(SETTINGS_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("larger-text", largerText);
+    document.documentElement.classList.toggle("high-contrast", highContrast);
+    document.documentElement.classList.toggle("reduce-animations", reduceAnimations);
+  }, [largerText, highContrast, reduceAnimations]);
+
   // Confirmation Modal
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
@@ -123,9 +194,21 @@ export default function SettingsPage() {
   };
 
   const handleSave = () => {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
+      theme, accentColor, density, cardStyle, experienceMode,
+      showPlainExplanations, showAdvancedTerms, showLearningTips, hideProIndicators,
+      defaultTradingMode, defaultMarket, defaultTradeAmount, defaultTradeDuration,
+      confirmPracticeTrades, requireLiveTyping, enableAutoPracticeTrading,
+      enableLiveAutoTrading, maxAutoTradeAmount, maxReinvestAmount,
+      maxAutoTradesPerDay, maxDailyAutoLoss, stopAfterOneLoss,
+      priceRefreshSpeed, showMarketStatus, showAfterHoursWarning, showDataDelayWarning,
+      timezone, saveTradeHistory, saveLearningProgress, useHistoryForRecommendations,
+      largerText, highContrast, reduceAnimations, colorblindFriendly,
+      alwaysShowWordsWithColors, notifs,
+    }));
     toast({
       title: "✅ Settings Saved Successfully",
-      description: "Your local preferences and alert rules have been updated.",
+      description: "Your local preferences, auto trading rules, and alerts have been updated.",
     });
   };
 
@@ -145,6 +228,16 @@ export default function SettingsPage() {
     setDefaultTradeDuration(RECOMMENDED_SETTINGS.defaultTradeDuration);
     setConfirmPracticeTrades(RECOMMENDED_SETTINGS.confirmPracticeTrades);
     setRequireLiveTyping(RECOMMENDED_SETTINGS.requireLiveTyping);
+    // Auto Trading Safety resets
+    setEnableAutoPracticeTrading(RECOMMENDED_SETTINGS.enableAutoPracticeTrading);
+    setEnableLiveAutoTrading(RECOMMENDED_SETTINGS.enableLiveAutoTrading);
+    setMaxAutoTradeAmount(RECOMMENDED_SETTINGS.maxAutoTradeAmount);
+    setMaxReinvestAmount(RECOMMENDED_SETTINGS.maxReinvestAmount);
+    setMaxAutoTradesPerDay(RECOMMENDED_SETTINGS.maxAutoTradesPerDay);
+    setMaxDailyAutoLoss(RECOMMENDED_SETTINGS.maxDailyAutoLoss);
+    setStopAfterOneLoss(RECOMMENDED_SETTINGS.stopAfterOneLoss);
+    setRequireLiveAutoConfirmation(RECOMMENDED_SETTINGS.requireLiveAutoConfirmation);
+
     setPriceRefreshSpeed(RECOMMENDED_SETTINGS.priceRefreshSpeed);
     setShowMarketStatus(RECOMMENDED_SETTINGS.showMarketStatus);
     setShowAfterHoursWarning(RECOMMENDED_SETTINGS.showAfterHoursWarning);
@@ -159,6 +252,7 @@ export default function SettingsPage() {
     setColorblindFriendly(RECOMMENDED_SETTINGS.colorblindFriendly);
     setAlwaysShowWordsWithColors(RECOMMENDED_SETTINGS.alwaysShowWordsWithColors);
     setNotifs(DEFAULT_NOTIFS);
+    localStorage.removeItem(SETTINGS_STORAGE_KEY);
 
     setShowResetConfirm(false);
     toast({
@@ -179,23 +273,15 @@ export default function SettingsPage() {
     );
   }
 
-  function SegmentedControl<T extends string>({
-    options,
-    value,
-    onChange
-  }: {
-    options: { value: T, label: string }[];
-    value: T;
-    onChange: (v: T) => void;
-  }) {
+  function SegmentedControl({ value, onChange, options }: { value: string, onChange: (v: string) => void, options: { value: string, label: string }[] }) {
     return (
-      <div className="flex bg-[#050b14]/65 border border-slate-800 p-1 rounded-xl w-full">
-        {options.map(opt => (
+      <div className="segmented-control w-full flex">
+        {options.map((opt) => (
           <button
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`flex-1 py-1.5 px-2 text-center rounded-lg text-[11px] font-black transition-all cursor-pointer ${
+            className={`flex-1 text-center py-1.5 text-[10px] font-black uppercase tracking-wider rounded-md transition-all cursor-pointer ${
               value === opt.value
                 ? "bg-[#2563eb] text-white shadow-sm"
                 : "text-slate-400 hover:text-slate-200"
@@ -209,8 +295,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="select-none text-left pb-16">
-      <div className="max-w-none">
+    <div className="select-none text-left pb-16 page-container page-glow min-h-screen" style={{ background: "var(--color-bg-deep)" }}>
+      <div className="px-4 lg:px-8 pt-6 max-w-none">
         
         {/* Page Header */}
         <div className="page-header select-none">
@@ -323,7 +409,7 @@ export default function SettingsPage() {
                       { value: "pro", label: "Pro Mode" },
                     ]}
                   />
-                  <p className="text-[10px] text-slate-400 mt-2 font-bold bg-slate-950/45 p-2 rounded border border-slate-900 text-left">
+                  <p className="text-[10px] text-slate-400 mt-2 font-bold bg-slate-950/45 p-2 rounded border border-slate-900 text-left border-box">
                     {experienceMode === "beginner"
                       ? "💡 Beginner Mode explains trades in simple language."
                       : "⚡ Pro Mode shows more market data."}
@@ -400,7 +486,7 @@ export default function SettingsPage() {
                       onChange={setDefaultTradingMode}
                       options={[
                         { value: "practice", label: "Practice Mode" },
-                        { value: "live", label: "Live Mode" },
+                        { value: "live", label: "Broker Sandbox" },
                       ]}
                     />
                   </div>
@@ -527,9 +613,127 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 bg-amber-500/5 border border-amber-500/20 p-2.5 rounded-lg flex items-center gap-2.5 text-amber-400 select-none text-left">
+                <div className="mt-4 bg-amber-500/5 border border-amber-500/20 p-2.5 rounded-lg flex items-center gap-2.5 text-amber-400 select-none text-left border-box">
                   <i className="fas fa-exclamation-triangle text-xs shrink-0"></i>
-                  <span className="text-[10px] font-bold">Live trading confirmations cannot be fully disabled because live trades use real money.</span>
+                  <span className="text-[10px] font-bold">Sandbox confirmations stay enabled so simulated broker actions remain explicit.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Auto Trading Safety Card */}
+            <div className="account-card flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2.5 mb-2 select-none">
+                  <div className="w-8 h-8 rounded-full bg-[#101d31]/80 border border-slate-800 flex items-center justify-center text-slate-400">
+                    <i className="fas fa-shield-halved text-xs"></i>
+                  </div>
+                  <span className="text-[15px] font-black text-white">Auto Trading Safety</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-semibold mb-4 leading-relaxed">
+                  Control defaults and safety thresholds for automated practice and live plans.
+                </p>
+
+                <div className="flex flex-col gap-3 mt-2 select-none">
+                  {/* Practice Auto Mode toggle */}
+                  <div className="protection-row">
+                    <span className="text-slate-400">Enable Auto Practice Mode:</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-black uppercase ${enableAutoPracticeTrading ? "text-green-400" : "text-slate-500"}`}>
+                        {enableAutoPracticeTrading ? "Allowed" : "Off"}
+                      </span>
+                      <Toggle checked={enableAutoPracticeTrading} onChange={setEnableAutoPracticeTrading} />
+                    </div>
+                  </div>
+
+                  {/* Live Auto Mode toggle */}
+                  <div className="protection-row">
+                    <span className="text-slate-400">Enable Live Auto Trading:</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-black uppercase ${enableLiveAutoTrading ? "text-amber-500" : "text-slate-500"}`}>
+                        {enableLiveAutoTrading ? "Allowed" : "Off"}
+                      </span>
+                      <Toggle checked={enableLiveAutoTrading} onChange={setEnableLiveAutoTrading} />
+                    </div>
+                  </div>
+
+                  {/* Warn if live auto is checked */}
+                  {enableLiveAutoTrading && (
+                    <div className="bg-amber-500/5 border border-amber-500/20 p-2 rounded text-[10px] text-amber-500 font-bold leading-relaxed mb-1 border-box">
+                      Sandbox automation uses simulated funds and fills. Limits remain useful for testing safety rules.
+                    </div>
+                  )}
+
+                  {/* Max amount cap */}
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Max Auto Trade Size ($):</span>
+                    <input
+                      type="number"
+                      aria-label="Maximum auto trade size"
+                      min="0.25"
+                      value={maxAutoTradeAmount}
+                      onChange={(e) => setMaxAutoTradeAmount(Number(e.target.value))}
+                      className="w-20 h-7 rounded bg-slate-900 border border-slate-800 text-white font-bold px-2 text-right focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Max reinvest size */}
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Max Reinvest Cap ($):</span>
+                    <input
+                      type="number"
+                      aria-label="Maximum reinvestment amount"
+                      min="0"
+                      value={maxReinvestAmount}
+                      onChange={(e) => setMaxReinvestAmount(Number(e.target.value))}
+                      className="w-20 h-7 rounded bg-slate-900 border border-slate-800 text-white font-bold px-2 text-right focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Max daily trades limit */}
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Max Daily Auto Trades:</span>
+                    <input
+                      type="number"
+                      aria-label="Maximum daily auto trades"
+                      min="1"
+                      value={maxAutoTradesPerDay}
+                      onChange={(e) => setMaxAutoTradesPerDay(Number(e.target.value))}
+                      className="w-20 h-7 rounded bg-slate-900 border border-slate-800 text-white font-bold px-2 text-right focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Max daily loss */}
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Max Daily Auto Loss ($):</span>
+                    <input
+                      type="number"
+                      aria-label="Maximum daily auto loss"
+                      min="0"
+                      value={maxDailyAutoLoss}
+                      onChange={(e) => setMaxDailyAutoLoss(Number(e.target.value))}
+                      className="w-20 h-7 rounded bg-slate-900 border border-slate-800 text-white font-bold px-2 text-right focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Stop After Loss */}
+                  <div className="protection-row">
+                    <span className="text-slate-400">Stop Plan After Single Loss:</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${stopAfterOneLoss ? "bg-green-500/10 text-green-400 border border-green-500/20" : "text-slate-500"}`}>
+                        {stopAfterOneLoss ? "Recommended" : "Off"}
+                      </span>
+                      <Toggle checked={stopAfterOneLoss} onChange={setStopAfterOneLoss} />
+                    </div>
+                  </div>
+
+                  {/* Live Auto Confirmation checkbox toggle */}
+                  <div className="protection-row">
+                    <span className="text-slate-400">Require Checkbox to Start:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase text-green-400">Always On</span>
+                      <Toggle checked={true} onChange={() => {}} disabled={true} />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -563,7 +767,7 @@ export default function SettingsPage() {
                     ].map(item => {
                       const rowStates = notifs[item.key as keyof typeof notifs];
                       return (
-                        <div key={item.key} className="flex flex-col gap-1.5 py-1.5 border-b border-slate-900/60 last:border-0">
+                        <div key={item.key} className="flex flex-col gap-1.5 py-1.5 border-b border-slate-900/60 last:border-0 border-box">
                           <span className="text-[10px] font-black text-white">{item.label}</span>
                           <div className="flex gap-4">
                             <div className="flex items-center gap-1.5">
@@ -584,7 +788,7 @@ export default function SettingsPage() {
                     })}
                   </div>
 
-                  {/* Panel 2: Live Trading Alerts */}
+                  {/* Panel 2: Broker Sandbox Alerts */}
                   <div className="notification-panel flex flex-col gap-2.5 text-left">
                     <span className="text-[10px] text-blue-400 font-black uppercase tracking-wider mb-0.5">Live Alerts</span>
                     {[
@@ -596,7 +800,7 @@ export default function SettingsPage() {
                     ].map(item => {
                       const rowStates = notifs[item.key as keyof typeof notifs];
                       return (
-                        <div key={item.key} className="flex flex-col gap-1.5 py-1.5 border-b border-slate-900/60 last:border-0">
+                        <div key={item.key} className="flex flex-col gap-1.5 py-1.5 border-b border-slate-900/60 last:border-0 border-box">
                           <span className="text-[10px] font-black text-white">{item.label}</span>
                           <div className="flex gap-4">
                             <div className="flex items-center gap-1.5">
@@ -628,7 +832,7 @@ export default function SettingsPage() {
                     ].map(item => {
                       const rowStates = notifs[item.key as keyof typeof notifs];
                       return (
-                        <div key={item.key} className="flex flex-col gap-1.5 py-1.5 border-b border-slate-900/60 last:border-0">
+                        <div key={item.key} className="flex flex-col gap-1.5 py-1.5 border-b border-slate-900/60 last:border-0 border-box">
                           <span className="text-[10px] font-black text-white">{item.label}</span>
                           <div className="flex gap-4">
                             <div className="flex items-center gap-1.5">
@@ -648,7 +852,6 @@ export default function SettingsPage() {
                       );
                     })}
                   </div>
-
                 </div>
               </div>
             </div>
@@ -751,6 +954,7 @@ export default function SettingsPage() {
 
               <div className="flex flex-col gap-2 mt-5 select-none">
                 <button
+                  type="button"
                   onClick={() => toast({ title: "Data Export Dispatching", description: "Your Trade Pro backup ZIP file is preparing." })}
                   className="h-10 rounded-lg border border-slate-700 hover:bg-slate-700/10 text-white text-[11px] font-black transition-all cursor-pointer flex items-center justify-center gap-1.5"
                 >
@@ -758,6 +962,7 @@ export default function SettingsPage() {
                   Export App Data
                 </button>
                 <button
+                  type="button"
                   onClick={() => toast({ title: "Cache Cleared", description: "Local layout cache has been wiped." })}
                   className="h-10 rounded-lg border border-slate-700 hover:bg-slate-700/10 text-white text-[11px] font-black transition-all cursor-pointer flex items-center justify-center gap-1.5"
                 >
@@ -765,6 +970,7 @@ export default function SettingsPage() {
                   Clear Local Cache
                 </button>
                 <button
+                  type="button"
                   onClick={() => toast({ title: "Preferences Cleared", description: "All local preferences have been cleared." })}
                   className="h-10 rounded-lg border border-red-500/30 hover:bg-red-500/5 text-red-400 text-[11px] font-black transition-all cursor-pointer flex items-center justify-center gap-1.5"
                 >
@@ -828,6 +1034,7 @@ export default function SettingsPage() {
         {/* Footer Actions */}
         <div className="settings-footer-actions select-none">
           <button
+            type="button"
             onClick={() => setShowResetConfirm(true)}
             className="h-[52px] px-6 rounded-xl border border-slate-700 hover:bg-slate-700/10 text-white text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2"
           >
@@ -835,6 +1042,7 @@ export default function SettingsPage() {
             Reset to Recommended Settings
           </button>
           <button
+            type="button"
             onClick={handleSave}
             className="h-[52px] px-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-[0_0_16px_rgba(59,130,246,0.3)]"
           >
@@ -848,7 +1056,7 @@ export default function SettingsPage() {
       {/* Reset to Recommended Settings Modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.8)" }}>
-          <div className="w-full max-w-sm rounded-2xl p-6 border bg-[#0b1624] border-[#ef4444] text-left">
+          <div className="w-full max-w-sm rounded-2xl p-6 border bg-[#0b1624] border-[#ef4444] text-left border-box">
             <div className="text-base font-black text-red-500 mb-2 flex items-center gap-2">
               <i className="fas fa-exclamation-triangle"></i>
               Reset settings to defaults?
@@ -864,8 +1072,9 @@ export default function SettingsPage() {
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleReset}
-                className="h-10 px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black transition-all cursor-pointer"
+                className="h-10 px-5 rounded-xl bg-red-650 hover:bg-red-700 text-white text-xs font-black transition-all cursor-pointer"
               >
                 Yes, Reset Settings
               </button>

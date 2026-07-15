@@ -7,6 +7,18 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+/** Typed JSON request with consistent auth and HTTP error handling. */
+export async function apiJson<T>(url: string, init: RequestInit = {}): Promise<T> {
+  const token = localStorage.getItem("tp_token");
+  const headers = new Headers(init.headers);
+  if (token && !headers.has("Authorization")) headers.set("Authorization", `Bearer ${token}`);
+  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const res = await fetch(url, { ...init, headers, credentials: "include" });
+  await throwIfResNotOk(res);
+  if (res.status === 204) return undefined as T;
+  return await res.json() as T;
+}
+
 export async function apiRequest(
   method: string,
   url: string,

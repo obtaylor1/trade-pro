@@ -2,10 +2,10 @@ import { useLocation } from "wouter";
 
 const TABS = [
   { path: "/",          label: "Home",      icon: "🏠" },
-  { path: "/ai-signal", label: "AI Signal", icon: "⚡" },
-  { path: "/markets",   label: "Markets",   icon: "📊" },
-  { path: "/news",      label: "News",      icon: "📰" },
+  { path: "/markets",   label: "Trade",     icon: "📊" },
+  { path: "/my-trades", label: "Positions", icon: "💼" },
   { path: "/learn",     label: "Learn",     icon: "🎓" },
+  { path: "/account",   label: "Account",   icon: "👤" },
 ];
 
 export default function BottomNavigation() {

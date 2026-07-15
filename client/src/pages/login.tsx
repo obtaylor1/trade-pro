@@ -74,8 +74,9 @@ export default function LoginPage() {
         <h1 className="text-xl font-bold mb-6 text-center">Sign In</h1>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Email</label>
+            <label htmlFor="login-email" className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Email</label>
             <input
+              id="login-email"
               type="email" value={email} onChange={e => setEmail(e.target.value)}
               required placeholder="you@example.com"
               className="w-full rounded-xl px-4 py-3 text-sm border outline-none"
@@ -83,8 +84,9 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Password</label>
+            <label htmlFor="login-password" className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Password</label>
             <input
+              id="login-password"
               type="password" value={password} onChange={e => setPassword(e.target.value)}
               required placeholder="••••••••"
               className="w-full rounded-xl px-4 py-3 text-sm border outline-none"
@@ -94,16 +96,12 @@ export default function LoginPage() {
 
           {/* Remember Me */}
           <label className="flex items-center gap-3 cursor-pointer select-none">
-            <div
-              onClick={() => setRememberMe(v => !v)}
-              className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all"
-              style={{
-                background: rememberMe ? "#3b82f6" : "transparent",
-                border: `2px solid ${rememberMe ? "#3b82f6" : "#334155"}`,
-              }}
-            >
-              {rememberMe && <span className="text-white text-xs font-bold">✓</span>}
-            </div>
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={e => setRememberMe(e.target.checked)}
+              className="h-5 w-5 rounded border-slate-600 accent-blue-500"
+            />
             <span className="text-sm" style={{ color: "var(--color-text-soft)" }}>
               Remember me{" "}
               <span className="text-xs" style={{ color: "#475569" }}>(stay signed in for 90 days)</span>

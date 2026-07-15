@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { TradingOpportunity } from "@shared/schema";
+import { apiJson } from "@/lib/queryClient";
 
 function ConfBar({ val }: { val: number }) {
   const c = val >= 75 ? "#22c55e" : val >= 60 ? "#f59e0b" : "#ef4444";
@@ -104,7 +105,7 @@ export default function AISignalPage() {
 
   const { data: signals, isLoading, dataUpdatedAt } = useQuery<TradingOpportunity[]>({
     queryKey: ["/api/ai-signals"],
-    queryFn: () => fetch("/api/ai-signals").then(r => r.json()),
+    queryFn: () => apiJson<TradingOpportunity[]>("/api/ai-signals"),
     refetchInterval: 60000,
   });
 

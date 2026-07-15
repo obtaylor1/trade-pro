@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { LivePrice } from "@/lib/types";
+import { apiJson } from "@/lib/queryClient";
 
 interface LivePricesResponse {
   prices: Record<string, LivePrice>;
@@ -10,7 +11,7 @@ interface LivePricesResponse {
 export function useLivePrices() {
   const { data } = useQuery<LivePricesResponse>({
     queryKey: ["/api/live-prices"],
-    queryFn: () => fetch("/api/live-prices").then(r => r.json()),
+    queryFn: () => apiJson<LivePricesResponse>("/api/live-prices"),
     refetchInterval: 10_000,
     staleTime: 5_000,
   });

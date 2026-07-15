@@ -78,6 +78,12 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
+
+/* Utility captions remain compact without dropping below a readable floor. */
+[class~="text-[8px]"], [class~="text-[9px]"], [class~="text-[10px]"] {
+  font-size: 0.6875rem !important;
+  line-height: 1.35 !important;
+}
 h1 { font-size: var(--text-page-title); }
 h2 { font-size: var(--text-section-title); }
 h3 { font-size: 16px; }
@@ -240,6 +246,53 @@ input, textarea, select {
 input::placeholder { color: var(--color-muted) !important; }
 input:focus { border-color: var(--color-blue) !important; outline: none; box-shadow: 0 0 0 2px rgba(59,130,246,0.2) !important; }
 
+:where(button, a[href], input, select, textarea):focus-visible {
+  outline: 2px solid #60a5fa !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.22) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.larger-text { font-size: 112.5%; }
+.high-contrast { filter: contrast(1.15); }
+.reduce-animations *,
+.reduce-animations *::before,
+.reduce-animations *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.broker-sandbox-card {
+  position: relative;
+}
+
+.broker-sandbox-card::before {
+  content: "SANDBOX SIMULATION";
+  position: absolute;
+  top: -9px;
+  right: 14px;
+  z-index: 2;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  background: #07101d;
+  color: #93c5fd;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
 /* Button press effect */
 button:active { transform: scale(0.98); }
 
@@ -309,9 +362,22 @@ button:active { transform: scale(0.98); }
 
 .main-content {
   margin-left: 260px;
+  width: calc(100% - 260px);
+  min-width: 0;
   padding: 28px 36px 32px 36px;
   max-width: none;
   min-height: 100vh;
+}
+
+main, .page-container { min-width: 0; width: 100%; }
+
+@media (max-width: 1023px) {
+  .sidebar { display: none !important; }
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 20px 16px calc(84px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 .sidebar-logo-title {
@@ -402,7 +468,7 @@ button:active { transform: scale(0.98); }
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 16px;
 }
@@ -748,7 +814,7 @@ button:active { transform: scale(0.98); }
     radial-gradient(circle at left, rgba(34, 197, 94, 0.12), transparent 30%),
     linear-gradient(180deg, #0b1626 0%, #081321 100%);
   display: grid;
-  grid-template-columns: 110px 1fr 340px 360px;
+  grid-template-columns: 96px minmax(280px, 1fr) minmax(220px, 300px);
   align-items: center;
   gap: 26px;
   margin-top: 18px;
@@ -765,13 +831,13 @@ button:active { transform: scale(0.98); }
 .status-shield {
   width: 92px;
   height: 92px;
-  object-contain: fit;
+  object-fit: contain;
 }
 
 .status-chart {
   width: 320px;
   height: 92px;
-  object-contain: fit;
+  object-fit: contain;
 }
 
 .hero-cta-button {
@@ -805,7 +871,7 @@ button:active { transform: scale(0.98); }
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  select-none: none;
+  user-select: none;
 }
 
 .status-pill.green {
@@ -1157,16 +1223,16 @@ button:active { transform: scale(0.98); }
 }
 
 /* Custom layout responsive overrides for Account page grids */
-@media (max-width: 1024px) {
+@media (max-width: 1399px) {
   .account-status-card {
-    grid-template-columns: 1fr;
+    grid-template-columns: 80px minmax(0, 1fr) minmax(220px, 280px);
     padding: 24px;
     gap: 16px;
   }
   .top-card-grid,
   .middle-card-grid,
   .bottom-card-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .account-bottom-actions {
     grid-template-columns: 1fr;
@@ -1174,6 +1240,16 @@ button:active { transform: scale(0.98); }
   .notification-panels {
     grid-template-columns: 1fr;
   }
+}
+
+@media (max-width: 767px) {
+  .account-status-card { grid-template-columns: 1fr; text-align: center; }
+  .account-status-card > :first-child { margin-inline: auto; }
+  .account-status-card .status-main { font-size: 27px; }
+  .account-status-card .status-pill { height: auto; min-height: 28px; padding: 5px 10px; font-size: 11px; }
+  .account-status-card > :nth-child(2) > div { justify-content: center; flex-wrap: wrap; }
+  .top-card-grid, .middle-card-grid, .bottom-card-grid { grid-template-columns: 1fr; }
+  .profile-actions { grid-template-columns: 1fr; }
 }
 
 /* Settings Center Page Grids */
@@ -1186,7 +1262,7 @@ button:active { transform: scale(0.98); }
 
 .settings-middle-grid {
   display: grid;
-  grid-template-columns: 0.92fr 1.08fr;
+  grid-template-columns: 1fr 1fr 1.2fr;
   gap: 16px;
   margin-top: 16px;
 }
@@ -1285,8 +1361,8 @@ button:active { transform: scale(0.98); }
   color: #64748b !important;
 }
 
-.light-theme .bg-slate-950/40,
-.light-theme .bg-[#050b14]/65 {
+.light-theme .bg-slate-950\/40,
+.light-theme .bg-\[\#050b14\]\/65 {
   background: #f1f5f9 !important;
   border-color: #cbd5e1 !important;
 }
@@ -1347,9 +1423,24 @@ button:active { transform: scale(0.98); }
 /* Home Overview Layout Grids */
 .home-summary-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin-top: 16px;
+}
+
+/* Best-match layout is container-aware rather than forcing four columns at all widths. */
+.best-match-grid { grid-template-columns: 1.05fr 1.35fr 0.9fr 1.15fr; }
+.best-match-column { min-width: 0; }
+@media (max-width: 1399px) {
+  .best-match-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .best-match-column { padding: 24px !important; border-bottom: 1px solid rgba(51,85,120,0.55); }
+  .best-match-column:nth-child(2) { border-right: 0; }
+}
+@media (max-width: 767px) {
+  .best-match-grid { grid-template-columns: 1fr; }
+  .best-match-card { padding: 56px 18px 20px !important; min-height: 0 !important; }
+  .best-match-column { padding: 20px 0 !important; border-right: 0 !important; }
+  .best-match-column:last-child { border-bottom: 0; }
 }
 
 .home-chart-container {
@@ -1394,7 +1485,22 @@ button:active { transform: scale(0.98); }
   }
 }
 
+/* Broker Connection Layout Grids */
+.broker-three-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 16px;
+}
 
+@media (max-width: 1024px) {
+  .broker-three-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
-
-
+@media (max-width: 640px) {
+  .broker-three-grid {
+    grid-template-columns: 1fr;
+  }
+}

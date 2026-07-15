@@ -1,13 +1,24 @@
 import type { Express } from "express";
 import { randomUUID } from "crypto";
 import { storage } from "../storage";
-import { encrypt } from "../crypto";
 import { getBrokerAdapter, type OrderRequest } from "../broker";
 import { authMiddleware, authed } from "./middleware";
+import { z } from "zod";
 
 // Beginner safety rules: cap per-order notional and lock complex products.
 const BEGINNER_MAX_NOTIONAL = 100;
 const BEGINNER_LOCKED_ASSETS = new Set(["options", "futures"]);
+const brokerConnectionSchema = z.object({
+  brokerName: z.enum(["Alpaca", "Public", "Charles Schwab", "Tradier", "tastytrade", "TradeStation", "OANDA", "Interactive Brokers", "Tradovate", "Coinbase", "Kraken", "SnapTrade", "DriveWealth"]),
+  mode: z.enum(["paper", "live"]),
+  accountLabel: z.string().trim().min(2).max(80),
+  brokerAccountId: z.string().trim().max(100).optional(),
+});
+
+function publicAccount(account: any) {
+  const { apiKeyEncrypted, apiSecretEncrypted, accessTokenEncrypted, refreshTokenEncrypted, ...safe } = account;
+  return { ...safe, environment: "sandbox" };
+}
 
 export function registerTradingRoutes(app: Express) {
   const userModes = new Map<string, string>();
@@ -36,7 +47,7 @@ export function registerTradingRoutes(app: Express) {
       const accounts = await storage.getTradingAccounts(req.userId);
       const hasLiveBroker = accounts.some(acc => acc.mode === "live" && acc.status === "connected");
       if (!hasLiveBroker) {
-        return res.status(400).json({ message: "No active live broker connection found. Connect a broker first!" });
+        return res.status(400).json({ message: "No broker sandbox profile found. Connect one first." });
       }
     }
 
@@ -45,15 +56,12 @@ export function registerTradingRoutes(app: Express) {
   }));
 
   app.get("/api/trading/accounts", authMiddleware, authed(async (req, res) => {
-    res.json(await storage.getTradingAccounts(req.userId));
+    res.json((await storage.getTradingAccounts(req.userId)).map(publicAccount));
   }));
 
   app.post("/api/trading/accounts/connect", authMiddleware, authed(async (req, res) => {
     try {
-      const { brokerName, mode, accountLabel, apiKey, apiSecret, brokerAccountId } = req.body;
-      if (!brokerName || !mode || !accountLabel || !apiKey || !apiSecret) {
-        return res.status(400).json({ message: "All required connection fields must be provided." });
-      }
+      const { brokerName, mode, accountLabel, brokerAccountId } = brokerConnectionSchema.parse(req.body);
 
       const acc = await storage.connectTradingAccount(req.userId, {
         brokerName,
@@ -61,17 +69,20 @@ export function registerTradingRoutes(app: Express) {
         status: "connected",
         accountLabel,
         brokerAccountId: brokerAccountId || null,
-        apiKeyEncrypted: encrypt(apiKey),
-        apiSecretEncrypted: encrypt(apiSecret),
-        maskedKey: "****" + apiKey.slice(-4),
+        apiKeyEncrypted: null,
+        apiSecretEncrypted: null,
+        maskedKey: "SANDBOX",
+        // Broker adapters are sandbox simulations until a verified provider
+        // integration replaces the stubs in server/broker.ts.
         buyingPower: mode === "live" ? "25000" : "10000",
         accessTokenEncrypted: null,
         refreshTokenEncrypted: null,
       });
 
-      res.json(acc);
+      res.json(publicAccount(acc));
     } catch (e) {
       console.error(e);
+      if (e instanceof z.ZodError) return res.status(400).json({ message: e.issues[0]?.message || "Invalid broker connection" });
       res.status(500).json({ message: "Failed to connect broker account" });
     }
   }));
@@ -103,7 +114,7 @@ export function registerTradingRoutes(app: Express) {
 
       const adapter = await resolveAdapter(req.userId);
       if (!adapter) {
-        return res.status(400).json({ message: "No active live broker connection found. Connect a broker first!" });
+        return res.status(400).json({ message: "No broker sandbox profile found. Connect one first." });
       }
 
       const preview = await adapter.previewOrder(req.userId, {
@@ -147,7 +158,7 @@ export function registerTradingRoutes(app: Express) {
 
       const adapter = await resolveAdapter(req.userId);
       if (!adapter) {
-        return res.status(400).json({ message: "No active live broker connection found. Connect a broker first!" });
+        return res.status(400).json({ message: "No broker sandbox profile found. Connect one first." });
       }
 
       const order: OrderRequest = {

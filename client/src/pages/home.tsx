@@ -5,6 +5,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import type { TradingOpportunity } from "@shared/schema";
+import type { Trade, LearnProgress } from "@shared/schema";
+import { apiJson } from "@/lib/queryClient";
+
+interface WatchlistItem { id: string; ticker: string; market: string }
 
 type Period = "1D" | "1W" | "1M" | "3M" | "1Y";
 
@@ -43,39 +47,39 @@ export default function HomePage() {
   const [activeReasoning, setActiveReasoning] = useState<string | null>(null);
 
   // Queries
-  const { data: snapshots } = useQuery<any[]>({
+  const { data: snapshots = [] } = useQuery<SnapshotPoint[]>({
     queryKey: ["/api/portfolio/snapshots"],
-    queryFn: () => fetch("/api/portfolio/snapshots", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+    queryFn: () => apiJson<SnapshotPoint[]>("/api/portfolio/snapshots"),
     enabled: !!token,
   });
 
   const { data: signals = [], isLoading: signalsLoading } = useQuery<TradingOpportunity[]>({
     queryKey: ["/api/ai-signals"],
-    queryFn: () => fetch("/api/ai-signals").then(r => r.json()),
+    queryFn: () => apiJson<TradingOpportunity[]>("/api/ai-signals"),
     refetchInterval: 60000,
   });
 
-  const { data: watchlistItems = [] } = useQuery<any[]>({
+  const { data: watchlistItems = [] } = useQuery<WatchlistItem[]>({
     queryKey: ["/api/watchlist"],
-    queryFn: () => fetch("/api/watchlist", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+    queryFn: () => apiJson<WatchlistItem[]>("/api/watchlist"),
     enabled: !!token,
   });
 
-  const { data: trades = [] } = useQuery<any[]>({
+  const { data: trades = [] } = useQuery<Trade[]>({
     queryKey: ["/api/trades"],
-    queryFn: () => fetch("/api/trades", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+    queryFn: () => apiJson<Trade[]>("/api/trades"),
     enabled: !!token,
   });
 
-  const { data: learnProgress = [] } = useQuery<any[]>({
+  const { data: learnProgress = [] } = useQuery<LearnProgress[]>({
     queryKey: ["/api/learn/progress"],
-    queryFn: () => fetch("/api/learn/progress", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+    queryFn: () => apiJson<LearnProgress[]>("/api/learn/progress"),
     enabled: !!token,
   });
 
   // Count metrics
-  const openTradesCount = trades.filter((t: any) => t.status === "OPEN").length;
-  const completedLessons = learnProgress.filter((p: any) => p.completed).length;
+  const openTradesCount = trades.filter(t => t.status === "OPEN").length;
+  const completedLessons = learnProgress.filter(p => p.completed).length;
 
   // Watchlist Add mutation
   const addToWatchlistMutation = useMutation({
@@ -537,7 +541,7 @@ export default function HomePage() {
                   <div key={i} className="skeleton rounded-2xl" style={{ height: 190 }} />
                 ))
               ) : (
-                signals.slice(0, 6).map((opp) => {
+                signals.slice(0, 3).map((opp) => {
                   const colors: Record<string, string> = {
                     stocks: "#3b82f6", crypto: "#f59e0b", options: "#8b5cf6", forex: "#22c55e", commodities: "#ef4444",
                   };
@@ -645,58 +649,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* ────────────────── Quick Actions Footer ────────────────── */}
-          <div>
-            <div className="flex items-center gap-2.5 mb-2 select-none pl-1">
-              <div className="w-8 h-8 rounded-full bg-[#101d31]/80 border border-slate-800 flex items-center justify-center text-slate-400">
-                <i className="fas fa-bolt text-xs"></i>
-              </div>
-              <span className="text-[17px] font-black text-white">Quick Actions</span>
-            </div>
-
-            <div className="quick-actions-grid select-none">
-              <Link href="/markets" className="account-card p-4 rounded-xl flex items-center gap-4 hover:border-blue-500/40 transition-all cursor-pointer">
-                <div className="w-9 h-9 rounded-full bg-blue-600/10 border border-blue-600/20 flex items-center justify-center text-blue-400">
-                  <i className="fas fa-chart-line text-xs"></i>
-                </div>
-                <div className="text-left">
-                  <strong className="block text-xs text-white">Choose a Trade</strong>
-                  <span className="text-[9px] text-slate-500 font-bold mt-0.5">Browse available markets</span>
-                </div>
-              </Link>
-
-              <Link href="/my-trades" className="account-card p-4 rounded-xl flex items-center gap-4 hover:border-blue-500/40 transition-all cursor-pointer">
-                <div className="w-9 h-9 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400">
-                  <i className="fas fa-briefcase text-xs"></i>
-                </div>
-                <div className="text-left">
-                  <strong className="block text-xs text-white">View My Trades</strong>
-                  <span className="text-[9px] text-slate-500 font-bold mt-0.5">Track your open positions</span>
-                </div>
-              </Link>
-
-              <Link href="/learn" className="account-card p-4 rounded-xl flex items-center gap-4 hover:border-blue-500/40 transition-all cursor-pointer">
-                <div className="w-9 h-9 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                  <i className="fas fa-graduation-cap text-xs"></i>
-                </div>
-                <div className="text-left">
-                  <strong className="block text-xs text-white">Learning Center</strong>
-                  <span className="text-[9px] text-slate-500 font-bold mt-0.5">Browse Academy lessons</span>
-                </div>
-              </Link>
-
-              <Link href="/connect-broker" className="account-card p-4 rounded-xl flex items-center gap-4 hover:border-blue-500/40 transition-all cursor-pointer">
-                <div className="w-9 h-9 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
-                  <i className="fas fa-link text-xs"></i>
-                </div>
-                <div className="text-left">
-                  <strong className="block text-xs text-white">Connect Broker</strong>
-                  <span className="text-[9px] text-slate-500 font-bold mt-0.5">Unlock live real trading</span>
-                </div>
-              </Link>
-            </div>
-          </div>
-
         </div>
 
       </div>
@@ -704,14 +656,15 @@ export default function HomePage() {
       {/* ─── Why This Trade reasoning modal popup ─── */}
       {activeReasoning && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center px-4 animate-fade-in" style={{ background: "rgba(0,0,0,0.85)" }}>
-          <div className="w-full max-w-md rounded-2xl p-6 border bg-[#0b1624] border-blue-500/40 text-left relative">
+          <div role="dialog" aria-modal="true" aria-labelledby="trade-reason-title" className="w-full max-w-md rounded-2xl p-6 border bg-[#0b1624] border-blue-500/40 text-left relative">
             <button
               onClick={() => setActiveReasoning(null)}
+              aria-label="Close trade explanation"
               className="absolute top-4 right-4 text-slate-500 hover:text-white text-sm outline-none cursor-pointer"
             >
               <i className="fas fa-times"></i>
             </button>
-            <div className="text-sm font-black text-blue-400 mb-3 uppercase tracking-wider flex items-center gap-2">
+            <div id="trade-reason-title" className="text-sm font-black text-blue-400 mb-3 uppercase tracking-wider flex items-center gap-2">
               <i className="fas fa-circle-question"></i>
               Why this trade?
             </div>

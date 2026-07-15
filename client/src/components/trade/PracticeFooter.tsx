@@ -27,7 +27,7 @@ export default function PracticeFooter() {
         <button
           onClick={() => setShowTutorial(true)}
           id="how-it-works-btn"
-          className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-bold py-2.5 px-5 rounded-xl transition-all whitespace-nowrap"
+          className="min-h-10 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-bold py-2.5 px-5 rounded-xl transition-all whitespace-nowrap"
         >
           How It Works
         </button>

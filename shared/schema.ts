@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { pgTable, text, timestamp, numeric, integer, boolean, json } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, numeric, integer, boolean, json, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 
 // ─── Database Tables ──────────────────────────────────────────────────────────
@@ -19,7 +19,7 @@ export const users = pgTable("users_v2", {
 
 export const trades = pgTable("trades_v2", {
   id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   market: text("market").notNull(),
   ticker: text("ticker").notNull(),
   tickerName: text("ticker_name").notNull(),
@@ -33,31 +33,31 @@ export const trades = pgTable("trades_v2", {
   exitAt: timestamp("exit_at"),
   pnl: numeric("pnl").default("0"),
   potentialGain: numeric("potential_gain"),
-});
+}, (table) => ({ userStatusIdx: index("trades_user_status_idx").on(table.userId, table.status), entryAtIdx: index("trades_entry_at_idx").on(table.entryAt) }));
 
 export const watchlist = pgTable("watchlist_v2", {
   id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   ticker: text("ticker").notNull(),
   market: text("market").notNull(),
   addedAt: timestamp("added_at").defaultNow().notNull(),
-});
+}, (table) => ({ userTickerUnique: uniqueIndex("watchlist_user_ticker_uidx").on(table.userId, table.ticker) }));
 
 export const learnProgress = pgTable("learn_progress_v2", {
   id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   moduleId: integer("module_id").notNull(),
   completed: boolean("completed").default(false).notNull(),
   quizScore: integer("quiz_score").default(0),
   completedAt: timestamp("completed_at"),
-});
+}, (table) => ({ userModuleUnique: uniqueIndex("learn_progress_user_module_uidx").on(table.userId, table.moduleId) }));
 
 export const portfolioSnapshots = pgTable("portfolio_snapshots_v2", {
   id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   balance: numeric("balance").notNull(),
   snapshotAt: timestamp("snapshot_at").defaultNow().notNull(),
-});
+}, (table) => ({ userSnapshotIdx: index("portfolio_user_snapshot_idx").on(table.userId, table.snapshotAt) }));
 
 // ─── Insert Schemas ───────────────────────────────────────────────────────────
 
@@ -144,7 +144,7 @@ export const executeTradeSchema = z.object({
 
 export const tradingAccounts = pgTable("trading_accounts", {
   id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   brokerName: text("broker_name").notNull(),
   mode: text("mode").notNull(), // 'paper' or 'live'
   status: text("status").notNull(), // 'connected', 'disconnected', 'needs_auth', 'error'
@@ -158,12 +158,12 @@ export const tradingAccounts = pgTable("trading_accounts", {
   buyingPower: numeric("buying_power").default("0").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({ userBrokerIdx: index("trading_accounts_user_broker_idx").on(table.userId, table.brokerName) }));
 
 export const orders = pgTable("orders", {
   id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
-  tradingAccountId: text("trading_account_id"),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tradingAccountId: text("trading_account_id").references(() => tradingAccounts.id, { onDelete: "set null" }),
   mode: text("mode").notNull(), // 'paper' or 'live'
   brokerName: text("broker_name").notNull(),
   brokerOrderId: text("broker_order_id"),
@@ -184,22 +184,89 @@ export const orders = pgTable("orders", {
   closedAt: timestamp("closed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({ userCreatedIdx: index("orders_user_created_idx").on(table.userId, table.createdAt), brokerOrderIdx: index("orders_broker_order_idx").on(table.brokerOrderId) }));
 
 export const orderEvents = pgTable("order_events", {
   id: text("id").primaryKey(),
-  orderId: text("order_id").notNull(),
+  orderId: text("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
   eventType: text("event_type").notNull(),
   oldStatus: text("old_status"),
   newStatus: text("new_status"),
   message: text("message"),
   rawBrokerPayload: json("raw_broker_payload"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({ orderCreatedIdx: index("order_events_order_created_idx").on(table.orderId, table.createdAt) }));
+
+// ─── Auto Trading Tables ──────────────────────────────────────────────────────
+export const autoTradePlans = pgTable("auto_trade_plans", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  mode: text("mode").notNull(), // 'paper' | 'live'
+  status: text("status").notNull(), // 'draft' | 'awaiting_confirmation' | 'active' | 'paused' | 'completed' | 'stopped' | 'failed'
+  market: text("market").notNull(),
+  symbol: text("symbol").notNull(),
+  direction: text("direction").notNull(), // 'BUY' | 'SELL'
+  initialAmount: numeric("initial_amount").notNull(),
+  currentCycleAmount: numeric("current_cycle_amount").notNull(),
+  reinvestMode: text("reinvest_mode").notNull(), // 'none' | 'profit_only' | 'profit_plus_principal'
+  maxCycles: integer("max_cycles").default(10).notNull(),
+  completedCycles: integer("completed_cycles").default(0).notNull(),
+  maxDailyTrades: integer("max_daily_trades").default(3).notNull(),
+  maxDailyLoss: numeric("max_daily_loss").notNull(),
+  stopAfterLoss: boolean("stop_after_loss").default(true).notNull(),
+  profitGoalAmount: numeric("profit_goal_amount").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({ userStatusIdx: index("auto_plans_user_status_idx").on(table.userId, table.status) }));
+
+export const autoTradeRules = pgTable("auto_trade_rules", {
+  id: text("id").primaryKey(),
+  autoTradePlanId: text("auto_trade_plan_id").notNull().references(() => autoTradePlans.id, { onDelete: "cascade" }),
+  closeType: text("close_type").notNull(), // 'time' | 'profit_target' | 'stop_loss' | 'whichever_first'
+  closeAfterMinutes: integer("close_after_minutes").notNull(),
+  scheduledCloseTime: timestamp("scheduled_close_time").notNull(),
+  profitTargetAmount: numeric("profit_target_amount").notNull(),
+  stopLossAmount: numeric("stop_loss_amount").notNull(),
+  trailingStopEnabled: boolean("trailing_stop_enabled").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({ planUnique: uniqueIndex("auto_rules_plan_uidx").on(table.autoTradePlanId) }));
+
+export const autoTradeCycles = pgTable("auto_trade_cycles", {
+  id: text("id").primaryKey(),
+  autoTradePlanId: text("auto_trade_plan_id").notNull().references(() => autoTradePlans.id, { onDelete: "cascade" }),
+  cycleNumber: integer("cycle_number").notNull(),
+  orderId: text("order_id"), // null if paper simulation
+  startingAmount: numeric("starting_amount").notNull(),
+  entryPrice: numeric("entry_price"),
+  profitLoss: numeric("profit_loss"),
+  endingAmount: numeric("ending_amount"),
+  reinvestAmount: numeric("reinvest_amount"),
+  status: text("status").notNull(), // 'scheduled' | 'open' | 'won' | 'lost' | 'closed' | 'skipped' | 'failed'
+  openedAt: timestamp("opened_at"),
+  closedAt: timestamp("closed_at"),
+  closeReason: text("close_reason"), // 'scheduled_time' | 'profit_target' | 'stop_loss' | 'manual_close'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({ planCycleUnique: uniqueIndex("auto_cycles_plan_cycle_uidx").on(table.autoTradePlanId, table.cycleNumber), statusIdx: index("auto_cycles_status_idx").on(table.status) }));
+
+export const autoTradeEvents = pgTable("auto_trade_events", {
+  id: text("id").primaryKey(),
+  autoTradePlanId: text("auto_trade_plan_id").notNull().references(() => autoTradePlans.id, { onDelete: "cascade" }),
+  cycleId: text("cycle_id").references(() => autoTradeCycles.id, { onDelete: "set null" }),
+  eventType: text("event_type").notNull(), // 'plan_created' | 'trade_opened' | 'auto_closed' | 'reinvested' | 'paused' | 'stopped' | 'error'
+  message: text("message").notNull(),
+  metadataJson: json("metadata_json"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({ planCreatedIdx: index("auto_events_plan_created_idx").on(table.autoTradePlanId, table.createdAt) }));
 
 export const insertTradingAccountSchema = createInsertSchema(tradingAccounts).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertOrderEventSchema = createInsertSchema(orderEvents).omit({ id: true, createdAt: true });
+export const insertAutoTradePlanSchema = createInsertSchema(autoTradePlans).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAutoTradeRuleSchema = createInsertSchema(autoTradeRules).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAutoTradeCycleSchema = createInsertSchema(autoTradeCycles).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAutoTradeEventSchema = createInsertSchema(autoTradeEvents).omit({ id: true, createdAt: true });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -220,3 +287,11 @@ export type Order = typeof orders.$inferSelect;
 export type InsertOrder = typeof orders.$inferInsert;
 export type OrderEvent = typeof orderEvents.$inferSelect;
 export type InsertOrderEvent = typeof orderEvents.$inferInsert;
+export type AutoTradePlan = typeof autoTradePlans.$inferSelect;
+export type InsertAutoTradePlan = typeof autoTradePlans.$inferInsert;
+export type AutoTradeRule = typeof autoTradeRules.$inferSelect;
+export type InsertAutoTradeRule = typeof autoTradeRules.$inferInsert;
+export type AutoTradeCycle = typeof autoTradeCycles.$inferSelect;
+export type InsertAutoTradeCycle = typeof autoTradeCycles.$inferInsert;
+export type AutoTradeEvent = typeof autoTradeEvents.$inferSelect;
+export type InsertAutoTradeEvent = typeof autoTradeEvents.$inferInsert;

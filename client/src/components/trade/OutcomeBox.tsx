@@ -8,81 +8,73 @@ interface OutcomeBoxProps {
 export default function OutcomeBox({ amount, profitRate, lossRate, riskLevel }: OutcomeBoxProps) {
   const profitIfWin = amount * profitRate;
   const lossIfLose = amount * lossRate;
-  const rewardMultiple = lossIfLose > 0 ? profitIfWin / lossIfLose : 0;
+  const totalReturn = amount + profitIfWin;
 
   const format = (val: number) => {
     return val.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 });
   };
 
-  const riskColors: Record<string, string> = {
-    Low: "text-green-400 border-green-500/25 bg-green-500/5",
-    Medium: "text-amber-400 border-amber-500/25 bg-amber-500/5",
-    High: "text-red-400 border-red-500/25 bg-red-500/5",
-  };
-
   return (
-    <div className="flex flex-col text-left">
-      <div className="text-[13px] font-extrabold uppercase tracking-wider text-[#cbd5e1] mb-3">
-        What Could Happen?
+    <div className="flex flex-col text-left select-none">
+      {/* Title with amount info */}
+      <div className="text-[13px] font-black uppercase tracking-wider text-slate-400 mb-3.5 flex items-center gap-1.5">
+        <span>WHAT COULD HAPPEN?</span>
+        <span className="text-slate-500 font-bold lowercase">({`Based on ${format(amount)}`})</span>
+        <i className="far fa-question-circle text-[11px] text-slate-650 cursor-pointer"></i>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+
+      <div className="grid grid-cols-2 gap-4">
         {/* Win Outcome Box */}
         <div
-          className="rounded-xl p-4 border flex flex-col justify-between min-h-[110px]"
+          className="rounded-xl p-4.5 border flex flex-col justify-between border-green-500/20"
           style={{
-            background: "rgba(34, 197, 94, 0.05)",
-            borderColor: "rgba(34, 197, 94, 0.22)",
+            background: "rgba(34, 197, 94, 0.04)",
           }}
         >
           <div>
-            <div className="text-[11px] uppercase tracking-wider font-bold text-[#22c55e]">
+            <div className="text-[12px] uppercase tracking-wider font-extrabold text-green-500 mb-2.5">
               If the trade wins
             </div>
-            <div className="text-[24px] font-extrabold text-[#22c55e] leading-tight mt-1.5">
-              +{format(profitIfWin)}
+            
+            <div className="text-[17px] font-extrabold text-slate-200 leading-normal">
+              Profit: <span className="text-green-400 font-black">+{format(profitIfWin)}</span>
+            </div>
+
+            <div className="text-[17px] font-extrabold text-slate-200 leading-normal mt-1.5">
+              Total return: <span className="text-green-400 font-black">{format(totalReturn)}</span>
             </div>
           </div>
-          <div className="text-[12px] text-[#cbd5e1] font-medium mt-2 leading-snug">
-            You may gain this amount
+
+          <div className="text-[12px] text-slate-400 font-bold mt-4.5 leading-snug">
+            Your {format(amount)} + {format(profitIfWin)} profit
           </div>
         </div>
 
         {/* Loss Outcome Box */}
         <div
-          className="rounded-xl p-4 border flex flex-col justify-between min-h-[110px]"
+          className="rounded-xl p-4.5 border flex flex-col justify-between border-red-500/20"
           style={{
-            background: "rgba(239, 68, 68, 0.05)",
-            borderColor: "rgba(239, 68, 68, 0.22)",
+            background: "rgba(239, 68, 68, 0.04)",
           }}
         >
           <div>
-            <div className="text-[11px] uppercase tracking-wider font-bold text-[#ef4444]">
+            <div className="text-[12px] uppercase tracking-wider font-extrabold text-red-400 mb-2.5">
               If the trade loses
             </div>
-            <div className="text-[24px] font-extrabold text-[#ef4444] leading-tight mt-1.5">
-              -{format(lossIfLose)}
+            
+            <div className="text-[17px] font-extrabold text-slate-200 leading-normal">
+              Loss: <span className="text-red-400 font-black">-{format(lossIfLose)}</span>
+            </div>
+
+            <div className="text-[12px] text-slate-400 font-bold leading-normal mt-2">
+              Amount lost if stop hits
             </div>
           </div>
-          <div className="text-[12px] text-[#cbd5e1] font-medium mt-2 leading-snug">
-            This is your safety limit
+
+          <div className="text-[12px] text-slate-400 font-bold mt-4.5 leading-snug">
+            Your {format(amount)} - {format(lossIfLose)}
           </div>
         </div>
-      </div>
-
-      {/* Reward vs risk summary */}
-      <div className="flex items-center justify-between gap-2 mt-3">
-        {rewardMultiple >= 1 && (
-          <div className="flex items-center gap-1.5 text-[12px] font-bold text-[#cbd5e1]">
-            <i className="fas fa-trophy text-amber-400 text-[11px]" aria-hidden="true"></i>
-            <span>Reward is {rewardMultiple % 1 === 0 ? rewardMultiple : rewardMultiple.toFixed(1)}x the risk</span>
-          </div>
-        )}
-        {riskLevel && (
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-[11px] font-extrabold uppercase tracking-wider ${riskColors[riskLevel] ?? riskColors.Medium}`}>
-            Risk Level: {riskLevel}
-            <i className="fas fa-shield-halved text-[10px]" aria-hidden="true"></i>
-          </span>
-        )}
       </div>
     </div>
   );

@@ -29,9 +29,9 @@ export default function AmountSelector({ amount, customActive, onSelectAmount }:
 
   return (
     <div className="flex flex-col gap-3 flex-1">
-      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
         3. How much do you want to trade with?
-      </h3>
+      </h2>
       <div className="flex gap-2">
         {presets.map(val => {
           const active = !customActive && amount === val;
@@ -39,7 +39,8 @@ export default function AmountSelector({ amount, customActive, onSelectAmount }:
             <button
               key={val}
               onClick={() => handlePreset(val)}
-              className="flex-1 py-2 rounded-lg text-xs font-bold border transition-all duration-200"
+              aria-pressed={active}
+              className="flex-1 min-h-10 py-2 rounded-lg text-xs font-bold border transition-all duration-200"
               style={{
                 background: active ? "rgba(37, 99, 235, 0.15)" : "transparent",
                 borderColor: active ? "#2563eb" : "#1e3555",
@@ -53,11 +54,11 @@ export default function AmountSelector({ amount, customActive, onSelectAmount }:
       </div>
 
       <div className="flex flex-col gap-1.5 mt-1">
-        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+        <label htmlFor="custom-trade-amount" className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
           Custom Amount
         </label>
         <div
-          className="flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-200"
+          className="flex items-center gap-2 px-3 min-h-10 rounded-lg border transition-all duration-200"
           style={{
             background: "var(--color-panel)",
             borderColor: customActive ? (isInvalid ? "#ef4444" : "#2563eb") : "#1e3555",
@@ -66,7 +67,12 @@ export default function AmountSelector({ amount, customActive, onSelectAmount }:
         >
           <span className="font-extrabold text-xs text-slate-500">$</span>
           <input
+            id="custom-trade-amount"
             type="number"
+            min="0.10"
+            step="0.01"
+            inputMode="decimal"
+            aria-describedby={isInvalid ? "custom-trade-amount-error" : undefined}
             placeholder="Enter amount"
             value={customVal}
             onChange={e => handleCustomChange(e.target.value)}
@@ -77,11 +83,11 @@ export default function AmountSelector({ amount, customActive, onSelectAmount }:
                 onSelectAmount(0, true);
               }
             }}
-            className="bg-transparent outline-none border-none text-xs font-extrabold text-white placeholder-slate-600 flex-1 w-full"
+            className="bg-transparent outline-none border-none text-xs font-extrabold text-white placeholder-slate-600 flex-1 w-full min-h-10"
           />
         </div>
         {isInvalid && (
-          <div className="text-[10px] text-red-500 font-bold mt-0.5">
+          <div id="custom-trade-amount-error" role="alert" className="text-[11px] text-red-400 font-bold mt-0.5">
             Enter an amount of $0.10 or more.
           </div>
         )}
