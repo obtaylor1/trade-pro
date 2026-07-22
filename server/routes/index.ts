@@ -10,11 +10,16 @@ import { registerMarketDataRoutes } from "./market-data";
 import { registerAdminRoutes } from "./admin";
 import { registerTradingRoutes } from "./trading";
 import autoTradeRoutes from "./auto-trades";
+import { registerManagedInvestingRoutes } from "./managed-investing";
+import { startManagedInvestingWorker } from "../managedInvestingWorker";
+import { registerOperationsRoutes } from "./operations";
+import { registerAlpacaRoutes } from "./alpaca";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   startLiveDataService();
   startNewsService();
   startAutoTradeWorker();
+  startManagedInvestingWorker();
 
   registerAuthRoutes(app);
   registerMarketDataRoutes(app);
@@ -22,8 +27,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerPortfolioRoutes(app);
   registerAdminRoutes(app);
   registerTradingRoutes(app);
+  registerManagedInvestingRoutes(app);
+  registerOperationsRoutes(app);
+  registerAlpacaRoutes(app);
+
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", service: "trade-pro", liveTrading: false, timestamp: new Date().toISOString() }));
   app.use("/api/auto-trades", autoTradeRoutes);
 
   return createServer(app);
 }
-

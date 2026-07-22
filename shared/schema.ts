@@ -180,11 +180,13 @@ export const orders = pgTable("orders", {
   tradeScore: integer("trade_score"),
   riskLevel: text("risk_level"),
   reason: text("reason"),
+  origin: text("origin").default("manual").notNull(),
+  idempotencyKey: text("idempotency_key"),
   openedAt: timestamp("opened_at"),
   closedAt: timestamp("closed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => ({ userCreatedIdx: index("orders_user_created_idx").on(table.userId, table.createdAt), brokerOrderIdx: index("orders_broker_order_idx").on(table.brokerOrderId) }));
+}, (table) => ({ userCreatedIdx: index("orders_user_created_idx").on(table.userId, table.createdAt), brokerOrderIdx: index("orders_broker_order_idx").on(table.brokerOrderId), userIdempotencyUnique: uniqueIndex("orders_user_idempotency_uidx").on(table.userId, table.idempotencyKey) }));
 
 export const orderEvents = pgTable("order_events", {
   id: text("id").primaryKey(),
@@ -260,6 +262,162 @@ export const autoTradeEvents = pgTable("auto_trade_events", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({ planCreatedIdx: index("auto_events_plan_created_idx").on(table.autoTradePlanId, table.createdAt) }));
 
+// ─── AI Managed Investing ───────────────────────────────────────────────────
+// These records describe a user's practice-mode mandate. They are deliberately
+// separate from broker orders so no profile change can silently grant live
+// trading authority.
+export const managedProfiles = pgTable("managed_profiles", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  goal: text("goal").notNull(),
+  horizon: text("horizon").notNull(),
+  riskComfort: text("risk_comfort").notNull(),
+  experience: text("experience").notNull(),
+  riskLevel: text("risk_level").notNull(),
+  allowedMarkets: json("allowed_markets").$type<string[]>().notNull(),
+  authorityLevel: text("authority_level").default("practice_managed").notNull(),
+  maxOrderAmount: numeric("max_order_amount").notNull(),
+  maxDailyAmount: numeric("max_daily_amount").default("250").notNull(),
+  maxPositionPercent: integer("max_position_percent").default(20).notNull(),
+  maxLossAmount: numeric("max_loss_amount").default("100").notNull(),
+  approvalMode: text("approval_mode").default("confirm_each").notNull(),
+  mandateExpiresAt: timestamp("mandate_expires_at"),
+  emergencyPaused: boolean("emergency_paused").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({ userUnique: uniqueIndex("managed_profiles_user_uidx").on(table.userId) }));
+
+export const managedPlans = pgTable("managed_plans", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  profileId: text("profile_id").notNull().references(() => managedProfiles.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  status: text("status").default("proposed").notNull(),
+  recurringAmount: numeric("recurring_amount").notNull(),
+  frequency: text("frequency").notNull(),
+  allocations: json("allocations").$type<Array<{ symbol: string; name: string; market: string; weight: number; reason: string }>>().notNull(),
+  rationale: text("rationale").notNull(),
+  nextRunAt: timestamp("next_run_at"),
+  lastRunAt: timestamp("last_run_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({ userStatusIdx: index("managed_plans_user_status_idx").on(table.userId, table.status) }));
+
+export const managedActivities = pgTable("managed_activities", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  planId: text("plan_id").notNull().references(() => managedPlans.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  explanation: text("explanation").notNull(),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({ planCreatedIdx: index("managed_activities_plan_created_idx").on(table.planId, table.createdAt) }));
+
+// ─── Owner Security & Audit ─────────────────────────────────────────────────
+export const adminMfa = pgTable("admin_mfa", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  encryptedSecret: text("encrypted_secret").notNull(),
+  recoveryCodeHashes: json("recovery_code_hashes").$type<string[]>().default([]).notNull(),
+  enabled: boolean("enabled").default(false).notNull(),
+  confirmedAt: timestamp("confirmed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({ userUnique: uniqueIndex("admin_mfa_user_uidx").on(table.userId) }));
+
+export const adminAuditLogs = pgTable("admin_audit_logs", {
+  id: text("id").primaryKey(),
+  adminUserId: text("admin_user_id").references(() => users.id, { onDelete: "set null" }),
+  action: text("action").notNull(),
+  targetType: text("target_type"),
+  targetId: text("target_id"),
+  summary: text("summary").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({ adminCreatedIdx: index("admin_audit_admin_created_idx").on(table.adminUserId, table.createdAt) }));
+
+export const platformControls = pgTable("platform_controls", {
+  id: text("id").primaryKey(),
+  globalTradingPaused: boolean("global_trading_paused").default(false).notNull(),
+  paperBetaInviteOnly: boolean("paper_beta_invite_only").default(false).notNull(),
+  liveTradingEnabled: boolean("live_trading_enabled").default(false).notNull(),
+  liveTradingReason: text("live_trading_reason").default("Broker approval and compliance review required").notNull(),
+  updatedBy: text("updated_by").references(() => users.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const betaInvites = pgTable("beta_invites", {
+  id: text("id").primaryKey(),
+  codeHash: text("code_hash").unique().notNull(),
+  label: text("label").notNull(),
+  maxUses: integer("max_uses").default(1).notNull(),
+  usedCount: integer("used_count").default(0).notNull(),
+  active: boolean("active").default(true).notNull(),
+  expiresAt: timestamp("expires_at"),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const betaFeedback = pgTable("beta_feedback", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  category: text("category").notNull(),
+  message: text("message").notNull(),
+  page: text("page"),
+  status: text("status").default("new").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const safetyEvents = pgTable("safety_events", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  orderId: text("order_id").references(() => orders.id, { onDelete: "set null" }),
+  rule: text("rule").notNull(),
+  severity: text("severity").default("warning").notNull(),
+  message: text("message").notNull(),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({ createdIdx: index("safety_events_created_idx").on(table.createdAt) }));
+
+export const reconciliationEvents = pgTable("reconciliation_events", {
+  id: text("id").primaryKey(),
+  orderId: text("order_id").references(() => orders.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  brokerName: text("broker_name").notNull(),
+  status: text("status").notNull(),
+  localStatus: text("local_status"),
+  brokerStatus: text("broker_status"),
+  message: text("message").notNull(),
+  checkedAt: timestamp("checked_at").defaultNow().notNull(),
+}, (table) => ({ statusCheckedIdx: index("reconciliation_status_checked_idx").on(table.status, table.checkedAt) }));
+
+export const userNotifications = pgTable("user_notifications", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  read: boolean("read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({ userReadIdx: index("notifications_user_read_idx").on(table.userId, table.read) }));
+
+export const expertStrategies = pgTable("expert_strategies", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  sourceName: text("source_name").notNull(),
+  sourceUrl: text("source_url"),
+  riskLevel: text("risk_level").notNull(),
+  disclosureDelay: text("disclosure_delay").notNull(),
+  allocations: json("allocations").$type<Array<{ symbol: string; weight: number }>>().notNull(),
+  active: boolean("active").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertTradingAccountSchema = createInsertSchema(tradingAccounts).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertOrderEventSchema = createInsertSchema(orderEvents).omit({ id: true, createdAt: true });
@@ -295,3 +453,8 @@ export type AutoTradeCycle = typeof autoTradeCycles.$inferSelect;
 export type InsertAutoTradeCycle = typeof autoTradeCycles.$inferInsert;
 export type AutoTradeEvent = typeof autoTradeEvents.$inferSelect;
 export type InsertAutoTradeEvent = typeof autoTradeEvents.$inferInsert;
+export type ManagedProfile = typeof managedProfiles.$inferSelect;
+export type ManagedPlan = typeof managedPlans.$inferSelect;
+export type ManagedActivity = typeof managedActivities.$inferSelect;
+export type AdminMfa = typeof adminMfa.$inferSelect;
+export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;

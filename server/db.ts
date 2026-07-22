@@ -6,24 +6,16 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-const dbUrl = process.env.DATABASE_URL;
-const isLocal = dbUrl.includes("localhost") || 
-                dbUrl.includes("127.0.0.1") ||
-                dbUrl.includes("host.docker.internal");
+const { Pool } = await import("pg");
+const { drizzle } = await import("drizzle-orm/node-postgres");
 
-export let pool: any;
-export let db: any;
+// The node-postgres adapter works with local Postgres, Railway Postgres, and
+// hosted providers that expose a standard PostgreSQL connection string.
+// Provider-specific serverless drivers should not be selected solely because
+// a database is remote.
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_SSL === "require" ? { rejectUnauthorized: false } : undefined,
+});
 
-if (isLocal) {
-  const { Pool } = await import("pg");
-  const { drizzle } = await import("drizzle-orm/node-postgres");
-  pool = new Pool({ connectionString: dbUrl });
-  db = drizzle({ client: pool, schema });
-} else {
-  const { Pool, neonConfig } = await import("@neondatabase/serverless");
-  const { drizzle } = await import("drizzle-orm/neon-serverless");
-  const ws = (await import("ws")).default;
-  neonConfig.webSocketConstructor = ws;
-  pool = new Pool({ connectionString: dbUrl });
-  db = drizzle({ client: pool, schema });
-}
+export const db = drizzle({ client: pool, schema });

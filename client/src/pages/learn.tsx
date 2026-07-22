@@ -177,7 +177,7 @@ const GLOSSARY = [
   { term: "Safety Stop", desc: "A rule that closes a trade to help limit the loss." }
 ];
 
-function QuizSection({ module, onComplete }: { module: typeof MODULES[0]; onComplete: (score: number) => void }) {
+function QuizSection({ module, onComplete, onNext }: { module: typeof MODULES[0]; onComplete: (score: number) => void; onNext: () => void }) {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
   
@@ -244,6 +244,7 @@ function QuizSection({ module, onComplete }: { module: typeof MODULES[0]; onComp
               ? "Passed! Good job! 📚" 
               : "Try again to pass the lesson."}
           </div>
+          {score >= 2 && <button onClick={onNext} className="mt-3 min-h-10 w-full rounded-lg bg-emerald-600 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-500">{module.id < 5 ? <>Continue to Mission {module.id + 1} <i className="fas fa-arrow-right ml-2" /></> : <>Return to Training Path <i className="fas fa-trophy ml-2" /></>}</button>}
         </div>
       )}
     </div>
@@ -258,6 +259,8 @@ export default function LearnPage() {
   const [openModule, setOpenModule] = useState<number | null>(null);
   const [expandedLearnMore, setExpandedLearnMore] = useState<Record<number, boolean>>({});
   const [lessonDone, setLessonDone] = useState<Set<number>>(new Set());
+  const [missionStep, setMissionStep] = useState<Record<number, number>>({});
+  const [coachOpen, setCoachOpen] = useState(false);
 
   // Database progress queries
   const { data: progress = [] } = useQuery<LearnProgress[]>({
@@ -273,9 +276,14 @@ export default function LearnPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, 
         body: JSON.stringify({ moduleId, completed, quizScore }) 
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || "Could not save mission progress");
+      }
       return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/learn/progress"] }),
+    onError: (error: Error) => toast({ title: "Progress not saved", description: error.message, variant: "destructive" }),
   });
 
   const getModuleProgress = (moduleId: number) => progress.find((p: any) => p.moduleId === moduleId);
@@ -286,12 +294,14 @@ export default function LearnPage() {
   // Required Modules are: 1, 2, 5. Coming soon requirement: 4th (locked paper trade)
   const isRequiredDone = (id: number) => !!getModuleProgress(id)?.completed;
   const completedRequired = (isRequiredDone(1) ? 1 : 0) + (isRequiredDone(2) ? 1 : 0) + (isRequiredDone(5) ? 1 : 0);
+  const nextMission = MODULES.find(module => !getModuleProgress(module.id)?.completed) || MODULES[0];
 
   const handleQuizComplete = (moduleId: number, score: number) => {
     const passed = score >= 2;
     progressMutation.mutate({ moduleId, completed: passed, quizScore: score });
     if (passed) {
-      toast({ title: `🎉 Lesson Complete!`, description: `You scored ${score}/3 on Module ${moduleId}.` });
+      const xp = [100, 125, 75, 100, 150][moduleId - 1];
+      toast({ title: `Mission ${moduleId} complete — +${xp} XP`, description: `Quick Check score: ${score}/3. Your progress was saved.` });
     } else {
       toast({ title: `Not Passed`, description: `Score ${score}/3. Reset and review details before retrying.`, variant: "destructive" });
     }
@@ -299,6 +309,7 @@ export default function LearnPage() {
 
   const handleStartModule = (modId: number) => {
     setOpenModule(modId);
+    setMissionStep(steps => ({ ...steps, [modId]: 0 }));
     // Auto-scroll to modules section
     const el = document.getElementById(`module-card-${modId}`);
     if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -324,84 +335,25 @@ export default function LearnPage() {
   };
 
   return (
-    <div className="select-none text-left pb-16">
-      <div className="max-w-none">
+    <div className="min-h-screen select-none bg-[#030914] pb-16 text-left text-slate-100 [background-image:radial-gradient(circle_at_28%_4%,rgba(0,174,255,.09),transparent_26%),linear-gradient(rgba(34,110,180,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(34,110,180,.035)_1px,transparent_1px)] [background-size:auto,32px_32px,32px_32px]">
+      <div className="mx-auto max-w-[1540px] px-3 pt-5 sm:px-5 lg:px-7">
 
         {/* 1. Page Header */}
-        <div className="page-header select-none">
+        <div className="mb-4 select-none">
           <div>
-            <h1 className="page-title">Learning Center</h1>
-            <p className="page-subtitle">Learn trading in plain English. No jargon. No pressure.</p>
+            <div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-black tracking-tight text-white">Training Academy</h1><span className="rounded-full border border-emerald-400/45 bg-emerald-400/10 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-300"><span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 motion-safe:animate-pulse" />Beginner Path</span></div>
+            <p className="mt-1 text-sm text-slate-400">Learn trading in plain English. Complete missions before unlocking live trading.</p>
           </div>
         </div>
 
-        {/* 2. Beginner Trading Path Hero Card */}
-        <div className="account-status-card mb-5 select-none text-left">
-          {/* Left: Academy Book Icon */}
-          <div className="w-[110px] h-[110px] flex items-center justify-center bg-slate-900/50 border border-slate-800/80 rounded-2xl">
-            <i className="fas fa-graduation-cap text-[42px] text-blue-400"></i>
+        <section className="command-scan relative mb-5 overflow-hidden rounded-2xl border border-blue-400/35 bg-[#071426]/90 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.03),0_18px_48px_rgba(0,0,0,.3)] sm:p-5">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300 to-transparent" />
+          <div className="grid items-center gap-5 lg:grid-cols-[220px_1fr] 2xl:grid-cols-[240px_1fr_360px]">
+            <div className="relative mx-auto h-40 w-56"><div className="absolute inset-x-7 bottom-2 h-8 rounded-[50%] bg-cyan-400/15 blur-xl" /><img src="/trade-icons/ai-autopilot.png" alt="AI training coach" className="relative h-full w-full object-contain drop-shadow-[0_0_22px_rgba(34,211,238,.45)]" /><div className="absolute -right-1 top-5 flex h-12 w-12 items-center justify-center rounded-full border border-blue-300/50 bg-blue-500/20 text-xl text-blue-100 shadow-[0_0_18px_rgba(59,130,246,.45)]"><i className="fas fa-graduation-cap" /></div></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.26em] text-cyan-300">AI Training Path</p><h2 className="mt-1 text-2xl font-black text-emerald-300 sm:text-3xl">Beginner Trading Path</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">5 short missions to help you understand trading before using real or practice money.</p><div className="mt-4 flex items-center gap-3"><div className="h-2 flex-1 overflow-hidden rounded-full border border-slate-700 bg-slate-950"><div className="h-full rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 transition-all duration-500" style={{ width: `${progressPercent}%` }} /></div><strong className="w-10 text-right text-xs text-blue-300">{progressPercent}%</strong></div><p className="mt-1.5 text-[10px] font-bold text-slate-500">{completedCount} of 5 missions complete · 31 minutes total</p></div>
+            <div className="grid grid-cols-2 gap-2 lg:col-span-2 2xl:col-span-1"><AcademyStatus icon="fa-shield-halved" label="Beginner Path" value="Active" tone="emerald" /><AcademyStatus icon="fa-lock" label="Live Trading" value="Locked" tone="rose" /><AcademyStatus icon="fa-book-open" label="Required Lessons" value={`${completedRequired} / 4`} tone="violet" /><AcademyStatus icon="fa-graduation-cap" label="Practice Mode" value="Active" tone="cyan" /><button onClick={() => { const next = MODULES.find(m => !getModuleProgress(m.id)?.completed); handleStartModule(next?.id || 1); }} className="col-span-2 min-h-12 rounded-xl border border-fuchsia-300 bg-fuchsia-600 text-xs font-black uppercase tracking-[.12em] text-white shadow-[0_0_24px_rgba(168,85,247,.35)] hover:bg-fuchsia-500"><i className="fas fa-play mr-2" />{completedCount ? "Continue Training" : "Start Mission 1"}</button><button onClick={() => document.getElementById("live-unlock")?.scrollIntoView({ behavior: "smooth" })} className="col-span-2 min-h-10 rounded-xl border border-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-300 hover:border-cyan-400/50">View Required Lessons</button></div>
           </div>
-
-          {/* Center-Left: Details and progress bar */}
-          <div className="flex flex-col justify-center">
-            <span className="text-[10px] font-black tracking-wider text-slate-500 uppercase">ACADEMY PATH</span>
-            <h2 className="status-main mt-0.5 leading-tight text-white">Beginner Trading Path</h2>
-            <p className="text-[12px] text-slate-400 font-semibold mt-1">
-              5 short lessons to help you understand trading before using real or practice money.
-            </p>
-            
-            {/* Progress bar */}
-            <div className="flex items-center gap-3 mt-4 w-full max-w-md">
-              <div className="flex-1 h-2 rounded-full bg-slate-950 border border-slate-800">
-                <div 
-                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              <span className="text-xs font-black text-blue-400 w-12 text-right">{progressPercent}%</span>
-            </div>
-            <span className="text-[10px] font-bold text-slate-500 mt-1.5">
-              {completedCount} of 5 lessons complete
-            </span>
-          </div>
-
-          {/* Center-Right: Timing specs */}
-          <div className="flex flex-col justify-center pl-4 select-none">
-            <div className="bg-slate-950/40 border border-slate-900 p-3 rounded-xl">
-              <span className="block text-[10px] text-slate-500 font-black uppercase tracking-wider">Estimated Time</span>
-              <strong className="block text-xl font-black text-white mt-0.5">31 minutes</strong>
-              <span className="block text-[9px] text-slate-400 font-bold mt-1">Total academy duration</span>
-            </div>
-          </div>
-
-          {/* Far Right: Start / Continue Buttons */}
-          <div className="flex flex-col justify-center gap-2">
-            {completedCount === 0 ? (
-              <button 
-                onClick={() => handleStartModule(1)}
-                className="hero-cta-button w-full cursor-pointer"
-              >
-                <i className="fas fa-play"></i>
-                Start Module 1
-              </button>
-            ) : (
-              <button 
-                onClick={() => {
-                  const nextUncomp = MODULES.find(m => !getModuleProgress(m.id)?.completed);
-                  if (nextUncomp) handleStartModule(nextUncomp.id);
-                  else handleStartModule(1);
-                }}
-                className="hero-cta-button w-full cursor-pointer bg-gradient-to-r from-indigo-500 to-blue-600"
-              >
-                <i className="fas fa-arrow-right"></i>
-                Continue Learning
-              </button>
-            )}
-            <span className="text-[10px] text-slate-500 font-bold text-center">
-              Practice trades use virtual money.
-            </span>
-          </div>
-        </div>
+        </section>
 
         {/* Outer Grids */}
         <div className="flex flex-col gap-6">
@@ -410,28 +362,28 @@ export default function LearnPage() {
           <div className="settings-bottom-grid">
             
             {/* lessons completed */}
-            <div className="account-card flex flex-col justify-between min-height-[128px]">
+            <div className="account-card flex flex-col justify-between min-height-[128px] border-cyan-400/25 hover:border-cyan-300/45 hover:-translate-y-0.5">
               <div className="flex items-center gap-2.5 mb-2 select-none">
                 <div className="w-8 h-8 rounded-full bg-[#101d31]/80 border border-slate-800 flex items-center justify-center text-slate-400">
                   <i className="fas fa-check-double text-xs"></i>
                 </div>
-                <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Lessons Completed</span>
+                <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Missions Completed</span>
               </div>
               <div className="text-left mt-1">
                 <strong className="text-3xl font-black text-white">{completedCount} / 5</strong>
                 <p className="text-[11px] text-slate-400 font-semibold mt-1.5">
-                  Finish each lesson to build confidence.
+                  Finish each mission to build confidence.
                 </p>
               </div>
             </div>
 
             {/* learning time */}
-            <div className="account-card flex flex-col justify-between min-height-[128px]">
+            <div className="account-card flex flex-col justify-between min-height-[128px] border-blue-400/25 hover:border-blue-300/45 hover:-translate-y-0.5">
               <div className="flex items-center gap-2.5 mb-2 select-none">
                 <div className="w-8 h-8 rounded-full bg-[#101d31]/80 border border-slate-800 flex items-center justify-center text-slate-400">
                   <i className="fas fa-clock text-xs"></i>
                 </div>
-                <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Learning Time</span>
+                <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Training Time</span>
               </div>
               <div className="text-left mt-1">
                 <strong className="text-3xl font-black text-white">31 min</strong>
@@ -442,7 +394,7 @@ export default function LearnPage() {
             </div>
 
             {/* current level */}
-            <div className="account-card flex flex-col justify-between min-height-[128px]">
+            <div className="account-card flex flex-col justify-between min-height-[128px] border-violet-400/25 hover:border-violet-300/45 hover:-translate-y-0.5">
               <div className="flex items-center gap-2.5 mb-2 select-none">
                 <div className="w-8 h-8 rounded-full bg-[#101d31]/80 border border-slate-800 flex items-center justify-center text-slate-400">
                   <i className="fas fa-user-graduate text-xs"></i>
@@ -460,14 +412,14 @@ export default function LearnPage() {
           </div>
 
           {/* ────────────────── Before Live Trading Warning ────────────────── */}
-          <div className="account-card select-none text-left">
+          <div id="live-unlock" className="account-card select-none text-left border-amber-400/40 bg-[radial-gradient(circle_at_82%_50%,rgba(245,158,11,.10),transparent_25%)]">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2.5 mb-2">
                   <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500">
                     <i className="fas fa-shield-halved text-xs"></i>
                   </div>
-                  <span className="text-[15px] font-black text-white">Before Live Trading</span>
+                  <span className="text-[15px] font-black uppercase tracking-wide text-amber-100">Live Trading Unlock Requirements</span>
                 </div>
                 <p className="text-xs text-slate-400 font-semibold leading-relaxed">
                   Complete the required lessons before using real money.
@@ -504,14 +456,14 @@ export default function LearnPage() {
               <div className="flex flex-col gap-2 w-full md:w-[280px] shrink-0 border-l border-slate-800/80 pl-0 md:pl-6 text-left">
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider">Required Progress</span>
-                  <strong className="text-sm font-black text-amber-400">{completedRequired} / 4 Done</strong>
+                  <strong className="text-sm font-black text-amber-400">{completedRequired} / 4 Complete</strong>
                 </div>
                 <button
                   onClick={handleStartRequired}
                   className="h-10 w-full rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <i className="fas fa-play text-xs"></i>
-                  Start Required Lessons
+                  Start Required Training
                 </button>
                 <span className="text-[9px] text-slate-500 font-bold leading-normal block">
                   ⚠️ Live trading uses real money. Learning first helps protect you from mistakes.
@@ -526,7 +478,7 @@ export default function LearnPage() {
               <div className="w-8 h-8 rounded-full bg-[#101d31]/80 border border-slate-800 flex items-center justify-center text-slate-400">
                 <i className="fas fa-graduation-cap text-xs"></i>
               </div>
-              <span className="text-[17px] font-black text-white">Course Academy Modules</span>
+              <div><span className="block text-[17px] font-black text-white">Training Missions</span><span className="text-[10px] font-semibold text-slate-500">Complete these missions to learn trading in simple steps.</span></div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4 mt-3">
@@ -541,14 +493,14 @@ export default function LearnPage() {
                   <div 
                     key={mod.id} 
                     id={`module-card-${mod.id}`}
-                    className="account-card flex flex-col justify-between text-left relative"
+                    className="account-card group flex flex-col justify-between text-left relative overflow-hidden transition hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(0,0,0,.28)]"
                     style={{ borderColor: completed ? "rgba(34, 197, 94, 0.45)" : active ? "rgba(59, 130, 246, 0.55)" : "rgba(51, 85, 120, 0.55)" }}
                   >
                     <div>
                       {/* Card Top Pill Details */}
                       <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                         <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">
-                          Module {mod.moduleNumber}
+                          Mission {mod.moduleNumber}
                         </span>
 
                         <div className="flex gap-2 items-center">
@@ -560,6 +512,7 @@ export default function LearnPage() {
                             {mod.level}
                           </span>
                           
+                          {mod.requiredForLive && <span className="rounded border border-emerald-400/30 bg-emerald-400/10 px-1.5 py-0.5 text-[8px] font-black uppercase text-emerald-300">Required for Live</span>}
                           {completed ? (
                             <span className="status-pill green scale-90">
                               <i className="fas fa-check-circle"></i>
@@ -585,6 +538,8 @@ export default function LearnPage() {
                       <p className="text-xs text-slate-400 font-semibold leading-relaxed mb-4 pl-1">
                         {mod.description}
                       </p>
+
+                      <div className="mb-3 flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/45 px-3 py-2"><div><span className="block text-[10px] font-black text-emerald-300">+{[100,125,75,100,150][mod.id - 1]} XP</span><span className="text-[8px] text-slate-500">Confidence XP</span></div><div className={`flex h-11 w-11 items-center justify-center rounded-full border-4 text-[10px] font-black ${completed ? "border-emerald-400 text-emerald-300" : "border-slate-700 border-t-blue-400 text-slate-400"}`}>{completed ? "100%" : "0%"}</div></div>
 
                       {/* Expand / Collapse learn details */}
                       <div className="border border-slate-900 bg-slate-950/20 rounded-lg p-2.5 mb-3 select-none text-left">
@@ -628,33 +583,41 @@ export default function LearnPage() {
                           className="w-full h-10 rounded-xl bg-[#2563eb] hover:bg-blue-700 text-white text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
                         >
                           <i className="fas fa-book-open"></i>
-                          Start Lesson
+                          Start Mission
                         </button>
                       ) : (
                         <div className="border-t border-slate-900/80 pt-3 select-none text-left">
                           {!readDone ? (
                             <div>
-                              <div className="flex flex-col gap-2 mb-3 max-h-[190px] overflow-y-auto pr-1">
-                                {mod.lessons.map((lesson, li) => (
-                                  <div key={li} className="rounded-lg p-2.5 text-xs leading-relaxed bg-slate-950/60 border border-slate-900 text-slate-300">
-                                    <strong className="text-blue-400">{li + 1}. </strong>
-                                    {lesson.split("**").map((p, pi) => pi % 2 === 1 ? <strong key={pi} className="text-white font-bold">{p}</strong> : <span key={pi}>{p}</span>)}
-                                  </div>
-                                ))}
+                              <div className="mb-3 rounded-xl border border-blue-400/25 bg-slate-950/60 p-4">
+                                <div className="mb-4 flex items-center justify-between"><span className="text-[9px] font-black uppercase tracking-[.16em] text-blue-300">Training step {(missionStep[mod.id] || 0) + 1} of {mod.lessons.length}</span><span className="text-[9px] font-bold text-slate-500">{Math.round((((missionStep[mod.id] || 0) + 1) / mod.lessons.length) * 100)}%</span></div>
+                                <div className="mb-4 flex gap-1.5" aria-label={`Mission progress: ${(missionStep[mod.id] || 0) + 1} of ${mod.lessons.length} steps`}>{mod.lessons.map((_, stepIndex) => <span key={stepIndex} className={`h-1.5 flex-1 rounded-full ${stepIndex <= (missionStep[mod.id] || 0) ? "bg-gradient-to-r from-blue-500 to-cyan-400 shadow-[0_0_8px_rgba(34,211,238,.3)]" : "bg-slate-800"}`} />)}</div>
+                                <div className="min-h-[112px] text-sm leading-7 text-slate-300">
+                                  {mod.lessons[missionStep[mod.id] || 0].split("**").map((part, partIndex) => partIndex % 2 === 1 ? <strong key={partIndex} className="font-black text-white">{part}</strong> : <span key={partIndex}>{part}</span>)}
+                                </div>
+                                <div className="mt-4 rounded-lg border border-emerald-400/15 bg-emerald-400/5 px-3 py-2 text-[10px] text-emerald-200"><i className="fas fa-lightbulb mr-2" />Take your time. There is no real money involved in this mission.</div>
                               </div>
 
                               <div className="flex gap-2">
                                 <button
-                                  onClick={() => setOpenModule(null)}
-                                  className="h-10 px-3 rounded-lg border border-slate-700 hover:bg-slate-700/10 text-white text-[11px] font-black cursor-pointer shrink-0"
+                                  onClick={() => {
+                                    const current = missionStep[mod.id] || 0;
+                                    if (current === 0) setOpenModule(null);
+                                    else setMissionStep(steps => ({ ...steps, [mod.id]: current - 1 }));
+                                  }}
+                                  className="h-10 px-4 rounded-lg border border-slate-700 hover:bg-slate-700/10 text-white text-[11px] font-black cursor-pointer shrink-0"
                                 >
-                                  Collapse
+                                  <i className="fas fa-arrow-left mr-1.5" />{(missionStep[mod.id] || 0) === 0 ? "Exit" : "Back"}
                                 </button>
                                 <button
-                                  onClick={() => setLessonDone(s => { const c = new Set(s); c.add(mod.id); return c; })}
-                                  className="flex-1 h-10 rounded-lg bg-green-600 hover:bg-green-700 text-white text-[11px] font-black transition-all flex items-center justify-center cursor-pointer"
+                                  onClick={() => {
+                                    const current = missionStep[mod.id] || 0;
+                                    if (current < mod.lessons.length - 1) setMissionStep(steps => ({ ...steps, [mod.id]: current + 1 }));
+                                    else setLessonDone(done => { const copy = new Set(done); copy.add(mod.id); return copy; });
+                                  }}
+                                  className="flex-1 h-10 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black transition-all flex items-center justify-center cursor-pointer shadow-[0_0_16px_rgba(37,99,235,.25)]"
                                 >
-                                  ✅ I've read this — take the quiz
+                                  {(missionStep[mod.id] || 0) < mod.lessons.length - 1 ? <>Next Step <i className="fas fa-arrow-right ml-2" /></> : <>Start Quick Check <i className="fas fa-clipboard-check ml-2" /></>}
                                 </button>
                               </div>
                             </div>
@@ -671,7 +634,11 @@ export default function LearnPage() {
                                 </button>
                               </div>
 
-                              <QuizSection module={mod} onComplete={score => handleQuizComplete(mod.id, score)} />
+                              <QuizSection module={mod} onComplete={score => handleQuizComplete(mod.id, score)} onNext={() => {
+                                setOpenModule(null);
+                                if (mod.id < 5) handleStartModule(mod.id + 1);
+                                else document.querySelector("h1")?.scrollIntoView({ behavior: "smooth" });
+                              }} />
                               
                               <div className="flex gap-2 mt-3 select-none">
                                 <button
@@ -688,7 +655,7 @@ export default function LearnPage() {
 
                       {/* Small Quick Check Info */}
                       <div className="text-[9px] text-slate-500 font-semibold mt-2.5 text-center">
-                        📋 Quick Check: A short quiz will appear after the lesson.
+                        📋 Quick Check: A short quiz appears after the mission.
                       </div>
                     </div>
                   </div>
@@ -700,7 +667,7 @@ export default function LearnPage() {
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-[10px] font-black text-slate-500 uppercase bg-slate-900/50 border border-slate-800/40 px-2 py-0.5 rounded">
-                      Module 6
+                      Mission 6
                     </span>
                     <span className="px-2 py-0.5 rounded text-[8px] font-black bg-slate-950 text-slate-500 border border-slate-800">
                       Locked
@@ -730,7 +697,7 @@ export default function LearnPage() {
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-[10px] font-black text-slate-500 uppercase bg-slate-900/50 border border-slate-800/40 px-2 py-0.5 rounded">
-                      Module 7
+                      Mission 7
                     </span>
                     <span className="px-2 py-0.5 rounded text-[8px] font-black bg-slate-950 text-slate-500 border border-slate-800">
                       Locked
@@ -758,6 +725,11 @@ export default function LearnPage() {
             </div>
           </div>
 
+          <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
+            <section className="command-scan relative overflow-hidden rounded-2xl border border-fuchsia-400/40 bg-[#071426]/90 p-5 shadow-[0_0_34px_rgba(168,85,247,.10)]"><p className="text-[9px] font-black uppercase tracking-[.2em] text-fuchsia-300">Recommended Next Mission</p><div className="mt-4 flex items-center gap-4"><div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-blue-400/35 bg-blue-500/10 text-2xl text-blue-200"><i className="fas fa-rocket" /></div><div><h2 className="text-lg font-black text-white">Start Mission {nextMission.id}: {nextMission.title}</h2><p className="mt-1 text-xs leading-5 text-slate-400">{nextMission.description} Practice first before using real money.</p></div></div><div className="mt-5 grid gap-2 sm:grid-cols-2"><button onClick={() => handleStartModule(nextMission.id)} className="min-h-11 rounded-lg bg-fuchsia-600 text-[10px] font-black uppercase tracking-wider text-white shadow-[0_0_20px_rgba(168,85,247,.28)]"><i className="fas fa-play mr-2" />Start Mission {nextMission.id}</button><button onClick={() => { setExpandedLearnMore(value => ({ ...value, [nextMission.id]: true })); handleStartModule(nextMission.id); }} className="min-h-11 rounded-lg border border-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-300"><i className="fas fa-eye mr-2" />Preview Lesson</button></div><p className="mt-3 text-[9px] text-slate-500"><i className="fas fa-clock mr-1" />{nextMission.time} · Beginner · +{[100,125,75,100,150][nextMission.id - 1]} XP</p></section>
+            <section className="relative overflow-hidden rounded-2xl border border-violet-400/35 bg-[#071426]/90 p-5"><div className="absolute -bottom-10 -right-8 h-36 w-36 rounded-full border border-cyan-400/20 shadow-[0_0_38px_rgba(34,211,238,.14)]" /><div className="relative"><p className="text-[9px] font-black uppercase tracking-[.2em] text-violet-300">AI Coach Tip</p><div className="mt-4 flex items-start gap-4"><img src="/trade-icons/ai-autopilot.png" alt="AI coach" className="h-24 w-28 object-contain drop-shadow-[0_0_14px_rgba(34,211,238,.35)]" /><p className="text-xs leading-6 text-slate-300">Complete the required training missions before live trading. Practice mode lets you learn without using real money.</p></div><button onClick={() => setCoachOpen(true)} className="mt-4 min-h-10 rounded-lg border border-violet-400/40 bg-violet-500/10 px-5 text-[10px] font-black uppercase tracking-wider text-violet-200 hover:bg-violet-500/20"><i className="fas fa-circle-question mr-2" />Ask AI Coach</button></div></section>
+          </div>
+
           {/* ────────────────── 6. Glossary Section ────────────────── */}
           <div>
             <div className="flex items-center gap-2.5 mb-2 select-none pl-1">
@@ -769,10 +741,8 @@ export default function LearnPage() {
 
             <div className="grid md:grid-cols-3 gap-4 mt-3">
               {GLOSSARY.map(item => (
-                <div key={item.term} className="account-card p-4 rounded-xl text-left flex flex-col justify-between">
-                  <div className="text-xs font-black text-blue-400 border-b border-slate-900/60 pb-1.5 mb-2 block">
-                    {item.term}
-                  </div>
+                <div key={item.term} className="account-card p-4 rounded-xl text-left flex flex-col justify-between border-blue-400/20 hover:border-blue-300/40 hover:-translate-y-0.5">
+                  <div className="text-xs font-black text-blue-300 border-b border-slate-900/60 pb-1.5 mb-2 flex items-center gap-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg border border-blue-400/25 bg-blue-500/10"><i className={`fas ${item.term === "Buy" ? "fa-arrow-up" : item.term === "Sell" ? "fa-arrow-down" : item.term === "Profit" ? "fa-dollar-sign" : item.term === "Loss" ? "fa-circle-minus" : item.term === "Trade Score" ? "fa-star" : "fa-shield-halved"}`} /></span>{item.term}</div>
                   <p className="text-xs text-slate-300 font-semibold leading-normal">
                     {item.desc}
                   </p>
@@ -784,6 +754,12 @@ export default function LearnPage() {
         </div>
 
       </div>
+      {coachOpen && <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="coach-title"><div className="w-full max-w-md rounded-2xl border border-violet-400/40 bg-[#071426] p-5"><div className="flex items-start justify-between"><div><p className="text-[9px] font-black uppercase tracking-[.2em] text-violet-300">Training support</p><h2 id="coach-title" className="mt-1 text-lg font-black text-white">AI Coach</h2></div><button onClick={() => setCoachOpen(false)} aria-label="Close AI Coach" className="h-9 w-9 rounded-lg border border-slate-700 text-slate-400"><i className="fas fa-xmark" /></button></div><p className="mt-4 text-sm leading-6 text-slate-300">Start with the next required mission. Read each step, take the Quick Check, and use Practice Mode until the safety rules feel familiar.</p><div className="mt-4 rounded-lg border border-amber-400/20 bg-amber-400/5 p-3 text-xs text-amber-200">Training helps you understand risk. It does not guarantee trading results.</div><button onClick={() => { setCoachOpen(false); handleStartRequired(); }} className="mt-5 min-h-11 w-full rounded-lg bg-violet-600 text-xs font-black text-white">Start my next required mission</button></div></div>}
     </div>
   );
+}
+
+function AcademyStatus({ icon, label, value, tone }: { icon: string; label: string; value: string; tone: "emerald" | "rose" | "violet" | "cyan" }) {
+  const colors = { emerald: "border-emerald-400/30 bg-emerald-400/5 text-emerald-300", rose: "border-rose-400/30 bg-rose-400/5 text-rose-300", violet: "border-violet-400/30 bg-violet-400/5 text-violet-300", cyan: "border-cyan-400/30 bg-cyan-400/5 text-cyan-300" };
+  return <div className={`flex min-h-16 items-center gap-3 rounded-xl border px-3 ${colors[tone]}`}><i className={`fas ${icon}`} /><div><p className="text-[8px] font-black uppercase tracking-wider text-slate-500">{label}</p><strong className="text-[10px] uppercase">{value}</strong></div></div>;
 }

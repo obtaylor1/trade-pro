@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { STARTING_BALANCE } from "./config";
-import { users, trades, watchlist, learnProgress, portfolioSnapshots, tradingAccounts, orders, orderEvents, autoTradePlans, autoTradeRules, autoTradeCycles, autoTradeEvents } from "@shared/schema";
+import { users, trades, watchlist, learnProgress, portfolioSnapshots, tradingAccounts, orders, orderEvents, autoTradePlans, autoTradeRules, autoTradeCycles, autoTradeEvents, managedPlans } from "@shared/schema";
 import type { User, InsertUser, Trade, InsertTrade, LearnProgress, PortfolioSnapshot, TradingAccount, InsertTradingAccount, Order, InsertOrder, OrderEvent, InsertOrderEvent, AutoTradePlan, InsertAutoTradePlan, AutoTradeRule, InsertAutoTradeRule, AutoTradeCycle, InsertAutoTradeCycle, AutoTradeEvent, InsertAutoTradeEvent } from "@shared/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 
@@ -19,6 +19,8 @@ export interface PracticeOrderTransactionInput {
   reason?: string | null;
   tickerName?: string;
   potentialGain?: number | null;
+  origin?: "manual" | "ai_confirmed" | "ai_managed" | "recurring_investment";
+  idempotencyKey?: string;
 }
 
 export interface IStorage {
@@ -208,6 +210,8 @@ export class DbStorage implements IStorage {
         tradeScore: input.tradeScore ?? null,
         riskLevel: input.riskLevel ?? null,
         reason: input.reason ?? null,
+        origin: input.origin ?? "manual",
+        idempotencyKey: input.idempotencyKey ?? null,
         openedAt: now,
         closedAt: now,
         createdAt: now,
@@ -285,6 +289,7 @@ export class DbStorage implements IStorage {
       // A reset is a true clean slate: remove paper positions, automation,
       // paper orders, and historical chart points before recording the reset.
       await tx.delete(autoTradePlans).where(and(eq(autoTradePlans.userId, userId), eq(autoTradePlans.mode, "paper")));
+      await tx.delete(managedPlans).where(eq(managedPlans.userId, userId));
       await tx.delete(orders).where(and(eq(orders.userId, userId), eq(orders.mode, "paper")));
       await tx.delete(trades).where(eq(trades.userId, userId));
       await tx.delete(portfolioSnapshots).where(eq(portfolioSnapshots.userId, userId));

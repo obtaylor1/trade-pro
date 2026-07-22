@@ -18,8 +18,8 @@ export function authed(handler: AuthedHandler) {
   };
 }
 
-export function makeToken(userId: string, isAdmin: boolean, expiresIn: string | number = "30d") {
-  return jwt.sign({ userId, isAdmin }, JWT_SECRET, { expiresIn } as jwt.SignOptions);
+export function makeToken(userId: string, isAdmin: boolean, expiresIn: string | number = "30d", extra: Record<string, unknown> = {}) {
+  return jwt.sign({ userId, isAdmin, ...extra }, JWT_SECRET, { expiresIn } as jwt.SignOptions);
 }
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {

@@ -1456,6 +1456,30 @@ main, .page-container { min-width: 0; width: 100%; }
   margin-top: 16px;
 }
 
+.command-scan::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: -2px;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.75), transparent);
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.45);
+  animation: command-scan 7s ease-in-out infinite;
+}
+
+@keyframes command-scan {
+  0%, 100% { transform: translateY(0); opacity: 0; }
+  8% { opacity: 0.75; }
+  55% { transform: translateY(220px); opacity: 0.35; }
+  70%, 100% { transform: translateY(220px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .command-scan::after { animation: none !important; opacity: 0 !important; }
+  .command-scan *, .command-scan { animation: none !important; transition-duration: 0.01ms !important; }
+}
+
 .quick-actions-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1504,3 +1528,8 @@ main, .page-container { min-width: 0; width: 100%; }
     grid-template-columns: 1fr;
   }
 }
+/* AI Managed — a calm violet mandate layer over Trade Pro's navy workspace. */
+.managed-page { background: radial-gradient(circle at 72% 8%, rgba(124,58,237,.12), transparent 31%), #0b1019; }
+.managed-hero { background: linear-gradient(115deg, rgba(15,23,42,.96), rgba(76,29,149,.28)), repeating-linear-gradient(90deg, transparent 0 79px, rgba(139,92,246,.05) 80px); border-bottom: 1px solid rgba(139,92,246,.18); }
+@media (prefers-reduced-motion: no-preference) { .managed-hero svg { animation: ai-pulse 3s ease-in-out infinite; } }
+@keyframes ai-pulse { 50% { filter: drop-shadow(0 0 8px rgba(196,181,253,.8)); } }

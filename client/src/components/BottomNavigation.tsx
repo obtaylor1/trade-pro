@@ -3,8 +3,8 @@ import { useLocation } from "wouter";
 const TABS = [
   { path: "/",          label: "Home",      icon: "🏠" },
   { path: "/markets",   label: "Trade",     icon: "📊" },
+  { path: "/ai-managed", label: "AI Plan", icon: "✦" },
   { path: "/my-trades", label: "Positions", icon: "💼" },
-  { path: "/learn",     label: "Learn",     icon: "🎓" },
   { path: "/account",   label: "Account",   icon: "👤" },
 ];
 

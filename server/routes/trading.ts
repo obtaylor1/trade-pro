@@ -4,6 +4,7 @@ import { storage } from "../storage";
 import { getBrokerAdapter, type OrderRequest } from "../broker";
 import { authMiddleware, authed } from "./middleware";
 import { z } from "zod";
+import { enforceOrderSafety } from "../orderSafetyService";
 
 // Beginner safety rules: cap per-order notional and lock complex products.
 const BEGINNER_MAX_NOTIONAL = 100;
@@ -100,6 +101,7 @@ export function registerTradingRoutes(app: Express) {
   app.post("/api/trading/orders/preview", authMiddleware, authed(async (req, res) => {
     try {
       const { symbol, assetClass, side, orderType, quantity, notionalAmount, estimatedPrice, tradeScore, riskLevel, reason } = req.body;
+      const origin = (["manual", "ai_confirmed", "ai_managed", "recurring_investment"].includes(req.body.origin) ? req.body.origin : "manual") as "manual" | "ai_confirmed" | "ai_managed" | "recurring_investment";
 
       const amount = parseFloat(String(notionalAmount));
       if (!isFinite(amount) || amount <= 0) {
@@ -111,6 +113,7 @@ export function registerTradingRoutes(app: Express) {
       if (BEGINNER_LOCKED_ASSETS.has(assetClass)) {
         return res.status(400).json({ message: "Options and futures trades are locked under beginner safety rules. Enable Advanced Mode to trade them." });
       }
+      await enforceOrderSafety({ userId: req.userId, amount, assetClass, symbol, origin, executionMode: "sandbox" });
 
       const adapter = await resolveAdapter(req.userId);
       if (!adapter) {
@@ -132,7 +135,7 @@ export function registerTradingRoutes(app: Express) {
       });
 
       const previewId = randomUUID();
-      activePreviews.set(`${req.userId}-${previewId}`, { ...req.body, preview });
+      activePreviews.set(`${req.userId}-${previewId}`, { ...req.body, origin, preview });
       res.json({ previewId, ...preview });
     } catch (e: any) {
       console.error(e);
@@ -173,6 +176,8 @@ export function registerTradingRoutes(app: Express) {
         tradeScore: cached.tradeScore,
         riskLevel: cached.riskLevel,
         reason: cached.reason,
+        origin: cached.origin ?? "manual",
+        idempotencyKey: previewId,
       };
 
       res.json(await adapter.placeOrder(req.userId, order));

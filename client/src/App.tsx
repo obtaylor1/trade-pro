@@ -11,9 +11,10 @@ import Sidebar from "@/components/Sidebar";
 import LoginPage from "@/pages/login";
 import SignupPage from "@/pages/signup";
 import OnboardingPage from "@/pages/onboarding";
+import AdminLoginPage from "@/pages/admin-login";
 import { TradingModeProvider } from "@/contexts/TradingModeContext";
 
-const HomePage = lazy(() => import("@/pages/home"));
+const HomePage = lazy(() => import("@/pages/home-command-center"));
 const MarketsPage = lazy(() => import("@/pages/markets"));
 const AISignalPage = lazy(() => import("@/pages/ai-signal"));
 const NewsPage = lazy(() => import("@/pages/news"));
@@ -23,6 +24,8 @@ const AccountCenterPage = lazy(() => import("@/pages/account-center"));
 const SettingsPage = lazy(() => import("@/pages/settings-center"));
 const AdminPage = lazy(() => import("@/pages/admin"));
 const ConnectBrokerPage = lazy(() => import("@/pages/connect-broker"));
+const AIManagedPage = lazy(() => import("@/pages/ai-managed"));
+const NotificationsPage = lazy(() => import("@/pages/notifications"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 function PageFallback() {
@@ -48,6 +51,7 @@ function AppRoutes() {
       <Switch>
         <Route path="/login" component={LoginPage} />
         <Route path="/signup" component={SignupPage} />
+        <Route path="/admin-login" component={AdminLoginPage} />
         <Route><Redirect to="/login" /></Route>
       </Switch>
     );
@@ -68,6 +72,8 @@ function AppRoutes() {
               <Route path="/" component={HomePage} />
               <Route path="/markets" component={MarketsPage} />
               <Route path="/connect-broker" component={ConnectBrokerPage} />
+              <Route path="/ai-managed" component={AIManagedPage} />
+              <Route path="/notifications" component={NotificationsPage} />
               <Route path="/ai-signal" component={AISignalPage} />
               <Route path="/news" component={NewsPage} />
               <Route path="/learn" component={LearnPage} />

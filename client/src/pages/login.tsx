@@ -126,6 +126,9 @@ export default function LoginPage() {
       <div className="mt-8 text-center text-xs" style={{ color: "#334155" }}>
         Paper trading only — no real money at risk
       </div>
+      <button onClick={() => setLocation("/admin-login")} className="mt-3 text-[11px] text-slate-600 hover:text-violet-300 transition-colors">
+        Owner sign in
+      </button>
     </div>
   );
 }
