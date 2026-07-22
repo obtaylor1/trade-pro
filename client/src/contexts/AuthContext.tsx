@@ -16,8 +16,10 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  adminLogin: (email: string, password: string) => Promise<{ requiresMfa: boolean; challengeToken?: string }>;
+  verifyAdminMfa: (challengeToken: string, code: string) => Promise<void>;
   loginDemo: () => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string, inviteCode?: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   updateBalance: (newBalance: number) => void;
@@ -100,11 +102,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
   };
 
-  const signup = async (name: string, email: string, password: string) => {
+  const adminLogin = async (email: string, password: string) => {
+    const res = await fetch("/api/auth/admin-login", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Owner sign-in failed");
+    if (data.requiresMfa) return { requiresMfa: true, challengeToken: data.challengeToken };
+    localStorage.setItem("tp_token", data.token);
+    setToken(data.token);
+    setUser(data.user);
+    return { requiresMfa: false };
+  };
+
+  const verifyAdminMfa = async (challengeToken: string, code: string) => {
+    const res = await fetch("/api/auth/admin-login/mfa", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ challengeToken, code }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Two-factor verification failed");
+    localStorage.setItem("tp_token", data.token); setToken(data.token); setUser(data.user);
+  };
+
+  const signup = async (name: string, email: string, password: string, inviteCode?: string) => {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, inviteCode }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Signup failed");
@@ -131,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, loginDemo, signup, logout, refreshUser, updateBalance }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, adminLogin, verifyAdminMfa, loginDemo, signup, logout, refreshUser, updateBalance }}>
       {children}
     </AuthContext.Provider>
   );

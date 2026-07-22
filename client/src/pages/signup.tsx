@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,7 +21,7 @@ export default function SignupPage() {
     }
     setLoading(true);
     try {
-      await signup(name, email, password);
+      await signup(name, email, password, inviteCode || undefined);
     } catch (err: any) {
       toast({ title: "Signup failed", description: err.message, variant: "destructive" });
     } finally {
@@ -48,6 +49,10 @@ export default function SignupPage() {
               className="w-full rounded-xl px-4 py-3 text-sm border outline-none"
               style={{ background: "#0d1117", borderColor: "#243044", color: "#e2e8f0" }}
             />
+          </div>
+          <div>
+            <label htmlFor="signup-invite" className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Beta invite <span className="text-xs text-slate-600">(if required)</span></label>
+            <input id="signup-invite" value={inviteCode} onChange={e => setInviteCode(e.target.value.toUpperCase())} placeholder="TP-XXXXXXXX" className="w-full rounded-xl px-4 py-3 text-sm border outline-none font-mono" style={{ background: "#0d1117", borderColor: "#243044", color: "#e2e8f0" }}/>
           </div>
           <div>
             <label htmlFor="signup-email" className="text-sm font-medium mb-1 block" style={{ color: "var(--color-text-soft)" }}>Email</label>

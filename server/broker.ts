@@ -14,6 +14,8 @@ export interface OrderRequest {
   tradeScore?: number;
   riskLevel?: string;
   reason?: string;
+  origin?: "manual" | "ai_confirmed" | "ai_managed" | "recurring_investment";
+  idempotencyKey?: string;
 }
 
 export interface BrokerAdapter {
@@ -77,6 +79,7 @@ export class PaperBrokerAdapter implements BrokerAdapter {
       notionalAmount: order.notionalAmount, estimatedPrice: order.estimatedPrice,
       estimatedFees: preview.estimatedFees, tradeScore: order.tradeScore,
       riskLevel: order.riskLevel, reason: order.reason,
+      origin: order.origin, idempotencyKey: order.idempotencyKey,
     });
     return { ...result.order, newBalance: result.newBalance };
   }
@@ -169,6 +172,8 @@ abstract class StubBrokerAdapter implements BrokerAdapter {
       tradeScore: order.tradeScore ?? null,
       riskLevel: order.riskLevel ?? null,
       reason: order.reason ?? null,
+      origin: order.origin ?? "manual",
+      idempotencyKey: order.idempotencyKey ?? null,
       openedAt: new Date(),
       closedAt: new Date(),
     });

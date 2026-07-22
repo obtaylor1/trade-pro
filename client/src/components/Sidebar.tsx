@@ -5,10 +5,12 @@ import { useTradingMode } from "@/contexts/TradingModeContext";
 const NAV = [
   { path: "/",          label: "Home",            icon: "fas fa-house" },
   { path: "/markets",   label: "Choose a Trade",  icon: "fas fa-chart-line" },
+  { path: "/ai-managed", label: "AI Managed", icon: "fas fa-wand-magic-sparkles" },
   { path: "/connect-broker", label: "Connect Broker", icon: "fas fa-link" },
   { path: "/my-trades", label: "My Trades",       icon: "fas fa-briefcase" },
   { path: "/learn",     label: "Learning Center", icon: "fas fa-graduation-cap" },
   { path: "/news",      label: "News",            icon: "fas fa-newspaper" },
+  { path: "/notifications", label: "Updates & Feedback", icon: "fas fa-bell" },
   { path: "/account",   label: "Account",         icon: "fas fa-user" },
   { path: "/settings",  label: "Settings",        icon: "fas fa-gear" },
 ];
@@ -83,6 +85,8 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      {user?.isAdmin && <div className="px-3 pb-3"><button onClick={() => setLocation("/admin")} className={`sidebar-item w-full text-left ${location === "/admin" ? "active" : "text-violet-300 hover:text-white"}`}><span className="w-5 text-center"><i className="fas fa-shield-halved"/></span><span>Owner Dashboard</span></button></div>}
 
       {/* Bottom Widgets */}
       <div className="px-4 flex flex-col gap-3">

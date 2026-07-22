@@ -9,7 +9,20 @@ interface AdminStats {
   newUsersToday: number;
   avgWinRate: number;
   topAssets: { ticker: string; count: number }[];
+  onboardingComplete: number;
+  aiPlansActive: number;
+  aiPlansTotal: number;
+  brokerConnections: number;
+  liveBrokerConnections: number;
+  rejectedOrders: number;
 }
+
+interface MfaStatus { enabled: boolean; confirmedAt: string | null; recoveryCodesRemaining: number }
+interface MfaSetup { qrDataUrl: string; manualKey: string; recoveryCodes: string[] }
+interface AuditLog { id: string; action: string; summary: string; ipAddress: string | null; createdAt: string }
+interface Controls { globalTradingPaused: boolean; paperBetaInviteOnly: boolean; liveTradingEnabled: boolean; liveTradingReason: string }
+interface SafetyEvent { id: string; rule: string; message: string; severity: string; createdAt: string }
+interface BetaFeedback { id: string; category: string; message: string; page: string | null; status: string; createdAt: string }
 
 interface AdminUser {
   id: string;
@@ -56,6 +69,9 @@ export default function AdminPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [mfaSetup, setMfaSetup] = useState<MfaSetup | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [newInvite, setNewInvite] = useState<string | null>(null);
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -76,6 +92,21 @@ export default function AdminPage() {
     queryFn: () => apiJson<UserDetail>(`/api/admin/users/${selectedUserId}`),
     enabled: !!selectedUserId,
   });
+
+  const { data: mfa, refetch: refetchMfa } = useQuery<MfaStatus>({ queryKey: ["/api/auth/admin-mfa/status"], queryFn: () => apiJson("/api/auth/admin-mfa/status") });
+  const { data: auditLogs = [] } = useQuery<AuditLog[]>({ queryKey: ["/api/admin/audit-logs"], queryFn: () => apiJson("/api/admin/audit-logs") });
+  const { data: controls, refetch: refetchControls } = useQuery<Controls>({ queryKey: ["/api/operations/controls"], queryFn: () => apiJson("/api/operations/controls") });
+  const { data: safetyEvents = [] } = useQuery<SafetyEvent[]>({ queryKey: ["/api/operations/safety-events"], queryFn: () => apiJson("/api/operations/safety-events") });
+  const { data: betaFeedback = [] } = useQuery<BetaFeedback[]>({ queryKey: ["/api/operations/beta-feedback"], queryFn: () => apiJson("/api/operations/beta-feedback") });
+
+  const startMfa = async () => setMfaSetup(await apiJson<MfaSetup>("/api/auth/admin-mfa/setup", { method: "POST" }));
+  const confirmMfa = async () => {
+    await apiJson("/api/auth/admin-mfa/confirm", { method: "POST", body: JSON.stringify({ code: mfaCode }) });
+    setMfaSetup(null); setMfaCode(""); await refetchMfa();
+  };
+  const updateControls = async (changes: Partial<Controls>) => { await apiJson("/api/operations/controls", { method: "PATCH", body: JSON.stringify(changes) }); await refetchControls(); };
+  const createInvite = async () => { const result = await apiJson<{ code: string }>("/api/operations/beta-invites", { method: "POST", body: JSON.stringify({ label: "Paper beta", maxUses: 1, expiresInDays: 30 }) }); setNewInvite(result.code); };
+  const reconcile = async () => { const result = await apiJson<{ checked: number; exceptions: number }>("/api/operations/reconcile", { method: "POST" }); alert(`Checked ${result.checked} broker orders. ${result.exceptions} need attention.`); };
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -134,6 +165,33 @@ export default function AdminPage() {
           </>
         )}
       </div>
+
+      <div className="grid lg:grid-cols-3 gap-4 mb-8">
+        <div className="glass-card p-5"><div className="label-secondary">Onboarding</div><div className="text-2xl font-black text-blue-400 mt-2">{stats?.onboardingComplete ?? 0} / {stats?.totalUsers ?? 0}</div><div className="text-xs text-slate-500 mt-1">users finished setup</div></div>
+        <div className="glass-card p-5"><div className="label-secondary">AI Managed</div><div className="text-2xl font-black text-violet-400 mt-2">{stats?.aiPlansActive ?? 0} active</div><div className="text-xs text-slate-500 mt-1">{stats?.aiPlansTotal ?? 0} plans created</div></div>
+        <div className="glass-card p-5"><div className="label-secondary">Broker Readiness</div><div className="text-2xl font-black text-amber-400 mt-2">{stats?.brokerConnections ?? 0} sandbox</div><div className="text-xs text-slate-500 mt-1">{stats?.liveBrokerConnections ?? 0} marked live · {stats?.rejectedOrders ?? 0} order exceptions</div></div>
+      </div>
+
+      <div className="glass-card p-5 mb-8 border border-amber-400/20">
+        <div className="flex items-center justify-between gap-4 flex-wrap"><div><div className="font-bold text-white">Operations control room</div><div className="text-xs text-slate-500 mt-1">Stop trading, manage beta access, and check broker records.</div></div><span className="text-[10px] font-black px-3 py-1 rounded-full bg-red-500/10 text-red-300">LIVE TRADING LOCKED</span></div>
+        <div className="grid md:grid-cols-3 gap-3 mt-5">
+          <button onClick={()=>updateControls({ globalTradingPaused: !controls?.globalTradingPaused })} className={`rounded-xl border p-4 text-left ${controls?.globalTradingPaused ? "border-red-400 bg-red-500/15" : "border-slate-700 bg-slate-950/40"}`}><div className="text-xs font-black">{controls?.globalTradingPaused ? "Resume all trading" : "Emergency stop"}</div><div className="text-[10px] text-slate-500 mt-1">{controls?.globalTradingPaused ? "All new orders are blocked." : "Immediately block every new order."}</div></button>
+          <button onClick={()=>updateControls({ paperBetaInviteOnly: !controls?.paperBetaInviteOnly })} className={`rounded-xl border p-4 text-left ${controls?.paperBetaInviteOnly ? "border-violet-400 bg-violet-500/15" : "border-slate-700 bg-slate-950/40"}`}><div className="text-xs font-black">Paper beta: {controls?.paperBetaInviteOnly ? "Invite only" : "Open"}</div><div className="text-[10px] text-slate-500 mt-1">Control who can create a new account.</div></button>
+          <button onClick={reconcile} className="rounded-xl border border-slate-700 bg-slate-950/40 p-4 text-left"><div className="text-xs font-black">Check broker records</div><div className="text-[10px] text-slate-500 mt-1">Compare local and sandbox broker orders.</div></button>
+        </div>
+        <div className="mt-4 flex items-center gap-3 flex-wrap"><button onClick={createInvite} className="px-4 py-2 rounded-lg bg-blue-600 text-xs font-black">Create one beta invite</button>{newInvite && <div className="rounded-lg bg-slate-950 border border-blue-400/20 px-4 py-2 font-mono text-sm text-blue-300">{newInvite} <span className="font-sans text-[10px] text-slate-500 ml-2">copy now—it is shown once</span></div>}</div>
+        <div className="mt-4 rounded-xl bg-slate-950/50 p-3 text-[11px] text-slate-400"><strong className="text-amber-300">Live gate:</strong> {controls?.liveTradingReason ?? "Broker approval and compliance review required"}</div>
+      </div>
+
+      {safetyEvents.length > 0 && <div className="glass-card p-5 mb-8"><div className="font-bold text-sm text-white">Recent safety stops</div><div className="mt-3 space-y-2">{safetyEvents.slice(0,8).map(event => <div key={event.id} className="rounded-lg bg-red-500/5 border border-red-500/10 p-3"><div className="text-xs font-bold text-red-300">{event.message}</div><div className="text-[10px] text-slate-600 mt-1">{event.rule} · {new Date(event.createdAt).toLocaleString()}</div></div>)}</div></div>}
+      {betaFeedback.length > 0 && <div className="glass-card p-5 mb-8"><div className="font-bold text-sm text-white">Paper beta feedback</div><div className="mt-3 grid md:grid-cols-2 gap-3">{betaFeedback.slice(0,8).map(item=><div key={item.id} className="rounded-xl bg-slate-950/50 border border-slate-800 p-4"><div className="text-[10px] uppercase tracking-wider font-black text-violet-300">{item.category}</div><p className="text-xs text-slate-300 mt-2">{item.message}</p><div className="text-[9px] text-slate-600 mt-2">{item.page ?? "Unknown page"} · {new Date(item.createdAt).toLocaleString()}</div></div>)}</div></div>}
+
+      <div className="glass-card p-5 mb-8 border border-violet-400/20">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4"><div><div className="font-bold text-white">Owner account security</div><div className="text-xs text-slate-500 mt-1">Authenticator two-factor is {mfa?.enabled ? "on" : "not set up"}.</div></div>{!mfa?.enabled && !mfaSetup && <button onClick={startMfa} className="px-4 py-2 rounded-lg bg-violet-500 text-white text-xs font-black">Set up two-factor</button>}{mfa?.enabled && <span className="text-xs font-black text-green-400">✓ Protected · {mfa.recoveryCodesRemaining} recovery codes</span>}</div>
+        {mfaSetup && <div className="mt-5 grid md:grid-cols-[240px_1fr] gap-6 border-t border-slate-800 pt-5"><img src={mfaSetup.qrDataUrl} alt="Authenticator QR code" className="rounded-xl w-60 h-60"/><div><h3 className="font-bold">Scan this in your authenticator app</h3><p className="text-xs text-slate-400 mt-2">Then enter the current six-digit code. Save the recovery codes somewhere private before confirming.</p><div className="mt-3 rounded-xl bg-slate-950 p-3 font-mono text-xs break-all text-slate-300">Manual key: {mfaSetup.manualKey}</div><div className="grid grid-cols-2 gap-2 mt-3">{mfaSetup.recoveryCodes.map(code => <code key={code} className="rounded bg-slate-950 p-2 text-xs text-amber-300">{code}</code>)}</div><div className="flex gap-2 mt-4"><input aria-label="Authenticator code" value={mfaCode} onChange={e=>setMfaCode(e.target.value.replace(/\D/g,"").slice(0,6))} placeholder="6-digit code" className="h-10 rounded-lg bg-slate-950 border border-slate-700 px-3 text-white"/><button onClick={confirmMfa} disabled={mfaCode.length!==6} className="px-4 rounded-lg bg-violet-500 disabled:opacity-40 text-xs font-black">Turn on two-factor</button></div></div></div>}
+      </div>
+
+      <div className="glass-card p-5 mb-8"><div className="font-bold text-sm text-white">Recent owner activity</div><div className="mt-4 space-y-3">{auditLogs.slice(0,8).map(log => <div key={log.id} className="flex items-start justify-between gap-4 border-t border-slate-800 pt-3"><div><div className="text-xs font-bold text-slate-200">{log.summary}</div><div className="text-[10px] text-slate-600 mt-1">{log.action} · {log.ipAddress ?? "unknown IP"}</div></div><time className="text-[10px] text-slate-500 shrink-0">{new Date(log.createdAt).toLocaleString()}</time></div>)}</div></div>
 
       {/* Top Assets */}
       {stats?.topAssets && stats.topAssets.length > 1 && (

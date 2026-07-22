@@ -2,6 +2,10 @@ import type { Express } from "express";
 import { storage } from "../storage";
 import { authMiddleware, authed, requireAdmin, userPayload } from "./middleware";
 import type { Trade } from "@shared/schema";
+import { adminAuditLogs, managedPlans, orders, tradingAccounts } from "@shared/schema";
+import { db } from "../db";
+import { desc } from "drizzle-orm";
+import { writeAdminAudit } from "../adminSecurity";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -18,6 +22,9 @@ export function registerAdminRoutes(app: Express) {
     try {
       const allUsers = await storage.getAllUsers();
       const allTrades = await storage.getAllTrades();
+      const [plans, accounts, allOrders] = await Promise.all([
+        db.select().from(managedPlans), db.select().from(tradingAccounts), db.select().from(orders),
+      ]);
 
       const todayStart = new Date();
       todayStart.setUTCHours(0, 0, 0, 0);
@@ -44,6 +51,12 @@ export function registerAdminRoutes(app: Express) {
         newUsersToday,
         avgWinRate,
         topAssets,
+        onboardingComplete: allUsers.filter(user => user.onboardingComplete).length,
+        aiPlansActive: plans.filter((plan: { status: string }) => plan.status === "active").length,
+        aiPlansTotal: plans.length,
+        brokerConnections: accounts.length,
+        liveBrokerConnections: accounts.filter((account: { mode: string }) => account.mode === "live").length,
+        rejectedOrders: allOrders.filter((order: { status: string }) => ["rejected", "failed", "canceled"].includes(order.status)).length,
       });
     } catch (e) {
       console.error(e);
@@ -91,5 +104,11 @@ export function registerAdminRoutes(app: Express) {
       console.error(e);
       res.status(500).json({ message: "Failed to load user" });
     }
+  }));
+
+  app.get("/api/admin/audit-logs", authMiddleware, requireAdmin, authed(async (req, res) => {
+    const logs = await db.select().from(adminAuditLogs).orderBy(desc(adminAuditLogs.createdAt)).limit(100);
+    await writeAdminAudit(req, req.userId, "admin_audit_viewed", "Owner viewed the security audit log.");
+    res.json(logs);
   }));
 }
